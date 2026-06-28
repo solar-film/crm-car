@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAR CRM Overview</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon-overview.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        #loginScreen {
+            display: none;
+            backdrop-filter: blur(8px);
+        }
+
+        body.auth-locked > :not(#loginScreen) {
+            display: none !important;
+        }
+
+        body.auth-locked #loginScreen {
+            display: flex;
+        }
+
+        .premium-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 20px -4px rgba(56, 189, 248, 0.05), 0 1px 3px -1px rgba(148, 163, 184, 0.05);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        .premium-card:hover {
+            box-shadow: 0 10px 30px -4px rgba(56, 189, 248, 0.1);
+        }
+
+        .period-chip {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            border: 1px solid rgba(191, 219, 254, 0.85);
+            border-radius: 999px;
+            background: rgba(239, 246, 255, 0.88);
+            padding: 0.2rem 0.6rem;
+            color: #475569;
+            font-size: 0.68rem;
+            font-weight: 400;
+            line-height: 1.15;
+        }
+
+        .period-chip-light {
+            border-color: rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.16);
+            color: #e0f2fe;
+        }
+
+        .bar-track {
+            height: 0.5rem;
+            border-radius: 999px;
+            background: #f1f5f9;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #7dd3fc, #3b82f6);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .donut-chart {
+            width: 160px;
+            height: 160px;
+            border-radius: 999px;
+            position: relative;
+            box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.1);
+        }
+
+        .donut-chart::after {
+            content: "";
+            position: absolute;
+            inset: 24px;
+            border-radius: inherit;
+            background: #ffffff;
+            box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.05), 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .donut-center {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .premium-progress {
+            height: 0.5rem;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #f1f5f9;
+        }
+
+        .premium-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #38bdf8, #2dd4bf);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .reminder-alert-icon {
+            animation: reminder-alert-blink 0.78s ease-in-out infinite;
+        }
+
+        @keyframes reminder-alert-blink {
+            0%, 100% {
+                transform: scale(1);
+                background: #ffffff;
+                box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.72), 0 8px 22px -12px rgba(146, 64, 14, 0.65);
+            }
+            45% {
+                transform: scale(1.18);
+                background: #fff7ed;
+                box-shadow: 0 0 0 14px rgba(217, 119, 6, 0), 0 12px 26px -10px rgba(146, 64, 14, 0.8);
+            }
+        }
+
+        .minimal-input {
+            appearance: none;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.875rem;
+            color: #475569;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+            transition: all 0.2s;
+        }
+        .minimal-input:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Custom scrollbar for inner tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="apple-style.css?v=20260520-4">
+    <script src="sidebar.js" defer></script>
+</head>
+<body class="antialiased auth-locked selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Minimal Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-100/90 px-4">
+        <form id="loginForm" class="w-full max-w-sm rounded-[2rem] border border-white bg-white/80 p-8 shadow-[0_8px_30px_rgb(59,130,246,0.08)] backdrop-blur-xl">
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <i class="ph-fill ph-lock-key text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">เข้าสู่ระบบ CRM</h1>
+                <p class="mt-2 text-sm text-slate-500">กรุณายืนยันสิทธิ์การเข้าถึงข้อมูล</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="loginUser" class="mb-1.5 block text-xs font-bold text-slate-500 uppercase tracking-wider">User ID</label>
+                    <input id="loginUser" type="text" autocomplete="username" class="minimal-input w-full" required placeholder="Enter username">
+                </div>
+                <div>
+                    <label for="loginPass" class="mb-1.5 block text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                    <input id="loginPass" type="password" autocomplete="current-password" class="minimal-input w-full" required placeholder="••••••••">
+                </div>
+            </div>
+            <p id="loginError" class="mt-4 hidden rounded-lg bg-rose-50 p-3 text-center text-xs font-bold text-rose-500">
+                ข้อมูลเข้าสู่ระบบไม่ถูกต้อง
+            </p>
+            <button type="submit" class="mt-6 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 active:scale-[0.98]">
+                ดำเนินการต่อ
+            </button>
+        </form>
+    </div>
+
+    <div data-car-crm-sidebar></div>
+
+    <main class="w-full px-4 py-8 sm:px-6 lg:ml-72 lg:w-[calc(100%-18rem)] lg:px-10">
+        <!-- Minimal Header -->
+        <header class="mb-8 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-800">ภาพรวมธุรกิจ</h1>
+                <p id="lastUpdated" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-slate-500">
+                    <i class="ph ph-arrows-clockwise animate-spin text-slate-400"></i> กำลังซิงค์ข้อมูล...
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <select id="monthFilter" class="minimal-input min-w-48 cursor-pointer appearance-none pr-10 font-medium">
+                        <option value="">ทุกเดือน (ภาพรวม)</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400">
+                        <i class="ph-bold ph-caret-down"></i>
+                    </div>
+                </div>
+                <button type="button" onclick="fetchOverviewData()" class="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 active:scale-95" title="รีเฟรชข้อมูล">
+                    <i class="ph-bold ph-arrows-clockwise text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loadingMessage" class="flex flex-col items-center justify-center rounded-[2rem] border border-slate-100 bg-white px-6 py-24 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)]">
+            <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50">
+                <i class="ph-bold ph-circle-notch animate-spin text-3xl text-sky-400"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-700">กำลังวิเคราะห์ข้อมูล</h3>
+            <p class="mt-2 text-sm text-slate-500">ระบบกำลังดึงข้อมูลล่าสุดจาก Google Sheets</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorMessage" class="hidden flex-col items-center justify-center rounded-[2rem] border border-rose-100 bg-white px-6 py-24 text-center shadow-[0_2px_10px_-3px_rgba(0,0,0,0.02)]">
+            <div class="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-400">
+                <i class="ph-fill ph-warning-circle text-3xl"></i>
+            </div>
+            <p class="text-lg font-bold text-slate-700">ไม่สามารถเชื่อมต่อข้อมูลได้</p>
+            <p class="mt-2 text-sm text-slate-500">โปรดตรวจสอบการตั้งค่าแชร์ไฟล์เป็นสาธารณะ</p>
+        </div>
+
+        <!-- Dashboard Content -->
+        <section id="dashboardContent" class="hidden space-y-6">
+            <div class="grid gap-4 xl:grid-cols-2">
+                <article id="paymentReminder" class="hidden overflow-hidden rounded-[1.5rem] border border-rose-200 bg-rose-50/90 shadow-[0_14px_34px_-24px_rgba(225,29,72,0.42)]">
+                    <div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex min-w-0 gap-3">
+                            <div class="reminder-alert-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-rose-700 shadow-sm ring-1 ring-rose-100">
+                                <i class="ph-fill ph-currency-circle-dollar text-3xl"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-rose-900">แจ้งเตือนเคสที่ยังไม่ได้รับชำระเงิน</p>
+                                <p id="paymentReminderText" class="mt-1 text-sm leading-6 text-rose-800"></p>
+                            </div>
+                        </div>
+                        <div class="inline-flex shrink-0 items-center justify-center rounded-xl border border-rose-200 bg-white px-4 py-2 text-sm font-bold text-rose-700 shadow-sm">
+                            <span id="paymentReminderCount">0 เคส</span>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="contactStatsReminder" class="hidden overflow-hidden rounded-[1.5rem] border border-amber-200 bg-amber-50/90 shadow-[0_14px_34px_-24px_rgba(217,119,6,0.45)]">
+                    <div class="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex min-w-0 gap-3">
+                            <div class="reminder-alert-icon flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+                                <i class="ph-fill ph-warning-circle text-3xl"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-bold text-amber-900">กรุณากรอกสถิติการติดต่อให้ครบ</p>
+                                <p id="contactStatsReminderText" class="mt-1 text-sm leading-6 text-amber-800"></p>
+                            </div>
+                        </div>
+                        <a href="contact-stats.html" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-200 bg-white px-4 py-2 text-sm font-bold text-amber-700 shadow-sm transition hover:bg-amber-100">
+                            ดูสถิติการติดต่อ
+                        </a>
+                    </div>
+                </article>
+            </div>
+            
+            <!-- Row 1: Executive KPIs -->
+            <div class="hidden grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <!-- Revenue -->
+                <article class="premium-card p-6 border-l-4 border-l-sky-500">
+                    <p class="text-sm font-bold text-slate-500 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-wallet text-sky-500 text-lg"></i> ยอดขายรวม</p>
+                    <p id="kpiRevenuePeriod" class="period-chip mb-3">ข้อมูลเดือนที่เลือก</p>
+                    <p id="kpiRevenue" class="text-3xl font-black text-slate-800 tracking-tight">฿0</p>
+                    <div class="mt-4">
+                        <div class="flex justify-between text-sm font-extrabold mb-1.5">
+                            <span class="text-slate-400" id="kpiTargetValue">เป้า ฿0</span>
+                            <span id="kpiTargetPercent" class="text-sky-600">0%</span>
+                        </div>
+                        <div class="premium-progress">
+                            <div id="targetProgressBar" class="premium-progress-fill" style="width:0%"></div>
+                        </div>
+                        <p id="kpiTargetGap" class="mt-2 text-sm font-bold text-slate-500">-</p>
+                    </div>
+                    <!-- ยอดถอด VAT -->
+                    <div class="mt-4 pt-4 border-t border-slate-100">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-bold text-slate-400 flex items-center gap-1"><i class="ph-bold ph-receipt text-amber-500"></i> ยอดถอด VAT 7%</span>
+                        </div>
+                        <p id="kpiRevenueExVat" class="text-xl font-extrabold text-amber-600 tracking-tight">฿0</p>
+                        <div class="mt-2">
+                            <div class="flex justify-between text-xs font-extrabold mb-1">
+                                <span class="text-slate-400" id="kpiExVatTargetValue">เป้า ฿0</span>
+                                <span id="kpiExVatTargetPercent" class="text-amber-600">0%</span>
+                            </div>
+                            <div class="premium-progress" style="height:0.35rem">
+                                <div id="exVatProgressBar" class="premium-progress-fill" style="width:0%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div>
+                            </div>
+                            <p id="kpiExVatGap" class="mt-1.5 text-xs font-bold text-slate-500">-</p>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Bookings -->
+                <article class="premium-card p-6 border-l-4 border-l-indigo-500 flex flex-col justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-500 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-calendar-check text-indigo-500 text-lg"></i> จำนวนคิวทั้งหมด</p>
+                        <p id="kpiBookingsPeriod" class="period-chip mb-3">ข้อมูลเดือนที่เลือก</p>
+                        <p id="kpiBookings" class="text-3xl font-black text-slate-800 tracking-tight">0</p>
+                    </div>
+                    <div class="mt-4 rounded-xl bg-slate-50 p-3.5 border border-slate-100 flex justify-between items-center">
+                        <span class="text-sm font-bold text-slate-500">ยอดเฉลี่ยต่อคิว</span>
+                        <span id="kpiAvgTicket" class="text-base font-extrabold text-indigo-700">฿0</span>
+                    </div>
+                </article>
+
+                <!-- Today -->
+                <article class="premium-card p-6 border-l-4 border-l-emerald-500 flex flex-col justify-between bg-emerald-50/30">
+                    <div>
+                        <p class="text-sm font-bold text-slate-500 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-lightning text-emerald-500 text-lg"></i> ผลงานวันนี้</p>
+                        <p id="snapshotTodayPeriod" class="period-chip mb-3">ข้อมูลวันนี้</p>
+                        <p id="snapshotTodaySales" class="text-3xl font-black text-emerald-600 tracking-tight">฿0</p>
+                    </div>
+                    <div class="mt-4 rounded-xl bg-white p-3.5 border border-emerald-100 flex justify-between items-center shadow-sm">
+                        <span class="text-sm font-bold text-emerald-600">จำนวนลูกค้าใหม่/เก่าวันนี้</span>
+                        <span id="snapshotTodayJobs" class="text-base font-extrabold text-emerald-700">0 คิว</span>
+                    </div>
+                </article>
+
+                <!-- Conversion -->
+                <article class="premium-card p-6 border-l-4 border-l-amber-500 flex flex-col justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-500 mb-1 flex items-center gap-1.5"><i class="ph-bold ph-funnel text-amber-500 text-lg"></i> อัตราปิดการขาย</p>
+                        <p id="kpiConversionPeriod" class="period-chip mb-3">ข้อมูลเดือนที่เลือก</p>
+                        <p id="kpiConversionRate" class="text-3xl font-black text-amber-600 tracking-tight">0%</p>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3.5">
+                        <div class="text-center">
+                            <p class="text-base font-extrabold text-slate-800" id="kpiContacts">0</p>
+                            <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">ติดต่อ</p>
+                        </div>
+                        <div class="text-base text-slate-300"><i class="ph-bold ph-arrow-right"></i></div>
+                        <div class="text-center">
+                            <p class="text-base font-extrabold text-slate-800" id="kpiContactBookings">0</p>
+                            <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">ลูกค้าใหม่/เก่า</p>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            <!-- MAIN LAYOUT: Left Content & Right Sidebar -->
+            <div class="flex flex-col gap-6 xl:flex-row xl:items-stretch">
+                
+                <!-- Left Content Area -->
+                <div class="w-full xl:w-2/3 space-y-6">
+                    
+                    <!-- Sales & Damage Summary -->
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <article class="premium-card p-6 lg:col-span-2 border-l-4 border-l-sky-500">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2"><i class="ph-bold ph-wallet text-sky-500"></i> ยอดขาย</h2>
+                                    <p id="operationsPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                                <span id="salesSummaryCount" class="text-xs font-normal text-sky-700 bg-sky-50 border border-sky-100 px-3 py-1 rounded-full">0 คิว</span>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="rounded-2xl border border-sky-100 bg-sky-50/60 p-5">
+                                    <p class="text-sm font-normal text-sky-700 mb-3 flex items-center gap-2"><i class="ph-bold ph-receipt text-sky-500"></i> ยอดขายถอด VAT</p>
+                                    <p id="salesSummaryNet" class="text-3xl font-bold text-slate-900">฿0</p>
+                                    <div class="mt-4 flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm shadow-sm ring-1 ring-sky-100">
+                                        <span class="font-normal text-slate-500">ยอดขายรวมก่อน VAT</span>
+                                        <span id="salesSummaryGross" class="font-normal text-sky-700">฿0</span>
+                                    </div>
+                                    <div class="mt-4 rounded-xl bg-white px-3 py-3 shadow-sm ring-1 ring-sky-100">
+                                        <div class="mb-2 flex items-center justify-between text-sm font-normal">
+                                            <span id="salesSummaryTargetValue" class="text-slate-500">เป้า ฿0</span>
+                                            <span id="salesSummaryTargetPercent" class="text-sky-600">0%</span>
+                                        </div>
+                                        <div class="premium-progress">
+                                            <div id="salesSummaryProgressBar" class="premium-progress-fill" style="width:0%"></div>
+                                        </div>
+                                        <p id="salesSummaryTargetGap" class="mt-2 text-sm font-normal text-slate-500">-</p>
+                                    </div>
+                                </div>
+                                <div class="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-5">
+                                    <p class="text-sm font-normal text-emerald-700 mb-4 flex items-center gap-2"><i class="ph-bold ph-users-three text-emerald-500"></i> ลูกค้าที่ยอดขายนับรวม</p>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="font-normal text-slate-600">ลูกค้าใหม่</span>
+                                            <span id="salesSummaryNewCount" class="font-normal text-emerald-700 bg-white px-3 py-1 rounded-lg shadow-sm border border-emerald-50">0 คัน</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-sm">
+                                            <span class="font-normal text-slate-600">ลูกค้าเก่า</span>
+                                            <span id="salesSummaryOldCount" class="font-normal text-amber-700 bg-white px-3 py-1 rounded-lg shadow-sm border border-amber-50">0 คัน</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 border-t border-emerald-100 pt-3">
+                                        <p class="mb-2 text-xs font-normal text-emerald-700">จำนวนการติดต่อ</p>
+                                        <div id="salesSummaryContactChannels" class="grid grid-cols-3 gap-1.5 text-[11px]"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                        
+                        <article class="premium-card p-6 border-l-4 border-l-rose-500">
+                            <div class="mb-6">
+                                <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2"><i class="ph-fill ph-warning-circle text-rose-500"></i> ความเสียหาย</h2>
+                                <p id="riskPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 shadow-sm">
+                                    <span class="text-sm font-normal text-slate-600">ลูกค้าเคลม</span>
+                                    <span class="text-right">
+                                        <span id="damageSummaryClaimCount" class="block text-lg font-normal text-rose-600">0 คัน</span>
+                                        <span id="damageSummaryClaimValue" class="block text-sm font-normal text-rose-500">฿0</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 shadow-sm">
+                                    <span class="text-sm font-normal text-slate-600">งานแก้ในวัน</span>
+                                    <span class="text-right">
+                                        <span id="damageSummaryRepairCount" class="block text-lg font-normal text-orange-600">0 คัน</span>
+                                        <span id="damageSummaryRepairValue" class="block text-sm font-normal text-orange-500">฿0</span>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 shadow-sm">
+                                    <span class="text-sm font-normal text-slate-600">มูลค่าความเสียหาย</span>
+                                    <span id="damageSummaryValue" class="text-lg font-normal text-amber-700">฿0</span>
+                                </div>
+                                <div class="rounded-xl bg-slate-50 px-4 py-3 text-xs font-normal text-slate-500 ring-1 ring-slate-100">
+                                    เทียบยอดขาย <span id="damageSummaryRatio" class="text-rose-600">0%</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <article class="premium-card p-8 flex flex-col justify-center">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-700 tracking-tight">สัดส่วนประเภทงาน</h2>
+                                    <p id="customerMixPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                                <div class="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-400">
+                                    <i class="ph-bold ph-chart-pie-slice"></i>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-8 md:grid-cols-[180px_1fr] md:items-center">
+                                <div id="customerDonutChart"></div>
+                                <div id="customerMix" class="space-y-4"></div>
+                            </div>
+                        </article>
+
+                        <article class="premium-card p-8 flex flex-col justify-center">
+                            <div class="mb-6 flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-lg font-bold text-slate-700 tracking-tight">ช่องทางติดต่อหลัก</h2>
+                                    <p id="contactChannelsPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                                <div class="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-400">
+                                    <i class="ph-bold ph-device-mobile"></i>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-8 md:grid-cols-[180px_1fr] md:items-center">
+                                <div id="contactDonutChart"></div>
+                                <div id="contactChannels" class="space-y-4"></div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- Rankings -->
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                        <article class="premium-card p-6">
+                            <div class="mb-6 flex items-center gap-3">
+                                <div class="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                                    <i class="ph-bold ph-medal"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-700">อันดับยอดขายพนักงาน</h2>
+                                    <p id="salesRankingPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                            </div>
+                            <div id="salesRanking" class="space-y-4"></div>
+                        </article>
+
+                        <article class="premium-card p-6">
+                            <div class="mb-6 flex items-center gap-3">
+                                <div class="h-8 w-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-500">
+                                    <i class="ph-bold ph-star"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-700">รุ่นฟิล์มยอดนิยม</h2>
+                                    <p id="filmRankingPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                            </div>
+                            <div id="filmRanking" class="space-y-4"></div>
+                        </article>
+
+                        <article class="premium-card p-6">
+                            <div class="mb-6 flex items-center gap-3">
+                                <div class="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">
+                                    <i class="ph-bold ph-car"></i>
+                                </div>
+                                <div>
+                                    <h2 class="text-base font-bold text-slate-700">แพ็กเกจติดตั้ง</h2>
+                                    <p id="installRankingPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
+                                </div>
+                            </div>
+                            <div id="installRanking" class="space-y-4"></div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar Area: Daily Sales Table -->
+                <div class="z-10 w-full xl:w-1/3 xl:self-stretch">
+                    <article class="premium-card flex min-h-[420px] flex-col overflow-hidden max-h-[85vh] shadow-[0_4px_30px_-4px_rgba(0,0,0,0.05)] border-t-4 border-t-sky-400 xl:h-full xl:max-h-none">
+                        <!-- Table Header Block -->
+                        <div class="p-6 pb-4 border-b border-slate-100 bg-white z-20">
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <i class="ph-bold ph-calendar-blank text-sky-500 text-xl"></i> สถิติยอดขายรายวัน
+                                </div>
+                                <span id="dailySalesPeriod" class="period-chip">ข้อมูลเดือนที่เลือก</span>
+                            </h2>
+                        </div>
+                        
+                        <!-- Table Content (Scrollable) -->
+                        <div class="overflow-y-auto flex-1 custom-scrollbar bg-slate-50/50 p-2 relative">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="sticky top-0 bg-slate-50/90 backdrop-blur-md z-10 rounded-lg">
+                                    <tr class="text-[10px] font-normal text-slate-500 uppercase tracking-wider">
+                                        <th class="py-3 px-3 w-[25%] rounded-tl-lg">วันที่</th>
+                                        <th class="py-3 px-2 text-center w-[20%]">ติดต่อ</th>
+                                        <th class="py-3 px-2 text-center w-[25%]" title="ใหม่ = ลูกค้าใหม่+ลูกค้าเก่า / เคลม = ลูกค้าเคลม+งานแก้(ในวัน)">ใหม่/เคลม</th>
+                                        <th class="py-3 px-3 text-right w-[30%] rounded-tr-lg">ยอดขาย (Ex VAT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dailySalesTableBody" class="divide-y divide-slate-100/80 text-sm">
+                                    <!-- JS injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
+        const BOOKINGS_SHEET_NAME = 'Bookings';
+        const CUSTOMER_SHEET_NAME = 'Customer';
+        const PAYIN_SHEET_NAME = 'PayIn';
+        const SALES_TARGET_SHEET_NAME = 'เป้ายอดขาย';
+        const CONTACT_SHEET_NAMES = ['สถิตการติดต่อ', 'สถิติดการติดต่อ', 'สถิติการติดต่อ', 'สถิติ ติดต่อ', 'ContactStats', 'Contact Stats', 'Contact'];
+        const CONTACT_CHANNELS = [
+            { key: 'phone', label: 'โทร', headers: ['โทร', 'โทรศัพท์', 'Tel', 'Phone'] },
+            { key: 'line', label: 'Line', headers: ['Line', 'ไลน์'] },
+            { key: 'fb', label: 'FB', headers: ['FB', 'Facebook', 'เฟซบุ๊ก'] },
+            { key: 'tiktok', label: 'Tiktok', headers: ['Tiktok', 'TikTok', 'ติ๊กตอก'] },
+            { key: 'walkin', label: 'WalkIn', headers: ['WalkIn', 'Walk In', 'Walk-in', 'หน้าร้าน'] }
+        ];
+        const LOGIN_USER = 'admin';
+        const LOGIN_PASS = 'MHL741mhl+';
+        const LOGIN_KEY = 'carCrmLoggedIn';
+
+        const dom = {};
+        const DOM_IDS = [
+            'loginForm', 'loginUser', 'loginPass', 'loginError',
+            'monthFilter', 'lastUpdated', 'loadingMessage', 'errorMessage', 'dashboardContent',
+            'contactStatsReminder', 'contactStatsReminderText',
+            'paymentReminder', 'paymentReminderText', 'paymentReminderCount',
+            'kpiRevenue', 'kpiAvgTicket', 'kpiTargetValue', 'kpiTargetPercent', 'targetProgressBar', 'kpiTargetGap',
+            'kpiRevenueExVat', 'kpiExVatTargetValue', 'kpiExVatTargetPercent', 'exVatProgressBar', 'kpiExVatGap',
+            'kpiBookings', 'snapshotTodaySales', 'snapshotTodayJobs',
+            'kpiConversionRate', 'kpiContacts', 'kpiContactBookings',
+            'kpiRevenuePeriod', 'kpiBookingsPeriod', 'snapshotTodayPeriod', 'kpiConversionPeriod',
+            'operationsPeriod', 'riskPeriod', 'customerMixPeriod', 'contactChannelsPeriod',
+            'salesRankingPeriod', 'filmRankingPeriod', 'installRankingPeriod', 'dailySalesPeriod',
+            'salesSummaryCount', 'salesSummaryNet', 'salesSummaryGross',
+            'salesSummaryTargetValue', 'salesSummaryTargetPercent', 'salesSummaryProgressBar', 'salesSummaryTargetGap',
+            'salesSummaryNewCount', 'salesSummaryOldCount', 'salesSummaryContactChannels',
+            'damageSummaryClaimCount', 'damageSummaryClaimValue',
+            'damageSummaryRepairCount', 'damageSummaryRepairValue',
+            'damageSummaryValue', 'damageSummaryRatio',
+            'dailySalesTableBody', 'customerDonutChart', 'customerMix', 'contactDonutChart', 'contactChannels',
+            'salesRanking', 'filmRanking', 'installRanking'
+        ];
+
+        let bookings = [];
+        let customers = [];
+        let payIns = [];
+        let contacts = [];
+        let contactStatsRows = [];
+        let salesTargets = {};
+        let contactSheetName = '';
+        let appHasStarted = false;
+
+        function cacheDom() {
+            DOM_IDS.forEach(id => {
+                dom[id] = document.getElementById(id);
+            });
+        }
+
+        function textValue(value, fallback = '') {
+            if (value === null || value === undefined) return fallback;
+            const text = String(value).trim();
+            return text === '' ? fallback : text;
+        }
+
+        function escapeHtml(value) {
+            return textValue(value).replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function normalizeText(value) {
+            return textValue(value).replace(/[\s._\-()（）/\\]+/g, '').toLowerCase();
+        }
+
+        function findField(row, candidates) {
+            if (!row) return '';
+            const keys = Object.keys(row).filter(key => normalizeText(key));
+            const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
+            const key = keys.find(item => normalizedCandidates.includes(normalizeText(item))) ||
+                keys.find(item => normalizedCandidates.some(candidate => {
+                    const normalizedItem = normalizeText(item);
+                    return normalizedItem.includes(candidate) || candidate.includes(normalizedItem);
+                }));
+            return key ? textValue(row[key]) : '';
+        }
+
+        function findExactField(row, candidates) {
+            if (!row) return '';
+            const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
+            const key = Object.keys(row).find(item => normalizedCandidates.includes(normalizeText(item)));
+            return key ? textValue(row[key]) : '';
+        }
+
+        function sheetCsvUrl(sheetName) {
+            return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        }
+
+        function isHtmlResponseText(text) {
+            const trimmedText = text.trim().toLowerCase();
+            return trimmedText.startsWith('<!doctype html>') ||
+                trimmedText.startsWith('<html') ||
+                trimmedText.includes('google.visualization.query.setresponse') ||
+                trimmedText.includes('invalid query');
+        }
+
+        async function fetchCsvText(sheetName) {
+            const response = await fetch(sheetCsvUrl(sheetName));
+            if (!response.ok) throw new Error(`Cannot load ${sheetName}`);
+            const text = await response.text();
+            if (isHtmlResponseText(text)) throw new Error(`Cannot parse ${sheetName}`);
+            return text;
+        }
+
+        async function fetchFirstAvailableSheet(sheetNames, parser = parseCsv) {
+            for (const name of sheetNames) {
+                try {
+                    const text = await fetchCsvText(name);
+                    return { name, rows: await parser(text) };
+                } catch (error) {
+                    console.warn(error.message);
+                }
+            }
+            return { name: '', rows: [] };
+        }
+
+        function parseCsv(csvText) {
+            return new Promise(resolve => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    transformHeader: header => header.trim(),
+                    complete: results => resolve(results.data)
+                });
+            });
+        }
+
+        function parseContactStatsCsv(csvText) {
+            return new Promise(resolve => {
+                Papa.parse(csvText, {
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: results => {
+                        const allRows = results.data;
+                        const headerIndex = allRows.findIndex(row =>
+                            row.some(cell => normalizeText(cell).includes(normalizeText('วันที่')))
+                        );
+
+                        if (headerIndex < 0) {
+                            resolve([]);
+                            return;
+                        }
+
+                        const headers = allRows[headerIndex].map(normalizeText);
+                        const dataRows = allRows.slice(headerIndex + 1);
+                        const getValue = (row, candidates) => {
+                            const normalizedCandidates = candidates.map(normalizeText);
+                            const index = headers.findIndex(header =>
+                                normalizedCandidates.includes(header) ||
+                                normalizedCandidates.some(candidate => header.includes(candidate))
+                            );
+                            return index >= 0 ? row[index] : '';
+                        };
+
+                        resolve(dataRows.map((row, index) => {
+                            const date = parseDate(getValue(row, ['วันที่', 'Date']));
+                            const phone = parseContactStatNumber(getValue(row, ['โทร', 'Tel']));
+                            const line = parseContactStatNumber(getValue(row, ['Line', 'ไลน์']));
+                            const fb = parseContactStatNumber(getValue(row, ['FB', 'เฟซ']));
+                            const tiktok = parseContactStatNumber(getValue(row, ['Tiktok', 'ติ๊ก']));
+                            const walkin = parseContactStatNumber(getValue(row, ['WalkIn', 'หน้าร้าน']));
+                            const total = phone + line + fb + tiktok + walkin;
+
+                            return {
+                                id: index,
+                                date,
+                                monthKey: monthKeyFromDate(date),
+                                phone,
+                                line,
+                                fb,
+                                tiktok,
+                                walkin,
+                                total
+                            };
+                        }).filter(item => item.date || item.total > 0));
+                    }
+                });
+            });
+        }
+
+        function parseDate(value) {
+            const raw = textValue(value);
+            let match = raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+            if (match) {
+                let year = parseInt(match[3], 10);
+                if (year < 100) {
+                    year = year > 40 ? year + 2500 : year + 2000;
+                }
+                if (year > 2400) year -= 543;
+                const date = new Date(year, parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+            match = raw.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (!match) return null;
+            let year = parseInt(match[1], 10);
+            if (year > 2400) year -= 543;
+            const date = new Date(year, parseInt(match[2], 10) - 1, parseInt(match[3], 10));
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function parseMoney(value) {
+            const number = parseFloat(textValue(value, '0').replace(/[^\d.-]/g, ''));
+            return Number.isFinite(number) ? number : 0;
+        }
+
+        function parseContactStatNumber(value) {
+            const raw = textValue(value, '0');
+            if (/[\/:]/.test(raw)) return 0;
+            return parseMoney(raw);
+        }
+
+        function monthKeyFromDate(date) {
+            if (!date) return 'ไม่ระบุเดือน';
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function monthLabel(monthKey) {
+            if (!monthKey || monthKey === 'ไม่ระบุเดือน') return 'ไม่ระบุเดือน';
+            const [year, month] = monthKey.split('-').map(Number);
+            const date = new Date(year, month - 1, 1);
+            return date.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' }).replace('.', '');
+        }
+
+        function monthKeyFromText(value) {
+            const raw = textValue(value);
+            if (!raw) return '';
+            const date = parseDate(raw);
+            if (date) return monthKeyFromDate(date);
+
+            let match = raw.match(/(\d{4})[-\/](\d{1,2})/);
+            if (match) {
+                let year = parseInt(match[1], 10);
+                if (year > 2400) year -= 543;
+                return `${year}-${String(parseInt(match[2], 10)).padStart(2, '0')}`;
+            }
+
+            match = raw.match(/(\d{1,2})[-\/](\d{2,4})/);
+            if (match) {
+                let year = parseInt(match[2], 10);
+                if (year < 100) {
+                    year = year > 40 ? year + 2500 : year + 2000;
+                }
+                if (year > 2400) year -= 543;
+                return `${year}-${String(parseInt(match[1], 10)).padStart(2, '0')}`;
+            }
+
+            const monthNames = [
+                ['มกราคม', 'ม.ค.', 'jan', 'january'],
+                ['กุมภาพันธ์', 'ก.พ.', 'feb', 'february'],
+                ['มีนาคม', 'มี.ค.', 'mar', 'march'],
+                ['เมษายน', 'เม.ย.', 'apr', 'april'],
+                ['พฤษภาคม', 'พ.ค.', 'may'],
+                ['มิถุนายน', 'มิ.ย.', 'jun', 'june'],
+                ['กรกฎาคม', 'ก.ค.', 'jul', 'july'],
+                ['สิงหาคม', 'ส.ค.', 'aug', 'august'],
+                ['กันยายน', 'ก.ย.', 'sep', 'september'],
+                ['ตุลาคม', 'ต.ค.', 'oct', 'october'],
+                ['พฤศจิกายน', 'พ.ย.', 'nov', 'november'],
+                ['ธันวาคม', 'ธ.ค.', 'dec', 'december']
+            ];
+            const normalized = raw.toLowerCase();
+            const monthIndex = monthNames.findIndex(names => names.some(name => normalized.includes(name)));
+            if (monthIndex < 0) return '';
+            const yearMatch = normalized.match(/(25\d{2}|20\d{2}|\d{2})/);
+            let year = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+            if (year < 100) {
+                year = year > 40 ? year + 2500 : year + 2000;
+            }
+            if (year > 2400) year -= 543;
+            return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+        }
+
+        function formatMoney(value) {
+            return value.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+        }
+
+        function removeVat(value) {
+            return Math.round((Number(value) || 0) / 1.07);
+        }
+
+        function classifyCustomerType(value) {
+            const normalized = normalizeText(value);
+            if (normalized.includes('เคลม') || normalized.includes('ปัญหา')) return 'งานเคลม';
+            if (normalized.includes('แก้') || normalized.includes('ในวัน')) return 'งานแก้';
+            if (normalized.includes('เก่า')) return 'ลูกค้าเก่า';
+            return 'ลูกค้าใหม่';
+        }
+
+        function buildBookings(rows) {
+            return rows.map(row => {
+                const date = parseDate(findField(row, ['วันที่ติดตั้ง', 'วันที่', 'Date']));
+                const bookingSales = parseMoney(findField(row, ['ยอดขาย', 'ยอดขาย (บาท)']));
+                const price = bookingSales;
+                const customerType = findField(row, ['ประเภทลูกค้า']);
+                return {
+                    jobId: findField(row, ['JobID', 'Job ID', 'รหัสงาน']),
+                    custId: findField(row, ['CustID']),
+                    date,
+                    monthKey: monthKeyFromDate(date),
+                    price,
+                    status: findField(row, ['Status', 'สถานะ']),
+                    promotion: findField(row, ['Pro_ID', 'โปรโมชั่น']),
+                    customerType,
+                    customerGroup: classifyCustomerType(customerType),
+                    sales: findField(row, ['พน.ขาย', 'พนง.ขาย', 'เซลล์', 'Sales']) || 'ไม่ระบุ',
+                    film: findField(row, ['ยี่ห้อฟิล์ม', 'รุ่นฟิล์มที่เลือก', 'Film']) || 'ไม่ระบุ',
+                    installType: findField(row, [
+                        'ตำแหน่งติดตั้ง',
+                        'ตำแหน่งติดตั้ง ใหม่',
+                        'ตำแหน่งติดตั้งใหม่',
+                        'การติดตั้ง',
+                        'ประเภทการติดตั้ง',
+                        'ตำแหน่ง'
+                    ]) || 'ไม่ระบุ',
+                    carModel: findField(row, ['รุ่นรถยนต์', 'รุ่นรถ', 'Model']) || '-',
+                    plate: findField(row, ['ทะเบียนรถ', 'ทะเบียน', 'Plate']) || '-'
+                };
+            }).filter(item => item.jobId);
+        }
+
+        function normalizeJobId(value) {
+            return normalizeText(value);
+        }
+
+        function buildPayIns(rows) {
+            return rows.map(row => ({
+                jobId: findField(row, ['JobID', 'Job ID', 'รหัสงาน', 'เลขงาน', 'Reference', 'อ้างอิง']),
+                amount: parseMoney(findField(row, ['ยอดชำระ', 'จำนวนเงิน', 'ยอดเงิน', 'ยอดโอน', 'มูลค่า', 'Amount'])),
+                date: parseDate(findField(row, ['วันที่ชำระ', 'วันที่โอน', 'วันที่', 'Date']))
+            })).filter(item => item.jobId);
+        }
+
+        function paidJobIdSet() {
+            return new Set(payIns.map(item => normalizeJobId(item.jobId)).filter(Boolean));
+        }
+
+        function buildContacts(rows) {
+            const hasDailyContactStats = rows.some(row =>
+                CONTACT_CHANNELS.some(channel => Object.prototype.hasOwnProperty.call(row, channel.key))
+            );
+
+            if (hasDailyContactStats) {
+                return rows.flatMap((row, index) =>
+                    CONTACT_CHANNELS.map(channel => ({
+                        id: `${index}-${channel.key}`,
+                        date: row.date,
+                        monthKey: row.monthKey,
+                        channel: channel.label,
+                        owner: '-',
+                        count: parseMoney(row[channel.key]),
+                        booking: 0,
+                        note: ''
+                    })).filter(item => item.count > 0)
+                );
+            }
+
+            const hasWideContactColumns = rows.some(row =>
+                CONTACT_CHANNELS.some(channel => findExactField(row, channel.headers) !== '')
+            );
+
+            if (hasWideContactColumns) {
+                return rows.flatMap((row, index) => {
+                    const date = parseDate(findExactField(row, ['วันที่']));
+                    return CONTACT_CHANNELS.map(channel => {
+                        const rawCount = findExactField(row, channel.headers);
+                        const count = /[\/:]/.test(textValue(rawCount)) ? 0 : parseMoney(rawCount);
+                        return {
+                            id: `${index}-${channel.key}`,
+                            date,
+                            monthKey: monthKeyFromDate(date),
+                            channel: channel.label,
+                            owner: findField(row, ['ผู้บันทึก', 'ผู้รับผิดชอบ', 'เซลล์', 'พนักงาน', 'Owner']) || '-',
+                            count,
+                            booking: 0,
+                            note: ''
+                        };
+                    }).filter(item => item.count > 0);
+                });
+            }
+
+            return rows.map((row, index) => {
+                const date = parseDate(findField(row, ['วันที่', 'วันที่ติดต่อ', 'วันที่บันทึก', 'Date']));
+                const count = parseMoney(findField(row, ['จำนวน', 'จำนวนติดต่อ', 'ติดต่อ', 'Contacts', 'Lead', 'Leads'])) || 1;
+                const booking = parseMoney(findField(row, ['จอง', 'จองคิว', 'Booking', 'Bookings', 'ปิดการขาย']));
+                return {
+                    id: index,
+                    date,
+                    monthKey: monthKeyFromDate(date),
+                    channel: findField(row, ['ช่องทาง', 'ช่องทางติดต่อ', 'แหล่งที่มา', 'Source', 'Channel']) || 'ไม่ระบุช่องทาง',
+                    owner: findField(row, ['ผู้รับผิดชอบ', 'เซลล์', 'พนักงาน', 'Owner']) || '-',
+                    count,
+                    booking,
+                    note: findField(row, ['หมายเหตุ', 'รายละเอียด', 'Note']) || ''
+                };
+            });
+        }
+
+        function buildSalesTargets(rows) {
+            const result = {};
+            if (!rows || rows.length === 0) return result;
+            
+            rows.forEach(row => {
+                const values = Object.values(row);
+                const monthText = findField(row, ['เดือน', 'Month']) || values[0];
+                const targetText = findField(row, ['เป้ายอดขาย', 'เป้า', 'Target']) || values[1];
+                
+                const monthKey = monthKeyFromText(monthText);
+                const target = parseMoney(targetText);
+                
+                if (monthKey && target > 0) {
+                    result[monthKey] = target;
+                }
+            });
+            return result;
+        }
+
+        function selectedMonthRows() {
+            const month = dom.monthFilter.value;
+            return {
+                month,
+                bookingRows: month ? bookings.filter(item => item.monthKey === month) : bookings,
+                contactRows: month ? contacts.filter(item => item.monthKey === month) : contacts
+            };
+        }
+
+        function selectedPeriodLabel(month) {
+            return month ? `ข้อมูลเดือน ${monthLabel(month)}` : 'ข้อมูลทุกเดือน';
+        }
+
+        function datePeriodLabel(date) {
+            return `ข้อมูลวันที่ ${date.toLocaleDateString('th-TH', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            }).replace('.', '')}`;
+        }
+
+        function renderPeriodLabels(month) {
+            const monthText = selectedPeriodLabel(month);
+            [
+                dom.kpiRevenuePeriod,
+                dom.kpiBookingsPeriod,
+                dom.kpiConversionPeriod,
+                dom.operationsPeriod,
+                dom.riskPeriod,
+                dom.customerMixPeriod,
+                dom.contactChannelsPeriod,
+                dom.salesRankingPeriod,
+                dom.filmRankingPeriod,
+                dom.installRankingPeriod,
+                dom.dailySalesPeriod
+            ].forEach(element => {
+                element.innerText = monthText;
+            });
+
+            dom.snapshotTodayPeriod.innerText = datePeriodLabel(new Date());
+        }
+
+        function groupSum(rows, keyFn, valueFn) {
+            return rows.reduce((map, row) => {
+                const key = keyFn(row) || 'ไม่ระบุ';
+                if (!map[key]) map[key] = { label: key, count: 0, value: 0 };
+                map[key].count += 1;
+                map[key].value += valueFn ? valueFn(row) : 1;
+                return map;
+            }, {});
+        }
+
+        function topItems(grouped, limit = 5) {
+            return Object.values(grouped).sort((a, b) => b.value - a.value || b.count - a.count).slice(0, limit);
+        }
+
+        function renderRankList(element, items, valueFormatter, emptyText = 'ยังไม่มีข้อมูล') {
+            if (!items.length) {
+                element.innerHTML = `<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm font-normal text-slate-400">${emptyText}</div>`;
+                return;
+            }
+            const max = Math.max(...items.map(item => item.value), 1);
+            element.innerHTML = items.map((item, index) => `
+                <div class="group">
+                    <div class="mb-1.5 flex items-center justify-between text-sm">
+                        <div class="font-normal text-slate-600 flex items-center gap-2">
+                            <span class="text-xs font-normal text-slate-300 w-4">${index + 1}.</span> 
+                            ${escapeHtml(item.label)}
+                        </div>
+                        <div class="font-normal text-slate-800">${valueFormatter(item)}</div>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, (item.value / max) * 100)}%"></div></div>
+                </div>
+            `).join('');
+        }
+
+        function chartEmptyHtml(text) {
+            return `<div class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-16 text-center text-sm font-normal text-slate-400">${text}</div>`;
+        }
+
+        function renderDonutChart(element, items, valueSelector, centerLabel, emptyText = 'ยังไม่มีข้อมูล') {
+            const values = items.map(item => Math.max(0, valueSelector(item)));
+            const total = values.reduce((sum, value) => sum + value, 0);
+            if (!items.length || !total) {
+                element.innerHTML = chartEmptyHtml(emptyText);
+                return;
+            }
+            const colors = ['#60a5fa', '#a78bfa', '#94a3b8', '#7dd3fc', '#cbd5e1'];
+            let current = 0;
+            const gradient = items.map((item, index) => {
+                const start = current;
+                const end = current + (values[index] / total) * 100;
+                current = end;
+                return `${colors[index % colors.length]} ${start}% ${end}%`;
+            }).join(', ');
+
+            element.innerHTML = `
+                <div class="donut-chart mx-auto" style="background: conic-gradient(${gradient})">
+                    <div class="donut-center">
+                        <div class="text-[1.75rem] leading-none font-normal text-slate-800">${formatMoney(total)}</div>
+                        <div class="mt-1 text-[10px] font-normal text-slate-400 uppercase tracking-widest">${escapeHtml(centerLabel)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function populateMonthFilter() {
+            const currentMonth = monthKeyFromDate(new Date());
+            const current = dom.monthFilter.value || currentMonth;
+            const monthMap = new Map();
+            [...bookings, ...contacts].forEach(item => {
+                if (item.monthKey) monthMap.set(item.monthKey, monthLabel(item.monthKey));
+            });
+            const months = [...monthMap.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+            dom.monthFilter.innerHTML = '<option value="">ทุกเดือน (ภาพรวม)</option>' + months
+                .map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`)
+                .join('');
+            dom.monthFilter.value = months.some(([key]) => key === current) ? current : (months[0]?.[0] || '');
+        }
+
+        function isCompletedBooking(item) {
+            return normalizeText(item.status).includes('เสร็จสิ้น');
+        }
+
+        function isActiveBooking(item) {
+            return !normalizeText(item.status).includes('ยกเลิก');
+        }
+
+        function isNewCustomerBooking(item) {
+            return item.customerGroup === 'ลูกค้าใหม่';
+        }
+
+        function isRevenueCustomerBooking(item) {
+            return item.customerGroup === 'ลูกค้าใหม่' || item.customerGroup === 'ลูกค้าเก่า';
+        }
+
+        function isOverviewSalesBooking(item) {
+            return item.customerGroup === 'ลูกค้าใหม่' || item.customerGroup === 'ลูกค้าเก่า';
+        }
+
+        function isClaimBooking(item) {
+            return item.customerGroup === 'งานเคลม';
+        }
+
+        function isDailyNewOrOldBooking(item) {
+            return item.customerGroup === 'ลูกค้าใหม่' || item.customerGroup === 'ลูกค้าเก่า';
+        }
+
+        function isDailyClaimOrRepairBooking(item) {
+            return item.customerGroup === 'งานเคลม' || item.customerGroup === 'งานแก้';
+        }
+
+        function isDamageBooking(item) {
+            const normalized = normalizeText(item.promotion);
+            return normalized.includes('mistake') || normalized.includes('เสียหาย');
+        }
+
+        function dateKey(date) {
+            return date ? date.toLocaleDateString('en-CA') : '';
+        }
+
+        function dateAtStartOfDay(date) {
+            return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        }
+
+        function dateFromMonthKey(monthKey) {
+            if (!/^\d{4}-\d{2}$/.test(monthKey || '')) return null;
+            const [year, month] = monthKey.split('-').map(Number);
+            const date = new Date(year, month - 1, 1);
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function contactStatsCheckRange(monthKey) {
+            const start = dateFromMonthKey(monthKey) || new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const yesterday = dateAtStartOfDay(new Date());
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const endOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+            const end = endOfMonth < yesterday ? endOfMonth : yesterday;
+            if (end < start) return null;
+            return { start, end };
+        }
+
+        function missingContactStatsDates(monthKey) {
+            const range = contactStatsCheckRange(monthKey);
+            if (!range) return [];
+
+            const enteredDates = new Set(contactStatsRows.map(item => dateKey(item.date)).filter(Boolean));
+            const missingDates = [];
+            const cursor = new Date(range.start);
+
+            while (cursor <= range.end) {
+                if (cursor.getDay() !== 0 && !enteredDates.has(dateKey(cursor))) {
+                    missingDates.push(new Date(cursor));
+                }
+                cursor.setDate(cursor.getDate() + 1);
+            }
+
+            return missingDates;
+        }
+
+        function formatMissingContactDate(date) {
+            return date.toLocaleDateString('th-TH', {
+                day: 'numeric',
+                month: 'short',
+                year: '2-digit'
+            }).replace(/\./g, '');
+        }
+
+        function renderContactStatsReminder(monthKey) {
+            const missingDates = missingContactStatsDates(monthKey);
+            if (!missingDates.length) {
+                dom.contactStatsReminder.classList.add('hidden');
+                dom.contactStatsReminderText.innerText = '';
+                return;
+            }
+
+            const monthText = monthLabel(monthKey || monthKeyFromDate(new Date()));
+            const missingDateText = missingDates.map(formatMissingContactDate).join(', ');
+
+            dom.contactStatsReminderText.innerHTML =
+                `ยังไม่มีข้อมูลถึงเมื่อวานใน ${escapeHtml(monthText)} จำนวน ${missingDates.length.toLocaleString('th-TH')} วัน ` +
+                `<span class="font-normal text-amber-950">วันที่ยังไม่มีข้อมูล: ${escapeHtml(missingDateText)}</span> ` +
+                `กรุณากรอกข้อมูลในชีตสถิติการติดต่อ`;
+            dom.contactStatsReminder.classList.remove('hidden');
+        }
+
+        function renderPaymentReminder(bookingRows, month) {
+            const paidIds = paidJobIdSet();
+            const unpaidRows = bookingRows.filter(item =>
+                isRevenueCustomerBooking(item) &&
+                item.jobId &&
+                !paidIds.has(normalizeJobId(item.jobId))
+            );
+
+            if (!unpaidRows.length) {
+                dom.paymentReminder.classList.add('hidden');
+                dom.paymentReminderText.innerText = '';
+                dom.paymentReminderCount.innerText = '0 เคส';
+                return;
+            }
+
+            const periodText = month ? `ใน ${monthLabel(month)}` : 'ในช่วงที่เลือก';
+            dom.paymentReminderText.innerText =
+                `พบ ${unpaidRows.length.toLocaleString('th-TH')} เคส ${periodText} ที่ยังไม่มีรายการรับชำระในชีต PayIn`;
+            dom.paymentReminderCount.innerText = `${unpaidRows.length.toLocaleString('th-TH')} เคส`;
+            dom.paymentReminder.classList.remove('hidden');
+        }
+
+        function renderDashboard() {
+            const { month, bookingRows, contactRows } = selectedMonthRows();
+            const activeBookingRows = bookingRows.filter(isActiveBooking);
+            renderContactStatsReminder(month || monthKeyFromDate(new Date()));
+            renderPaymentReminder(activeBookingRows, month);
+            renderPeriodLabels(month);
+            
+            // --- 1. การคำนวณข้อมูลหลัก ---
+            const revenueRows = activeBookingRows.filter(isOverviewSalesBooking);
+            const totalRevenueGross = revenueRows.reduce((sum, item) => sum + item.price, 0);
+            const totalRevenue = removeVat(totalRevenueGross);
+            const selectedTarget = month ? (salesTargets[month] || 0) : 0;
+            const targetPercent = selectedTarget ? Math.round((totalRevenue / selectedTarget) * 100) : 0;
+            const targetGap = totalRevenue - selectedTarget;
+            
+            const completed = activeBookingRows.filter(item => isCompletedBooking(item));
+            const pending = activeBookingRows.filter(item => !isCompletedBooking(item));
+            
+            const completedNew = completed.filter(item => isNewCustomerBooking(item));
+            const completedClaim = completed.filter(item => isClaimBooking(item));
+            const waitingNew = pending.filter(item => isNewCustomerBooking(item));
+            const waitingClaim = pending.filter(item => isClaimBooking(item));
+            
+            const claims = activeBookingRows.filter(item => isClaimBooking(item));
+            const repairs = activeBookingRows.filter(item => item.customerGroup === 'งานแก้');
+            const claimDamageValue = claims.reduce((sum, item) => sum + item.price, 0);
+            const repairDamageValue = repairs.reduce((sum, item) => sum + item.price, 0);
+            const damageValue = claimDamageValue + repairDamageValue;
+            const revenueCustomers = revenueRows;
+            const newRevenueCustomers = revenueRows.filter(isNewCustomerBooking);
+            const oldRevenueCustomers = revenueRows.filter(item => item.customerGroup === 'ลูกค้าเก่า');
+            
+            const todayKey = dateKey(new Date());
+            const todayRevenueCustomers = bookings.filter(item => isActiveBooking(item) && dateKey(item.date) === todayKey && isOverviewSalesBooking(item));
+            const todayRevenueSales = removeVat(todayRevenueCustomers.reduce((sum, item) => sum + item.price, 0));
+            
+            const contactCount = contactRows.reduce((sum, item) => sum + item.count, 0);
+            const conversionRate = contactCount ? Math.round((revenueCustomers.length / contactCount) * 100) : 0;
+            const contactChannelItems = topItems(groupSum(contactRows, item => item.channel, item => item.count), 6);
+
+            // --- 2. อัปเดต Hero KPIs (แถวบนสุด) ---
+            dom.kpiRevenue.innerText = `฿${formatMoney(totalRevenue)}`;
+            dom.kpiAvgTicket.innerText = `฿${formatMoney(revenueRows.length ? totalRevenue / revenueRows.length : 0)}`;
+            
+            dom.kpiTargetValue.innerText = selectedTarget ? `เป้า ฿${formatMoney(selectedTarget)}` : 'ไม่มีเป้าหมาย';
+            dom.kpiTargetPercent.innerText = selectedTarget ? `${targetPercent}%` : '-';
+            dom.targetProgressBar.style.width = selectedTarget ? `${Math.min(targetPercent, 100)}%` : '0%';
+            
+            if (selectedTarget) {
+                dom.kpiTargetGap.innerHTML = targetGap >= 0 
+                    ? `<span class="text-teal-500 font-normal"><i class="ph-bold ph-trend-up"></i> เกินเป้า ฿${formatMoney(targetGap)}</span>` 
+                    : `<span class="text-rose-400 font-normal"><i class="ph-bold ph-trend-down"></i> ขาดอีก ฿${formatMoney(Math.abs(targetGap))}</span>`;
+            } else {
+                dom.kpiTargetGap.innerText = 'โปรดระบุเป้ายอดขายใน Google Sheets';
+            }
+
+            // --- ยอดถอด VAT 7% เทียบเป้า ---
+            const revenueExVat = totalRevenue;
+            const exVatPercent = selectedTarget ? Math.round((revenueExVat / selectedTarget) * 100) : 0;
+            const exVatGap = revenueExVat - selectedTarget;
+
+            if (dom.kpiRevenueExVat) dom.kpiRevenueExVat.innerText = `฿${formatMoney(revenueExVat)}`;
+            if (dom.kpiExVatTargetValue) dom.kpiExVatTargetValue.innerText = selectedTarget ? `เป้า ฿${formatMoney(selectedTarget)}` : 'ไม่มีเป้าหมาย';
+            if (dom.kpiExVatTargetPercent) dom.kpiExVatTargetPercent.innerText = selectedTarget ? `${exVatPercent}%` : '-';
+            if (dom.exVatProgressBar) dom.exVatProgressBar.style.width = selectedTarget ? `${Math.min(exVatPercent, 100)}%` : '0%';
+            if (dom.kpiExVatGap) {
+                if (selectedTarget) {
+                    dom.kpiExVatGap.innerHTML = exVatGap >= 0
+                        ? `<span class="text-teal-500 font-normal"><i class="ph-bold ph-trend-up"></i> เกินเป้า ฿${formatMoney(exVatGap)}</span>`
+                        : `<span class="text-rose-400 font-normal"><i class="ph-bold ph-trend-down"></i> ขาดอีก ฿${formatMoney(Math.abs(exVatGap))}</span>`;
+                } else {
+                    dom.kpiExVatGap.innerText = '-';
+                }
+            }
+
+            dom.kpiBookings.innerText = revenueRows.length.toLocaleString('th-TH');
+            
+            dom.snapshotTodaySales.innerText = `฿${formatMoney(todayRevenueSales)}`;
+            dom.snapshotTodayJobs.innerText = `${todayRevenueCustomers.length.toLocaleString('th-TH')} คิว`;
+
+            dom.kpiConversionRate.innerText = `${conversionRate}%`;
+            dom.kpiContacts.innerText = contactCount.toLocaleString('th-TH');
+            dom.kpiContactBookings.innerText = revenueCustomers.length.toLocaleString('th-TH');
+            // --- 3. อัปเดต ยอดขาย & ความเสียหาย ---
+            if (dom.salesSummaryCount) dom.salesSummaryCount.innerText = `${revenueRows.length.toLocaleString('th-TH')} คิว`;
+            if (dom.salesSummaryNet) dom.salesSummaryNet.innerText = `฿${formatMoney(totalRevenue)}`;
+            if (dom.salesSummaryGross) dom.salesSummaryGross.innerText = `฿${formatMoney(totalRevenueGross)}`;
+            if (dom.salesSummaryTargetValue) dom.salesSummaryTargetValue.innerText = selectedTarget ? `เป้า ฿${formatMoney(selectedTarget)}` : 'ไม่มีเป้าหมาย';
+            if (dom.salesSummaryTargetPercent) dom.salesSummaryTargetPercent.innerText = selectedTarget ? `${targetPercent}%` : '-';
+            if (dom.salesSummaryProgressBar) dom.salesSummaryProgressBar.style.width = selectedTarget ? `${Math.min(targetPercent, 100)}%` : '0%';
+            if (dom.salesSummaryTargetGap) {
+                if (selectedTarget) {
+                    dom.salesSummaryTargetGap.innerHTML = targetGap >= 0
+                        ? `<span class="text-teal-500 font-normal"><i class="ph-bold ph-trend-up"></i> เกินเป้า ฿${formatMoney(targetGap)}</span>`
+                        : `<span class="text-rose-400 font-normal"><i class="ph-bold ph-trend-down"></i> ขาดอีก ฿${formatMoney(Math.abs(targetGap))}</span>`;
+                } else {
+                    dom.salesSummaryTargetGap.innerText = 'โปรดระบุเป้ายอดขายใน Google Sheets';
+                }
+            }
+            if (dom.salesSummaryNewCount) dom.salesSummaryNewCount.innerText = `${newRevenueCustomers.length.toLocaleString('th-TH')} คัน`;
+            if (dom.salesSummaryOldCount) dom.salesSummaryOldCount.innerText = `${oldRevenueCustomers.length.toLocaleString('th-TH')} คัน`;
+            if (dom.salesSummaryContactChannels) {
+                const contactChannelTotals = groupSum(contactRows, item => item.channel, item => item.count);
+                dom.salesSummaryContactChannels.innerHTML = CONTACT_CHANNELS.map(channel => {
+                    const matched = Object.values(contactChannelTotals).find(item => normalizeText(item.label) === normalizeText(channel.label));
+                    const value = matched?.value || 0;
+                    return `
+                        <div class="rounded-lg bg-white px-2.5 py-2 shadow-sm ring-1 ring-emerald-100">
+                            <div class="font-normal text-slate-500">${escapeHtml(channel.label)}</div>
+                            <div class="mt-0.5 text-sm font-normal text-emerald-700">${formatMoney(value)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (dom.damageSummaryClaimCount) dom.damageSummaryClaimCount.innerText = `${claims.length.toLocaleString('th-TH')} คัน`;
+            if (dom.damageSummaryClaimValue) dom.damageSummaryClaimValue.innerText = `฿${formatMoney(claimDamageValue)}`;
+            if (dom.damageSummaryRepairCount) dom.damageSummaryRepairCount.innerText = `${repairs.length.toLocaleString('th-TH')} คัน`;
+            if (dom.damageSummaryRepairValue) dom.damageSummaryRepairValue.innerText = `฿${formatMoney(repairDamageValue)}`;
+            if (dom.damageSummaryValue) dom.damageSummaryValue.innerText = `฿${formatMoney(damageValue)}`;
+            if (dom.damageSummaryRatio) dom.damageSummaryRatio.innerText = totalRevenue ? `${Math.round((damageValue / totalRevenue) * 100)}%` : '0%';
+
+            // --- 3.5 อัปเดต ตารางยอดขายรายวัน ---
+            const dailyData = {};
+            
+            // รวมข้อมูลยอดจอง/ยอดขาย
+            activeBookingRows.forEach(item => {
+                if (!item.date) return;
+                const dKey = dateKey(item.date);
+                if (!dailyData[dKey]) {
+                    dailyData[dKey] = {
+                        dateObj: item.date,
+                        newCount: 0,
+                        claimCount: 0,
+                        sales: 0,
+                        contactCount: 0
+                    };
+                }
+                if (isDailyNewOrOldBooking(item)) dailyData[dKey].newCount++;
+                if (isDailyClaimOrRepairBooking(item)) dailyData[dKey].claimCount++;
+                if (isOverviewSalesBooking(item)) dailyData[dKey].sales += item.price;
+            });
+
+            // รวมข้อมูลจำนวนการติดต่อ
+            contactRows.forEach(item => {
+                if (!item.date) return;
+                const dKey = dateKey(item.date);
+                if (!dailyData[dKey]) {
+                    dailyData[dKey] = {
+                        dateObj: item.date,
+                        newCount: 0,
+                        claimCount: 0,
+                        sales: 0,
+                        contactCount: 0
+                    };
+                }
+                dailyData[dKey].contactCount += item.count;
+            });
+
+            // เรียงลำดับจากวันที่ล่าสุดขึ้นก่อน
+            const sortedDays = Object.values(dailyData).sort((a, b) => b.dateObj - a.dateObj); 
+            const todayDateKey = dateKey(new Date());
+
+            if (sortedDays.length === 0) {
+                dom.dailySalesTableBody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-sm text-slate-400">ไม่มีข้อมูลยอดขายในเดือนนี้</td></tr>`;
+            } else {
+                dom.dailySalesTableBody.innerHTML = sortedDays.map(day => {
+                    const dStr = `${day.dateObj.getDate()}/${day.dateObj.getMonth() + 1}/${day.dateObj.getFullYear().toString().slice(-2)}`;
+                    const currentDayKey = dateKey(day.dateObj);
+                    const isToday = currentDayKey === todayDateKey;
+                    const queueUrl = `index.html?date=${encodeURIComponent(currentDayKey)}`;
+                    const dailySalesExVat = removeVat(day.sales);
+                    
+                    const trClass = isToday 
+                        ? "cursor-pointer bg-cyan-100/80 hover:bg-cyan-100 border-l-4 border-blue-500 ring-1 ring-inset ring-cyan-200/80 transition-colors" 
+                        : "cursor-pointer hover:bg-slate-100/50 transition-colors";
+                    const dateTextClass = isToday ? "font-normal text-sky-700" : "font-normal text-slate-700";
+                    const todayBadge = isToday ? `
+                        <span class="ml-1.5 inline-flex h-5 w-5 items-center justify-center rounded-md bg-sky-500 text-white shadow-sm" title="วันนี้" aria-label="วันนี้">
+                            <i class="ph-fill ph-calendar-dot text-[12px]"></i>
+                        </span>
+                    ` : '';
+
+                    return `
+                        <tr class="${trClass}" onclick="window.location.href='${queueUrl}'" title="ดูคิววันที่ ${dStr}">
+                            <td class="py-3 px-3 ${dateTextClass} flex flex-row items-center gap-1">${dStr} ${todayBadge}</td>
+                            <td class="py-3 px-2 text-center whitespace-nowrap">
+                                <span class="font-normal text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md" title="จำนวนติดต่อ">${day.contactCount}</span>
+                            </td>
+                            <td class="py-3 px-2 text-center whitespace-nowrap">
+                                <span class="font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md" title="ลูกค้าใหม่ + ลูกค้าเก่า">${day.newCount}</span> 
+                                <span class="text-slate-300 mx-0.5 text-xs">/</span> 
+                                <span class="font-normal text-rose-500 bg-rose-50 px-2 py-0.5 rounded-md" title="ลูกค้าเคลม + งานแก้(ในวัน)">${day.claimCount}</span>
+                            </td>
+                            <td class="py-3 px-3 text-right font-normal ${isToday ? 'text-sky-800' : 'text-sky-700'}">฿${formatMoney(dailySalesExVat)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            // --- 4. อัปเดต Charts & Rankings ---
+            const mix = topItems(groupSum(activeBookingRows, item => item.customerGroup, item => item.price), 5);
+            renderDonutChart(dom.customerDonutChart, mix, item => item.count, 'คิว', 'ไม่มีข้อมูล');
+            renderRankList(dom.customerMix, mix, item => `${item.count} คิว`, 'ไม่มีข้อมูล');
+
+            renderDonutChart(dom.contactDonutChart, contactChannelItems, item => item.value, 'ครั้ง', contactSheetName ? 'ไม่มีข้อมูล' : 'ไม่พบชีตสถิติ');
+            renderRankList(dom.contactChannels, contactChannelItems, item => `${formatMoney(item.value)} ครั้ง`, contactSheetName ? 'ไม่มีข้อมูลในช่วงที่เลือก' : 'ไม่พบชีตสถิติ');
+
+            renderRankList(dom.salesRanking, topItems(groupSum(revenueRows, item => item.sales, item => removeVat(item.price)), 6), item => `฿${formatMoney(item.value)}`);
+            renderRankList(dom.filmRanking, topItems(groupSum(activeBookingRows, item => item.film), 6), item => `${item.count} คิว`);
+            renderRankList(dom.installRanking, topItems(groupSum(activeBookingRows, item => item.installType, item => item.price), 6), item => `${item.count} คิว`);
+        }
+
+        async function fetchOverviewData() {
+            dom.loadingMessage.classList.remove('hidden');
+            dom.errorMessage.classList.add('hidden');
+            dom.dashboardContent.classList.add('hidden');
+
+            try {
+                const [bookingText, customerText, payInText, targetText, contactResult] = await Promise.all([
+                    fetchCsvText(BOOKINGS_SHEET_NAME),
+                    fetchCsvText(CUSTOMER_SHEET_NAME),
+                    fetchCsvText(PAYIN_SHEET_NAME).catch(error => {
+                        console.warn(error.message);
+                        return '';
+                    }),
+                    fetchCsvText(SALES_TARGET_SHEET_NAME).catch(error => {
+                        console.warn(error.message);
+                        return '';
+                    }),
+                    fetchFirstAvailableSheet(CONTACT_SHEET_NAMES, parseContactStatsCsv)
+                ]);
+                bookings = buildBookings(await parseCsv(bookingText));
+                customers = await parseCsv(customerText);
+                payIns = payInText ? buildPayIns(await parseCsv(payInText)) : [];
+                salesTargets = targetText ? buildSalesTargets(await parseCsv(targetText)) : {};
+                contactStatsRows = contactResult.rows;
+                contacts = buildContacts(contactResult.rows);
+                contactSheetName = contactResult.name;
+                populateMonthFilter();
+                renderDashboard();
+
+                dom.loadingMessage.classList.add('hidden');
+                dom.dashboardContent.classList.remove('hidden');
+                
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('th-TH', { hour: 'numeric', minute: '2-digit', hour12: false });
+                dom.lastUpdated.innerHTML = `<i class="ph-fill ph-check-circle text-sky-500"></i> อัปเดตล่าสุดเมื่อ ${timeString} น.`;
+            } catch (error) {
+                console.error(error);
+                dom.loadingMessage.classList.add('hidden');
+                dom.errorMessage.classList.remove('hidden');
+                dom.errorMessage.classList.add('flex');
+            }
+        }
+
+        function initApp() {
+            cacheDom();
+            dom.monthFilter.addEventListener('change', renderDashboard);
+            fetchOverviewData();
+        }
+
+        function startAppOnce() {
+            if (appHasStarted) return;
+            appHasStarted = true;
+            initApp();
+        }
+
+        function unlockPage() {
+            document.body.classList.remove('auth-locked');
+            startAppOnce();
+        }
+
+        function setupLogin() {
+            cacheDom();
+            const stored = localStorage.getItem(LOGIN_KEY);
+            if (stored === '1' || stored === 'yes') {
+                localStorage.setItem(LOGIN_KEY, '1');
+                unlockPage();
+                return;
+            }
+
+            dom.loginForm.addEventListener('submit', event => {
+                event.preventDefault();
+                if (dom.loginUser.value.trim() === LOGIN_USER && dom.loginPass.value === LOGIN_PASS) {
+                    localStorage.setItem(LOGIN_KEY, '1');
+                    dom.loginError.classList.add('hidden');
+                    unlockPage();
+                    return;
+                }
+
+                dom.loginError.classList.remove('hidden');
+                dom.loginPass.select();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', setupLogin);
+    </script>
+</body>
+</html>

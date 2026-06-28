@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สถิติการติดต่อ</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon-contacts.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- เพิ่ม Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- เพิ่ม Chart.js และปลั๊กอินสำหรับแสดงตัวเลขบนกราฟ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+        }
+
+        #loginScreen {
+            display: none;
+        }
+
+        body.auth-locked > :not(#loginScreen) {
+            display: none !important;
+        }
+
+        body.auth-locked #loginScreen {
+            display: flex;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .progress-bar-anim {
+            transition: width 1s ease-in-out;
+        }
+    </style>
+    <link rel="stylesheet" href="apple-style.css?v=20260520-4">
+    <script src="sidebar.js" defer></script>
+</head>
+<body class="text-slate-900 bg-slate-50 auth-locked min-h-screen">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-900/95 backdrop-blur-sm px-4">
+        <form id="loginForm" class="w-full max-w-md rounded-3xl border border-slate-700 bg-white p-8 shadow-2xl">
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <i data-lucide="lock" class="h-8 w-8"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">เข้าสู่ระบบ</h1>
+                <p class="mt-2 text-sm text-slate-500">กรุณายืนยันตัวตนก่อนเข้าดูสถิติการติดต่อ</p>
+            </div>
+            <div class="space-y-5">
+                <div>
+                    <label for="loginUser" class="mb-1.5 block text-sm font-semibold text-slate-700">ชื่อผู้ใช้งาน</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i data-lucide="user" class="h-5 w-5"></i>
+                        </div>
+                        <input id="loginUser" type="text" autocomplete="username" class="w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all" placeholder="Username" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="loginPass" class="mb-1.5 block text-sm font-semibold text-slate-700">รหัสผ่าน</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i data-lucide="key" class="h-5 w-5"></i>
+                        </div>
+                        <input id="loginPass" type="password" autocomplete="current-password" class="w-full rounded-xl border border-slate-300 bg-slate-50 pl-10 pr-4 py-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all" placeholder="••••••••" required>
+                    </div>
+                </div>
+            </div>
+            <div id="loginError" class="mt-4 hidden rounded-lg bg-red-50 p-3 text-sm font-medium text-red-600 flex items-center gap-2">
+                <i data-lucide="alert-circle" class="h-4 w-4"></i>
+                <span>User หรือ Password ไม่ถูกต้อง</span>
+            </div>
+            <button type="submit" class="mt-8 w-full rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transition-all">
+                เข้าสู่ระบบ
+            </button>
+        </form>
+    </div>
+
+    <!-- Sidebar placeholder -->
+    <div data-car-crm-sidebar></div>
+
+    <!-- Main Content -->
+    <main class="w-full px-4 py-8 sm:px-6 lg:ml-72 lg:w-[calc(100%-18rem)] lg:px-8 xl:py-10">
+        
+        <!-- Header Section -->
+        <header class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+                <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">สถิติการติดต่อ</h1>
+                <p id="lastUpdated" class="mt-1.5 text-sm text-slate-500 flex items-center gap-1">
+                    <i data-lucide="clock" class="h-4 w-4"></i> กำลังโหลดข้อมูล...
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row items-stretch gap-3 w-full md:w-auto">
+                <div class="relative w-full sm:w-48">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-500">
+                        <i data-lucide="calendar" class="h-4 w-4"></i>
+                    </div>
+                    <select id="monthFilter" class="w-full appearance-none rounded-xl border border-slate-200 bg-white pl-10 pr-8 py-2.5 text-sm font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer">
+                        <option value="">ทุกเดือน</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none text-slate-500">
+                        <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                    </div>
+                </div>
+                <button type="button" onclick="openAddStatsModal()" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                    <i data-lucide="plus-circle" class="h-4 w-4"></i> เพิ่มสถิติ
+                </button>
+                <button type="button" onclick="fetchContactStats()" class="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200">
+                    <i data-lucide="refresh-cw" class="h-4 w-4"></i> รีเฟรช
+                </button>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <div id="loadingMessage" class="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white py-20 shadow-sm">
+            <i data-lucide="loader-2" class="h-10 w-10 animate-spin text-blue-500 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-800">กำลังดึงข้อมูลสถิติ...</h3>
+            <p class="mt-1 text-sm text-slate-500">รอสักครู่ ระบบกำลังอ่านข้อมูลจาก Google Sheets</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorMessage" class="hidden rounded-3xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-500 mb-4">
+                <i data-lucide="x-circle" class="h-8 w-8"></i>
+            </div>
+            <h3 class="text-lg font-bold text-red-800">โหลดข้อมูลไม่สำเร็จ</h3>
+            <p class="mt-2 text-sm text-red-600">โปรดตรวจสอบชื่อชีต <code>สถิตการติดต่อ</code> และการตั้งค่าแชร์ลิงก์ของ Google Sheet</p>
+            <button onclick="fetchContactStats()" class="mt-5 rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white hover:bg-red-700 transition-colors">ลองใหม่อีกครั้ง</button>
+        </div>
+
+        <!-- Main Content (Hidden initially) -->
+        <div id="content" class="hidden space-y-6">
+
+            <!-- Charts / Rankings -->
+            <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                
+                <!-- Channel Ranking -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="mb-5 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">ช่องทางติดต่อยอดนิยม</h2>
+                            <p class="text-sm text-slate-500 mt-0.5">เรียงลำดับจากมากไปน้อย</p>
+                        </div>
+                        <i data-lucide="pie-chart" class="h-5 w-5 text-slate-400"></i>
+                    </div>
+                    <div id="channelRanking" class="space-y-4"></div>
+                </div>
+
+                <!-- Monthly Bar Chart -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="mb-5 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">แนวโน้มรายเดือน</h2>
+                            <p class="text-sm text-slate-500 mt-0.5">จำนวนการติดต่อรวม 12 เดือนย้อนหลัง</p>
+                        </div>
+                        <i data-lucide="bar-chart-3" class="h-5 w-5 text-slate-400"></i>
+                    </div>
+                    <div class="relative h-64 w-full">
+                        <canvas id="monthlyBarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Daily Trend Line Chart (Full Width on Desktop) -->
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+                    <div class="mb-5 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">แนวโน้มรายวัน (แยกช่องทาง)</h2>
+                            <p class="text-sm text-slate-500 mt-0.5">รายละเอียดจำนวนการติดต่อแต่ละช่องทาง และยอดรวมในแต่ละวัน</p>
+                        </div>
+                        <i data-lucide="trending-up" class="h-5 w-5 text-slate-400"></i>
+                    </div>
+                    <div class="relative min-h-[350px] w-full">
+                        <canvas id="dailyTrendChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Table -->
+            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                <div class="border-b border-slate-200 px-6 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">รายละเอียดข้อมูลรายวัน</h2>
+                        <p id="tableSummary" class="text-sm text-slate-500 mt-0.5">แสดงข้อมูลตามตัวกรอง</p>
+                    </div>
+                    <button onclick="document.querySelector('.custom-scrollbar').scrollIntoView({behavior: 'smooth'})" class="hidden sm:flex text-sm text-blue-600 hover:text-blue-800 font-medium items-center gap-1">
+                        เลื่อนดูข้อมูล <i data-lucide="arrow-down" class="h-4 w-4"></i>
+                    </button>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs">วันที่</th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="phone" class="h-3.5 w-3.5"></i> โทร</div>
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="message-circle" class="h-3.5 w-3.5"></i> Line</div>
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="facebook" class="h-3.5 w-3.5"></i> FB</div>
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="video" class="h-3.5 w-3.5"></i> Tiktok</div>
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="footprints" class="h-3.5 w-3.5"></i> WalkIn</div>
+                                </th>
+                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-800 uppercase tracking-wider text-xs text-right bg-slate-100/50">
+                                    รวม
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
+                            <!-- Rows inserted via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Add Contact Stats Modal -->
+    <div id="addStatsModal" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur-sm">
+        <div class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">เพิ่มข้อมูลสถิติการติดต่อ</h2>
+                    <p class="mt-1 text-sm text-slate-500">บันทึกลงชีต <span class="font-semibold text-slate-700">สถิตการติดต่อ</span></p>
+                </div>
+                <button type="button" onclick="closeAddStatsModal()" class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-200" aria-label="ปิดหน้าต่างเพิ่มสถิติ">
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+
+            <form id="addStatsForm" class="space-y-5 px-6 py-5">
+                <div id="addStatsStatus" class="hidden rounded-xl px-4 py-3 text-sm font-medium"></div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="statsDate" class="mb-1.5 block text-sm font-semibold text-slate-700">วันที่</label>
+                        <input id="statsDate" type="date" required class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                    <div>
+                        <label for="statsRecorder" class="mb-1.5 block text-sm font-semibold text-slate-700">ผู้บันทึก</label>
+                        <div class="relative">
+                            <select id="statsRecorder" required class="w-full appearance-none rounded-xl border border-slate-300 bg-white px-4 py-3 pr-10 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                                <option value="">กำลังโหลดรายชื่อ...</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500">
+                                <i data-lucide="chevron-down" class="h-4 w-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
+                    <div>
+                        <label for="statsPhone" class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700"><i data-lucide="phone" class="h-4 w-4 text-blue-500"></i> โทร</label>
+                        <input id="statsPhone" type="number" min="0" step="1" value="0" inputmode="numeric" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                    <div>
+                        <label for="statsLine" class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700"><i data-lucide="message-circle" class="h-4 w-4 text-green-500"></i> Line</label>
+                        <input id="statsLine" type="number" min="0" step="1" value="0" inputmode="numeric" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                    <div>
+                        <label for="statsFb" class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700"><i data-lucide="facebook" class="h-4 w-4 text-indigo-500"></i> FB</label>
+                        <input id="statsFb" type="number" min="0" step="1" value="0" inputmode="numeric" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                    <div>
+                        <label for="statsTiktok" class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700"><i data-lucide="video" class="h-4 w-4 text-slate-700"></i> Tiktok</label>
+                        <input id="statsTiktok" type="number" min="0" step="1" value="0" inputmode="numeric" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                    <div>
+                        <label for="statsWalkin" class="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700"><i data-lucide="footprints" class="h-4 w-4 text-amber-500"></i> WalkIn</label>
+                        <input id="statsWalkin" type="number" min="0" step="1" value="0" inputmode="numeric" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-right text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="statsNote" class="mb-1.5 block text-sm font-semibold text-slate-700">หมายเหตุ</label>
+                    <textarea id="statsNote" rows="3" placeholder="ระบุเพิ่มเติมถ้ามี" class="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"></textarea>
+                </div>
+
+                <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                    <button type="button" onclick="closeAddStatsModal()" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200">ยกเลิก</button>
+                    <button id="addStatsSubmitBtn" type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/40">
+                        <i data-lucide="save" class="h-4 w-4"></i> บันทึกลงชีต
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';
+        const CONTACT_SHEET_NAMES = ['สถิตการติดต่อ', 'สถิติดการติดต่อ', 'สถิติการติดต่อ', 'สถิติ ติดต่อ', 'ContactStats'];
+        const SALES_RECORDER_SHEET_NAME = 'พนักงานขาย';
+        const DEFAULT_RECORDERS = ['พี่เมย์', 'นัท'];
+        
+        // Settings for parsing channels (Added HEX color for Chart.js)
+        const CONTACT_CHANNELS = [
+            { key: 'phone', label: 'โทร', color: 'bg-blue-500', bg: 'bg-blue-100', hex: '#3b82f6' },
+            { key: 'line', label: 'Line', color: 'bg-green-500', bg: 'bg-green-100', hex: '#22c55e' },
+            { key: 'fb', label: 'FB', color: 'bg-indigo-500', bg: 'bg-indigo-100', hex: '#6366f1' },
+            { key: 'tiktok', label: 'Tiktok', color: 'bg-slate-800', bg: 'bg-slate-200', hex: '#1e293b' },
+            { key: 'walkin', label: 'WalkIn', color: 'bg-amber-500', bg: 'bg-amber-100', hex: '#f59e0b' }
+        ];
+        
+        const LOGIN_USER = 'admin';
+        const LOGIN_PASS = 'MHL741mhl+';
+        const LOGIN_KEY = 'carCrmLoggedIn';
+
+        const dom = {};
+        const DOM_IDS = [
+            'loginForm', 'loginUser', 'loginPass', 'loginError',
+            'monthFilter', 'lastUpdated', 'loadingMessage', 'errorMessage', 'content',
+            'channelRanking', 'monthlyBarChart', 'dailyTrendChart', 'tableSummary', 'tableBody',
+            'addStatsModal', 'addStatsForm', 'addStatsStatus', 'statsDate', 'statsRecorder',
+            'statsPhone', 'statsLine', 'statsFb', 'statsTiktok', 'statsWalkin', 'statsNote',
+            'addStatsSubmitBtn'
+        ];
+
+        let rows = [];
+        let sheetName = CONTACT_SHEET_NAMES[0];
+        let appHasStarted = false;
+        let dailyChartInstance = null;
+        let monthlyChartInstance = null;
+        let recorderOptions = [...DEFAULT_RECORDERS];
+
+        function cacheDom() {
+            DOM_IDS.forEach(id => {
+                dom[id] = document.getElementById(id);
+            });
+        }
+
+        function textValue(value, fallback = '') {
+            if (value === null || value === undefined) return fallback;
+            const text = String(value).trim();
+            return text === '' ? fallback : text;
+        }
+
+        function escapeHtml(value) {
+            return textValue(value).replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[char]));
+        }
+
+        function normalizeText(value) {
+            return textValue(value).replace(/[\s._\-()（）/\\]+/g, '').toLowerCase();
+        }
+
+        function parseNumber(value) {
+            const raw = textValue(value, '0');
+            if (/[\/:]/.test(raw)) return 0;
+            const number = parseFloat(raw.replace(/[^\d.-]/g, ''));
+            return Number.isFinite(number) ? number : 0;
+        }
+
+        function parseDate(value) {
+            const raw = textValue(value);
+            if (!raw) return null;
+            
+            // Format: DD/MM/YYYY or DD-MM-YYYY
+            let match = raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+            if (match) {
+                let year = parseInt(match[3], 10);
+                if (year < 100) year += 2000;
+                if (year > 2400) year -= 543; // Convert TH year to EN
+                const date = new Date(year, parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+            
+            // Format: YYYY-MM-DD
+            match = raw.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+            if (match) {
+                let year = parseInt(match[1], 10);
+                if (year > 2400) year -= 543;
+                const date = new Date(year, parseInt(match[2], 10) - 1, parseInt(match[3], 10));
+                return Number.isNaN(date.getTime()) ? null : date;
+            }
+
+            // Fallback JS Date
+            const d = new Date(raw);
+            if (!Number.isNaN(d.getTime())) {
+                if (d.getFullYear() > 2400) d.setFullYear(d.getFullYear() - 543);
+                return d;
+            }
+            return null;
+        }
+
+        function monthKeyFromDate(date) {
+            if (!date) return 'ไม่ระบุเดือน';
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function monthLabel(monthKey) {
+            if (!monthKey || monthKey === 'ไม่ระบุเดือน') return 'ไม่ระบุเดือน';
+            const [year, month] = monthKey.split('-').map(Number);
+            const date = new Date(year, month - 1, 1);
+            return date.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+        }
+
+        function shortMonthLabel(monthKey) {
+            if (!monthKey || monthKey === 'ไม่ระบุเดือน') return 'ไม่ระบุเดือน';
+            const [year, month] = monthKey.split('-').map(Number);
+            const date = new Date(year, month - 1, 1);
+            return date.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
+        }
+
+        function formatDate(date) {
+            return date ? date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) : '-';
+        }
+
+        function sheetCsvUrl(name) {
+            return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+        }
+
+        async function fetchCsvText(name) {
+            const response = await fetch(sheetCsvUrl(name));
+            if (!response.ok) throw new Error(`Cannot load ${name}`);
+            const text = await response.text();
+            // Google Returns HTML if query is invalid/sheet missing
+            if (text.trim().toLowerCase().startsWith('<!doctype html>') || text.includes('google.visualization.query')) {
+                throw new Error(`Cannot parse ${name}`);
+            }
+            return text;
+        }
+
+        async function fetchContactSheet() {
+            let lastError = null;
+            for (const name of CONTACT_SHEET_NAMES) {
+                try {
+                    const text = await fetchCsvText(name);
+                    return { name, text };
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+            throw lastError || new Error('Contact sheet not found');
+        }
+
+        function getPreferredRecorder() {
+            const saved = localStorage.getItem('contactStatsRecorder') || '';
+            return recorderOptions.includes(saved) ? saved : (recorderOptions[0] || '');
+        }
+
+        function renderRecorderOptions() {
+            const selected = getPreferredRecorder();
+            dom.statsRecorder.innerHTML = '<option value="">เลือกผู้บันทึก</option>' + recorderOptions
+                .map(name => `<option value="${escapeHtml(name)}"${name === selected ? ' selected' : ''}>${escapeHtml(name)}</option>`)
+                .join('');
+        }
+
+        function extractRecorderNames(csvText) {
+            const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            const names = new Set();
+
+            parsed.data.forEach(row => {
+                const keys = Object.keys(row || {});
+                const nameKey = keys.find(key => {
+                    const normalized = normalizeText(key);
+                    return normalized.includes('พนักงานขาย') ||
+                        normalized.includes('พนขาย') ||
+                        normalized.includes('เซลล์') ||
+                        normalized.includes('sales') ||
+                        normalized.includes('name') ||
+                        normalized.includes('ชื่อ');
+                }) || keys[0];
+
+                const name = textValue(row[nameKey]);
+                if (name && !/^[-–—]+$/.test(name)) names.add(name);
+            });
+
+            return [...names];
+        }
+
+        async function loadRecorderOptions() {
+            renderRecorderOptions();
+            try {
+                const text = await fetchCsvText(SALES_RECORDER_SHEET_NAME);
+                const names = extractRecorderNames(text);
+                if (names.length) {
+                    recorderOptions = names;
+                    renderRecorderOptions();
+                }
+            } catch (error) {
+                console.warn('Cannot load sales recorder sheet:', error);
+                recorderOptions = [...DEFAULT_RECORDERS];
+                renderRecorderOptions();
+            }
+        }
+
+        function parseCsvDataRobust(csvText) {
+            return new Promise(resolve => {
+                Papa.parse(csvText, {
+                    header: false, // Do not rely on row 1 being headers
+                    skipEmptyLines: true,
+                    complete: results => {
+                        const allRows = results.data;
+                        let headerIndex = -1;
+                        
+                        // Find header row (Look for "วันที่")
+                        for (let i = 0; i < allRows.length; i++) {
+                            if (allRows[i].some(cell => typeof cell === 'string' && cell.replace(/\s+/g,'').includes('วันที่'))) {
+                                headerIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (headerIndex === -1) {
+                            resolve([]);
+                            return;
+                        }
+
+                        const headers = allRows[headerIndex].map(h => normalizeText(h));
+                        const dataRows = allRows.slice(headerIndex + 1);
+
+                        const parsed = dataRows.map((row, index) => {
+                            const getVal = (candidates) => {
+                                const normCands = candidates.map(normalizeText);
+                                const idx = headers.findIndex(h => normCands.includes(h) || normCands.some(c => h.includes(c)));
+                                return idx !== -1 ? row[idx] : '';
+                            };
+
+                            const dateRaw = getVal(['วันที่', 'date']);
+                            const phone = parseNumber(getVal(['โทร', 'tel']));
+                            const line = parseNumber(getVal(['line', 'ไลน์']));
+                            const fb = parseNumber(getVal(['fb', 'เฟซ']));
+                            const tiktok = parseNumber(getVal(['tiktok', 'ติ๊ก']));
+                            const walkin = parseNumber(getVal(['walkin', 'หน้าร้าน']));
+                            
+                            const date = parseDate(dateRaw);
+                            const total = phone + line + fb + tiktok + walkin;
+
+                            return {
+                                id: index,
+                                date,
+                                monthKey: monthKeyFromDate(date),
+                                phone, line, fb, tiktok, walkin, total
+                            };
+                        }).filter(item => item.date || item.total > 0);
+
+                        resolve(parsed);
+                    }
+                });
+            });
+        }
+
+        function populateMonthFilter() {
+            const currentMonth = monthKeyFromDate(new Date());
+            const current = dom.monthFilter.value || currentMonth;
+            
+            const months = [...new Map(rows.map(row => [row.monthKey, monthLabel(row.monthKey)])).entries()]
+                .sort((a, b) => b[0].localeCompare(a[0])); // Sort descending usually, but localeCompare does asc string. For YYYY-MM b[0] vs a[0] does desc.
+                
+            dom.monthFilter.innerHTML = '<option value="">ทุกเดือน (ตลอดกาล)</option>' + months
+                .map(([key, label]) => `<option value="${escapeHtml(key)}">${escapeHtml(label)}</option>`)
+                .join('');
+                
+            dom.monthFilter.value = months.some(([key]) => key === current) ? current : (months[0]?.[0] || '');
+        }
+
+        function filteredRows() {
+            const month = dom.monthFilter.value;
+            return rows.filter(row => !month || row.monthKey === month);
+        }
+
+        function groupRows(data, keyFn, valueFn) {
+            return data.reduce((result, row) => {
+                const key = keyFn(row) || 'ไม่ระบุ';
+                if (!result[key]) result[key] = { label: key, value: 0 };
+                result[key].value += valueFn ? valueFn(row) : row.total;
+                return result;
+            }, {});
+        }
+
+        function renderProgressRanking(element, items, emptyText, useColors = false) {
+            if (!items.length) {
+                element.innerHTML = `<div class="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">${emptyText}</div>`;
+                return;
+            }
+            const max = Math.max(...items.map(item => item.value), 1);
+            
+            element.innerHTML = items.map((item, idx) => {
+                const colorClass = useColors && item.color ? item.color : 'bg-blue-500';
+                const bgClass = useColors && item.bg ? item.bg : 'bg-slate-100';
+                const percent = Math.max(2, (item.value / max) * 100);
+                
+                return `
+                <div class="group">
+                    <div class="mb-2 flex items-center justify-between text-sm">
+                        <div class="font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">${escapeHtml(item.label)}</div>
+                        <div class="font-bold text-slate-900">${item.value.toLocaleString('th-TH')} <span class="text-xs font-normal text-slate-500">ครั้ง</span></div>
+                    </div>
+                    <div class="h-2.5 w-full overflow-hidden rounded-full ${bgClass}">
+                        <div class="h-full rounded-full ${colorClass} progress-bar-anim" style="width: 0%" data-target-width="${percent}%"></div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // Animate bars
+            setTimeout(() => {
+                element.querySelectorAll('.progress-bar-anim').forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-target-width');
+                });
+            }, 50);
+        }
+
+        function renderStats() {
+            const data = filteredRows();
+            
+            // Calculate Totals for Top Cards
+            const totals = CONTACT_CHANNELS.map(ch => ({
+                ...ch,
+                value: data.reduce((sum, row) => sum + row[ch.key], 0)
+            }));
+            
+            dom.tableSummary.innerText = data.length > 0 ? 
+                `แสดง ${data.length.toLocaleString('th-TH')} วันที่มีการติดต่อ จากทั้งหมด ${rows.length.toLocaleString('th-TH')} วัน` : 
+                'ไม่มีข้อมูลในเดือนนี้';
+
+            // 1. Channel Ranking
+            const channelItems = totals.sort((a, b) => b.value - a.value).filter(item => item.value > 0);
+            renderProgressRanking(dom.channelRanking, channelItems, 'ยังไม่มีข้อมูลการติดต่อ', true);
+
+            // 2. Monthly Bar Chart (12 เดือนย้อนหลัง) - ใช้ข้อมูล 'rows' ทั้งหมด ไม่ถูกตีกรอบด้วย monthFilter
+            if (monthlyChartInstance) {
+                monthlyChartInstance.destroy();
+            }
+            
+            const monthlyGroups = groupRows(rows, r => r.monthKey, r => r.total);
+            // เลือก 12 เดือนล่าสุด (เรียงใหม่จากซ้ายไปขวา อดีต->ปัจจุบัน)
+            const sortedMonthsKeys = Object.keys(monthlyGroups)
+                .filter(k => k !== 'ไม่ระบุเดือน')
+                .sort((a, b) => b.localeCompare(a))
+                .slice(0, 12)
+                .reverse(); 
+
+            const monthlyLabels = sortedMonthsKeys.map(key => shortMonthLabel(key));
+            const monthlyTotals = sortedMonthsKeys.map(key => monthlyGroups[key].value);
+
+            const ctxMonthly = dom.monthlyBarChart.getContext('2d');
+            monthlyChartInstance = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: monthlyLabels,
+                    datasets: [{
+                        label: 'ยอดติดต่อรวม',
+                        data: monthlyTotals,
+                        backgroundColor: '#8b5cf6', // สีม่วง
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#7c3aed'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 25 } // เพิ่มที่ว่างด้านบนเพื่อไม่ให้ตัวเลขตกขอบ
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Prompt', size: 13 },
+                            bodyFont: { family: 'Prompt', size: 13 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false
+                        },
+                        // ตั้งค่า plugin datalabels ให้แสดงตัวเลขบนแท่ง
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            color: '#475569',
+                            font: { family: 'Prompt', size: 11, weight: 'bold' },
+                            formatter: (value) => value > 0 ? value.toLocaleString('th-TH') : ''
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748b' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            border: { display: false },
+                            ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748b', precision: 0 }
+                        }
+                    }
+                }
+            });
+
+
+            // 3. Daily Trend Line Chart (แสดงรายวันตามที่ Filter มา พร้อมแยกเส้นปะแต่ละช่องทาง)
+            if (dailyChartInstance) {
+                dailyChartInstance.destroy(); // ล้างกราฟเก่าก่อนวาดใหม่
+            }
+            
+            // เรียงข้อมูลตามวันที่จากเก่าไปใหม่สำหรับกราฟ และกรองวันที่ยอดเป็น 0 ออก
+            const chartData = [...data].filter(row => row.total > 0).sort((a, b) => (a.date?.getTime() || 0) - (b.date?.getTime() || 0));
+            const chartLabels = chartData.map(row => formatDate(row.date));
+            const chartTotals = chartData.map(row => row.total);
+
+            // สร้าง Dataset สำหรับยอดรวม (เส้นทึบ)
+            const dailyDatasets = [
+                {
+                    label: 'ยอดรวม (Total)',
+                    data: chartTotals,
+                    borderColor: '#94a3b8', // สีเทา (Slate-400) เพื่อไม่ให้แย่งซีนสีช่องทาง
+                    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                    borderWidth: 3,
+                    borderDash: [], // เส้นทึบ
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#94a3b8',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.3,
+                    datalabels: {
+                        color: '#64748b', // สีเทาเข้ม (Slate-500)
+                        font: { family: 'Prompt', size: 11, weight: 'bold' },
+                        align: 'top',
+                        offset: 6,
+                        formatter: (value) => value > 0 ? value.toLocaleString('th-TH') : ''
+                    }
+                }
+            ];
+
+            // สร้าง Dataset แยกทีละช่องทาง (เป็นเส้นปะ)
+            CONTACT_CHANNELS.forEach(ch => {
+                dailyDatasets.push({
+                    label: ch.label,
+                    data: chartData.map(row => row[ch.key]),
+                    borderColor: ch.hex,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5], // เส้นปะ
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: ch.hex,
+                    pointBorderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    fill: false,
+                    tension: 0.3,
+                    datalabels: {
+                        color: ch.hex,
+                        font: { family: 'Prompt', size: 10 },
+                        align: 'bottom', // นำตัวเลขไว้ด้านล่างเพื่อลดการทับซ้อน
+                        offset: 4,
+                        formatter: (value) => value > 0 ? value.toLocaleString('th-TH') : ''
+                    }
+                });
+            });
+
+            const ctxDaily = dom.dailyTrendChart.getContext('2d');
+            dailyChartInstance = new Chart(ctxDaily, {
+                type: 'line',
+                data: {
+                    labels: chartLabels,
+                    datasets: dailyDatasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 30, left: 10, right: 10, bottom: 10 }
+                    },
+                    plugins: {
+                        legend: { 
+                            display: true, 
+                            position: 'bottom', // นำตัวบอกสีไปไว้ข้างล่างกราฟ
+                            labels: {
+                                font: { family: 'Prompt', size: 12 },
+                                usePointStyle: true, // ทำให้สัญลักษณ์ดูกลมและทันสมัย
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: 'Prompt', size: 13 },
+                            bodyFont: { family: 'Prompt', size: 13 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: true // เปิดแสดงสีกล่องใน Tooltip จะได้รู้ว่าตัวเลขของใคร
+                        },
+                        datalabels: {
+                            // การตั้งค่าตัวเลขถูกกำหนดแยกไว้แล้วในระดับ Dataset ด้านบน
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748b' }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            border: { display: false },
+                            ticks: { font: { family: 'Prompt', size: 11 }, color: '#64748b', precision: 0 }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+
+            // Table Body
+            if (!data.length) {
+                dom.tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-slate-500"><i data-lucide="inbox" class="mx-auto mb-3 h-8 w-8 text-slate-300"></i> ไม่พบข้อมูลสถิติตามตัวกรองที่เลือก</td></tr>`;
+                lucide.createIcons();
+                return;
+            }
+
+            dom.tableBody.innerHTML = data
+                .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
+                .map(row => `
+                    <tr class="hover:bg-blue-50/50 transition-colors group">
+                        <td class="whitespace-nowrap px-6 py-3.5 text-sm font-medium text-slate-700">${escapeHtml(formatDate(row.date))}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.phone > 0 ? 'font-semibold text-slate-900' : ''}">${row.phone > 0 ? row.phone.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.line > 0 ? 'font-semibold text-slate-900' : ''}">${row.line > 0 ? row.line.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.fb > 0 ? 'font-semibold text-slate-900' : ''}">${row.fb > 0 ? row.fb.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.tiktok > 0 ? 'font-semibold text-slate-900' : ''}">${row.tiktok > 0 ? row.tiktok.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.walkin > 0 ? 'font-semibold text-slate-900' : ''}">${row.walkin > 0 ? row.walkin.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm font-bold text-blue-700 bg-slate-50/50 group-hover:bg-transparent">${row.total.toLocaleString('th-TH')}</td>
+                    </tr>
+                `).join('');
+                
+            // Re-initialize icons for newly added HTML
+            lucide.createIcons();
+        }
+
+        function todayInputValue() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function inputDateToSheetDate(value) {
+            const date = value ? new Date(`${value}T00:00:00`) : new Date();
+            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear() + 543}`;
+        }
+
+        function readPositiveInteger(input) {
+            const value = parseInt(input.value, 10);
+            return Number.isFinite(value) && value > 0 ? value : 0;
+        }
+
+        function setAddStatsStatus(type, message) {
+            dom.addStatsStatus.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-emerald-50', 'text-emerald-700');
+            dom.addStatsStatus.classList.add(type === 'success' ? 'bg-emerald-50' : 'bg-red-50', type === 'success' ? 'text-emerald-700' : 'text-red-700');
+            dom.addStatsStatus.textContent = message;
+        }
+
+        function resetAddStatsForm() {
+            dom.addStatsForm.reset();
+            dom.statsDate.value = todayInputValue();
+            dom.statsPhone.value = '0';
+            dom.statsLine.value = '0';
+            dom.statsFb.value = '0';
+            dom.statsTiktok.value = '0';
+            dom.statsWalkin.value = '0';
+            renderRecorderOptions();
+            dom.statsRecorder.value = getPreferredRecorder();
+            dom.addStatsStatus.classList.add('hidden');
+            dom.addStatsSubmitBtn.disabled = false;
+            dom.addStatsSubmitBtn.innerHTML = '<i data-lucide="save" class="h-4 w-4"></i> บันทึกลงชีต';
+            lucide.createIcons();
+        }
+
+        function openAddStatsModal() {
+            resetAddStatsForm();
+            dom.addStatsModal.classList.remove('hidden');
+            dom.addStatsModal.classList.add('flex');
+            setTimeout(() => dom.statsDate.focus(), 50);
+        }
+
+        function closeAddStatsModal() {
+            dom.addStatsModal.classList.add('hidden');
+            dom.addStatsModal.classList.remove('flex');
+        }
+
+        async function submitContactStats(event) {
+            event.preventDefault();
+
+            const phone = readPositiveInteger(dom.statsPhone);
+            const line = readPositiveInteger(dom.statsLine);
+            const fb = readPositiveInteger(dom.statsFb);
+            const tiktok = readPositiveInteger(dom.statsTiktok);
+            const walkin = readPositiveInteger(dom.statsWalkin);
+            const total = phone + line + fb + tiktok + walkin;
+
+            if (!dom.statsDate.value) {
+                setAddStatsStatus('error', 'กรุณาเลือกวันที่');
+                return;
+            }
+            if (!dom.statsRecorder.value.trim()) {
+                setAddStatsStatus('error', 'กรุณาระบุผู้บันทึก');
+                dom.statsRecorder.focus();
+                return;
+            }
+            if (total <= 0) {
+                setAddStatsStatus('error', 'กรุณากรอกจำนวนการติดต่ออย่างน้อย 1 ช่องทาง');
+                return;
+            }
+
+            const recorder = dom.statsRecorder.value.trim();
+            localStorage.setItem('contactStatsRecorder', recorder);
+
+            const payload = {
+                sheetName: CONTACT_SHEET_NAMES[0],
+                'วันที่': inputDateToSheetDate(dom.statsDate.value),
+                'โทร': phone,
+                'Line': line,
+                'FB': fb,
+                'Tiktok': tiktok,
+                'WalkIn': walkin,
+                'หมายเหตุ': dom.statsNote.value.trim(),
+                'ผู้บันทึก': recorder
+            };
+
+            dom.addStatsSubmitBtn.disabled = true;
+            dom.addStatsSubmitBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 animate-spin"></i> กำลังบันทึก...';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await response.json();
+                if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
+
+                setAddStatsStatus('success', `บันทึกสำเร็จ (${result.id || 'เพิ่มรายการแล้ว'})`);
+                dom.addStatsSubmitBtn.innerHTML = '<i data-lucide="check" class="h-4 w-4"></i> บันทึกแล้ว';
+                lucide.createIcons();
+
+                setTimeout(async () => {
+                    closeAddStatsModal();
+                    await fetchContactStats();
+                }, 800);
+            } catch (error) {
+                setAddStatsStatus('error', `บันทึกไม่สำเร็จ: ${error.message}`);
+                dom.addStatsSubmitBtn.disabled = false;
+                dom.addStatsSubmitBtn.innerHTML = '<i data-lucide="save" class="h-4 w-4"></i> บันทึกลงชีต';
+                lucide.createIcons();
+            }
+        }
+
+        async function fetchContactStats() {
+            dom.loadingMessage.classList.remove('hidden');
+            dom.errorMessage.classList.add('hidden');
+            dom.content.classList.add('hidden');
+
+            try {
+                const result = await fetchContactSheet();
+                sheetName = result.name;
+                rows = await parseCsvDataRobust(result.text);
+                
+                populateMonthFilter();
+                renderStats();
+                
+                dom.loadingMessage.classList.add('hidden');
+                dom.content.classList.remove('hidden');
+                dom.lastUpdated.innerHTML = `<i data-lucide="check-circle-2" class="h-4 w-4 text-emerald-500"></i> อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH', { hour: 'numeric', minute: '2-digit', hour12: false })} น.`;
+                lucide.createIcons();
+            } catch (error) {
+                console.error("Data fetch error:", error);
+                dom.loadingMessage.classList.add('hidden');
+                dom.errorMessage.classList.remove('hidden');
+            }
+        }
+
+        function initApp() {
+            cacheDom();
+            lucide.createIcons();
+            // เปิดใช้งาน DataLabels Plugin สำหรับ Chart.js
+            Chart.register(ChartDataLabels);
+            
+            dom.monthFilter.addEventListener('change', renderStats);
+            dom.addStatsForm.addEventListener('submit', submitContactStats);
+            loadRecorderOptions();
+            fetchContactStats();
+        }
+
+        function startAppOnce() {
+            if (appHasStarted) return;
+            appHasStarted = true;
+            initApp();
+        }
+
+        function unlockPage() {
+            document.body.classList.remove('auth-locked');
+            startAppOnce();
+        }
+
+        function setupLogin() {
+            cacheDom();
+            lucide.createIcons();
+            
+            const stored = localStorage.getItem(LOGIN_KEY);
+            if (stored === '1' || stored === 'yes') {
+                localStorage.setItem(LOGIN_KEY, '1');
+                unlockPage();
+                return;
+            }
+
+            dom.loginForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const btn = event.submitter;
+                const orgText = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="loader-2" class="h-5 w-5 animate-spin mx-auto"></i>`;
+
+                setTimeout(() => {
+                    if (dom.loginUser.value.trim() === LOGIN_USER && dom.loginPass.value === LOGIN_PASS) {
+                        localStorage.setItem(LOGIN_KEY, '1');
+                        dom.loginError.classList.add('hidden');
+                        unlockPage();
+                    } else {
+                        dom.loginError.classList.remove('hidden');
+                        dom.loginPass.select();
+                        btn.innerHTML = orgText;
+                    }
+                }, 400); // Fake delay for UX
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', setupLogin);
+    </script>
+</body>
+</html>

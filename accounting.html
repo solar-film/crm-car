@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บัญชี – MHL CAR Film</title>
+    <link rel="icon" type="image/svg+xml" href="images/favicon-accounting.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="stylesheet" href="apple-style.css?v=20260520-4">
+    <script src="sidebar.js" defer></script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+
+        /* Sticky header for table */
+        thead th { position: sticky; top: 0; z-index: 10; }
+
+        /* Scrollbar */
+        .custom-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Row hover */
+        tbody tr { transition: background 0.1s; }
+
+        .damage-column-head {
+            background: #e11d48 !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+        }
+
+        .payment-proof-icon {
+            display: inline-flex;
+            height: 1.45rem;
+            width: 1.45rem;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            border: 1px solid #99f6e4;
+            background: #ccfbf1;
+            color: #0f766e;
+            box-shadow: 0 4px 10px rgba(15, 118, 110, 0.12);
+            vertical-align: middle;
+        }
+
+        @media screen and (min-width: 1024px) {
+            #appContent main {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+        }
+
+        /* Print */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .print-container { box-shadow: none !important; border: none !important; }
+        }
+
+        /* ── Timeline column ── */
+        .tl-cell {
+            position: relative;
+            padding-left: 2.2rem !important;
+        }
+        .tl-cell::before {
+            content: '';
+            position: absolute;
+            left: 0.85rem;
+            top: 0;
+            bottom: 0;
+            width: 1.5px;
+            background: #bfdbfe;
+        }
+        tr:first-child .tl-cell::before { top: 50%; }
+        tr:last-child .tl-cell::before { bottom: 50%; }
+        .tl-dot {
+            position: absolute;
+            left: calc(0.85rem - 4px);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #2563eb;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1.5px #93c5fd;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800 lg:flex">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm hidden">
+        <div class="w-full max-w-sm rounded-3xl border border-white/15 bg-white p-8 shadow-2xl">
+            <div class="mb-6 text-center">
+                <div class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
+                    <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-extrabold text-slate-900">ระบบบัญชี</h2>
+                <p class="mt-1 text-sm text-slate-500">MHL CAR Film — สำหรับฝ่ายบัญชี</p>
+            </div>
+            <div class="space-y-3">
+                <input id="loginUser" type="text" placeholder="ชื่อผู้ใช้" autocomplete="username"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                <input id="loginPass" type="password" placeholder="รหัสผ่าน" autocomplete="current-password"
+                    class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                <p id="loginError" class="hidden text-center text-xs font-semibold text-red-600">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+                <button onclick="doLogin()" class="w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white shadow-md hover:bg-indigo-700 active:scale-95 transition-all">เข้าสู่ระบบ</button>
+            </div>
+        </div>
+    </div>
+
+    <div data-car-crm-sidebar></div>
+
+    <!-- MAIN APP -->
+    <div id="appContent" class="hidden min-h-screen w-full">
+
+        <!-- TOP HEADER -->
+        <header class="no-print px-4 pt-5 sm:px-6">
+            <div class="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-sm backdrop-blur">
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                    <div class="flex items-center gap-3">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-indigo-500">MHL CAR Film</p>
+                        <h1 class="text-xl font-extrabold leading-tight text-slate-950">รายงานการเงิน / บัญชี</h1>
+                    </div>
+                </div>
+                    <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-1.5">
+                    <a href="sunroof.html" target="_blank" class="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-sky-50 hover:text-sky-700">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        ราคาซันรูฟ
+                    </a>
+                    <a href="price-audit.html" target="_blank" class="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-indigo-50 hover:text-indigo-700">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        ตรวจสอบราคาขาย
+                    </a>
+                    <button onclick="window.print()" class="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-100">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        พิมพ์
+                    </button>
+                    <button onclick="exportCsv()" class="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-slate-100">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Export CSV
+                    </button>
+                    <button onclick="fetchData()" class="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-indigo-500">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        รีเฟรช
+                    </button>
+                </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="px-4 py-4 sm:px-6">
+
+            <!-- SUMMARY CARDS -->
+            <div id="summaryCards" class="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-5 no-print">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-xs font-semibold text-slate-500">รายการทั้งหมด</p>
+                    <p id="statTotal" class="mt-1 text-2xl font-extrabold text-slate-900">-</p>
+                    <p class="text-[11px] text-slate-400">คิว</p>
+                </div>
+                <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-4 shadow-sm">
+                    <p class="text-xs font-semibold text-indigo-600">ยอดเงินรวม</p>
+                    <p id="statRevenue" class="mt-1 text-2xl font-extrabold text-indigo-700">-</p>
+                    <p class="text-[11px] text-indigo-400">บาท</p>
+                </div>
+                <div class="rounded-2xl border border-amber-100 bg-amber-50 p-4 shadow-sm">
+                    <p class="text-xs font-semibold text-amber-600">ส่วนลดรวม</p>
+                    <p id="statDiscount" class="mt-1 text-2xl font-extrabold text-amber-700">-</p>
+                    <p class="text-[11px] text-amber-400">บาท</p>
+                </div>
+                <div class="rounded-2xl border border-rose-100 bg-rose-50 p-4 shadow-sm">
+                    <p class="text-xs font-semibold text-rose-600">ค้างชำระ</p>
+                    <p id="statUnpaid" class="mt-1 text-2xl font-extrabold text-rose-700">-</p>
+                    <p class="text-[11px] text-rose-400">คิว</p>
+                </div>
+                <div class="rounded-2xl border border-orange-100 bg-orange-50 p-4 shadow-sm">
+                    <p class="text-xs font-semibold text-orange-600">ความเสียหาย</p>
+                    <p id="statDamage" class="mt-1 text-2xl font-extrabold text-orange-700">-</p>
+                    <p class="text-[11px] text-orange-400">เคลม + งานแก้</p>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div class="mb-4 flex flex-wrap items-end gap-3 no-print">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">กรองวันที่ติดตั้ง</label>
+                    <select id="filterDatePreset" onchange="toggleCustomDate()" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="today">วันนี้</option>
+                        <option value="yesterday">เมื่อวาน</option>
+                        <option value="thisMonth" selected>เดือนนี้</option>
+                        <option value="lastMonth">เดือนที่ผ่านมา</option>
+                        <option value="custom">ระบุวันที่</option>
+                    </select>
+                </div>
+                <div id="customDateWrap" class="hidden items-end gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold text-slate-500">จากวันที่</label>
+                        <input id="filterDateFrom" type="date" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-semibold text-slate-500">ถึงวันที่</label>
+                        <input id="filterDateTo" type="date" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">สถานะการชำระ</label>
+                    <select id="filterPayStatus" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none">
+                        <option value="">ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-semibold text-slate-500">ค้นหา</label>
+                    <input id="filterSearch" type="text" placeholder="JobID / ชื่อ / เบอร์ / ทะเบียน..." class="w-56 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100">
+                </div>
+                <button onclick="applyFilters()" class="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-bold text-white shadow hover:bg-indigo-500 active:scale-95 transition-all">
+                    กรอง
+                </button>
+                <button onclick="clearFilters()" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                    ล้าง
+                </button>
+                <span id="filterResultLabel" class="ml-auto text-xs font-medium text-slate-400"></span>
+            </div>
+
+            <!-- LOADING / ERROR -->
+            <div id="loadingMessage" class="flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white py-16 shadow-sm">
+                <svg class="mb-3 h-8 w-8 animate-spin text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                <p class="text-sm font-medium text-slate-500">กำลังโหลดข้อมูล...</p>
+            </div>
+            <div id="errorMessage" class="hidden rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+                <svg class="mx-auto mb-3 h-10 w-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                <p class="text-base font-bold text-red-700">ไม่สามารถโหลดข้อมูลได้</p>
+                <p class="mt-1 text-sm text-red-500">กรุณาตรวจสอบการแชร์ Google Sheet หรือการเชื่อมต่ออินเทอร์เน็ต</p>
+                <button onclick="fetchData()" class="mt-4 rounded-xl bg-red-600 px-5 py-2 text-sm font-bold text-white hover:bg-red-500">ลองใหม่</button>
+            </div>
+
+            <!-- TABLE -->
+            <div id="tableWrapper" class="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm print-container">
+                <div class="overflow-x-auto custom-scroll">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-800 text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">เวลานัด</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ชื่อลูกค้า</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ประเภท</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">รุ่นรถยนต์</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ทะเบียนรถ</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ตำแหน่งติดตั้ง</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">เลขที่บิล/ใบเสร็จ</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ประเภทการชำระ</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">มูลค่าสินค้า</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">ส่วนลด</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">ยอดเงิน (บาท)</th>
+                                <th class="damage-column-head px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">ความเสียหาย</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">สถานะการชำระ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
+                        <tfoot id="tableFoot" class="bg-slate-50 font-bold text-slate-700"></tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <p class="mt-3 text-right text-[11px] text-slate-400 no-print" id="lastUpdated"></p>
+        </main>
+    </div>
+
+    <!-- DETAIL DRAWER -->
+    <div id="drawerOverlay" class="fixed inset-0 z-40 bg-black/40 hidden no-print" onclick="closeDrawer()"></div>
+    <aside id="detailDrawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-2xl translate-x-full transform overflow-y-auto bg-slate-100 shadow-2xl transition-transform duration-300 ease-in-out no-print">
+        <div class="m-5 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div>
+                <p class="text-[11px] font-bold tracking-wider text-indigo-500">รายละเอียดงาน</p>
+                <h2 id="dTitle" class="mt-0.5 text-lg font-extrabold text-slate-900">-</h2>
+            </div>
+            <button onclick="closeDrawer()" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-600">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div id="drawerBody" class="px-5 pb-5 space-y-4"></div>
+    </aside>
+
+    <script>
+    // ─── CONFIG ───────────────────────────────────────────────────────────
+    const SHEET_ID        = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
+    const CSV = {
+        bookings  : sheet('Bookings'),
+        customer  : sheet('Customer'),
+        payIn     : sheet('PayIn'),
+        detail    : sheet('Detail_film'),
+        installer : sheet('Detail_Installer'),
+        glass     : sheet('ขนาดกระจก'),
+        waranty   : sheet('Waranty'),
+        cutReason : sheet('เหตุผลขอตัดฟิล์ม'),
+        data      : sheet('data'),
+    };
+    function sheet(name) {
+        return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+    }
+
+    const LOGIN_USER = 'admin';
+    const LOGIN_PASS = 'MHL741mhl+';
+    const LOGIN_KEY  = 'carCrmLoggedIn';
+
+    // ─── AUTH ─────────────────────────────────────────────────────────────
+    function doLogin() {
+        const u = document.getElementById('loginUser').value.trim();
+        const p = document.getElementById('loginPass').value;
+        if (u === LOGIN_USER && p === LOGIN_PASS) {
+            localStorage.setItem(LOGIN_KEY, '1');
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('appContent').classList.remove('hidden');
+            fetchData();
+        } else {
+            document.getElementById('loginError').classList.remove('hidden');
+        }
+    }
+
+    document.getElementById('loginPass')?.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+    // ─── HELPERS ──────────────────────────────────────────────────────────
+    function tv(v, fb = '-') {
+        if (v === null || v === undefined) return fb;
+        const t = String(v).trim();
+        return t === '' ? fb : t;
+    }
+    function esc(v) {
+        return tv(v, '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function nh(v) { return tv(v,'').replace(/[\s().（）_\-]+/g,'').toLowerCase(); }
+    function normId(v) { return tv(v,'').replace(/\s+/g,'').toLowerCase(); }
+    function filterKey(v) {
+        return tv(v, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    function fv(row, candidates, fb = '-') {
+        const keys = Object.keys(row || {});
+        const nc = candidates.map(nh);
+        const key = keys.find(k => nc.includes(nh(k))) ||
+                    keys.find(k => nc.some(c => nh(k).includes(c) || c.includes(nh(k))));
+        return key ? tv(row[key], fb) : fb;
+    }
+
+    function parseCsv(text) {
+        return new Promise(resolve => Papa.parse(text, {
+            header: true, skipEmptyLines: true,
+            transformHeader: h => h.trim(),
+            complete: r => resolve(r.data)
+        }));
+    }
+
+    function parseNum(v) {
+        const n = parseFloat(tv(v,'0').replace(/,/g,''));
+        return isFinite(n) ? n : 0;
+    }
+    function fmt(n) { return n.toLocaleString('th-TH', { minimumFractionDigits: 0 }); }
+    function fmtMoney(n) { return '฿' + fmt(n); }
+
+    // parse D/M/YYYY or YYYY-MM-DD → Date
+    function parseDate(v) {
+        const t = tv(v,'');
+        let m = t.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+        if (m) {
+            let y = parseInt(m[1]); if (y > 2400) y -= 543;
+            return new Date(y, parseInt(m[2])-1, parseInt(m[3]));
+        }
+        m = t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+        if (m) {
+            let y = parseInt(m[3]); if (y < 100) y += 2500; if (y > 2400) y -= 543;
+            return new Date(y, parseInt(m[2])-1, parseInt(m[1]));
+        }
+        return null;
+    }
+
+    function dateToInput(d) {
+        // returns YYYY-MM-DD (CE)
+        if (!d) return '';
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function startOfDay(d) {
+        if (!d) return null;
+        const v = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        v.setHours(0, 0, 0, 0);
+        return v;
+    }
+
+    function endOfDay(d) {
+        if (!d) return null;
+        const v = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        v.setHours(23, 59, 59, 999);
+        return v;
+    }
+
+    // ─── DATA ─────────────────────────────────────────────────────────────
+    let allRows = [];
+    let filteredRows = [];
+
+    function populateFilterOptions() {
+        const paySel = document.getElementById('filterPayStatus');
+        const currentPay = paySel.value;
+        const uniquePay = [...new Set(allRows.map(r => r.payStatus).filter(s => s && s !== '-'))].sort();
+        paySel.innerHTML = '<option value="">ทั้งหมด</option>';
+        uniquePay.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s; opt.textContent = s;
+            if (s === currentPay) opt.selected = true;
+            paySel.appendChild(opt);
+        });
+
+    }
+
+    let detailMap    = {};
+    let installerMap = {};
+    let glassMap     = {};
+    let warantyMap   = {};
+    let cutReasonMap = {}; // keyed by เหตุผลขอตัดฟิล์ม value
+    let dataMap      = {};
+
+    async function fetchData() {
+        setUI('loading');
+        try {
+            const urls = Object.values(CSV);
+            const responses = await Promise.all(urls.map(u => fetch(u).catch(() => null)));
+            const [bRes, cRes, pRes, dRes, iRes, gRes, wRes, crRes, dataRes] = responses;
+            if (![bRes, cRes, pRes].every(r => r?.ok)) throw new Error('network');
+            const [bText, cText, pText] = await Promise.all([bRes.text(), cRes.text(), pRes.text()]);
+            if ([bText, cText, pText].some(t => /^\s*<(!doctype|html)/i.test(t))) throw new Error('permission');
+
+            const dText  = dRes?.ok  ? await dRes.text()  : '';
+            const iText  = iRes?.ok  ? await iRes.text()  : '';
+            const gText  = gRes?.ok  ? await gRes.text()  : '';
+            const wText  = wRes?.ok  ? await wRes.text()  : '';
+            const crText = crRes?.ok ? await crRes.text() : '';
+            const dataText = dataRes?.ok ? await dataRes.text() : '';
+            const safeParse = async t => { try { return t ? await parseCsv(t) : []; } catch(e) { return []; } };
+            const [bookings, customers, payIns, details, installers, glasses, waranties, cutReasons, dataRows] = await Promise.all([
+                parseCsv(bText), parseCsv(cText), parseCsv(pText),
+                safeParse(dText),
+                safeParse(iText),
+                safeParse(gText),
+                safeParse(wText),
+                safeParse(crText),
+                safeParse(dataText),
+            ]);
+
+            // Build Detail_film map
+            detailMap = {};
+            details.forEach(row => {
+                const id = fv(row, ['JobID','Job ID'], '');
+                if (id) { detailMap[id] = row; detailMap[normId(id)] = row; }
+            });
+
+            // Build Detail_Installer map
+            installerMap = {};
+            installers.forEach(row => {
+                const id = fv(row, ['JobID','Job ID'], '');
+                if (id) { installerMap[id] = row; installerMap[normId(id)] = row; }
+            });
+
+            // Build Waranty map
+            warantyMap = {};
+            waranties.forEach(row => {
+                const id = fv(row, ['JobID','Job ID'], '');
+                if (id) { warantyMap[id] = row; warantyMap[normId(id)] = row; }
+            });
+
+            // Build เหตุผลขอตัดฟิล์ม map (keyed by ID column)
+            cutReasonMap = {};
+            cutReasons.forEach(row => {
+                const key = fv(row, ['ID','id'], '').trim();
+                if (key) cutReasonMap[key] = row;
+            });
+
+            // Build data sheet map (keyed by JobID, one job may have multiple rows)
+            dataMap = {};
+            dataRows.forEach(row => {
+                const id = fv(row, ['JobID','Job ID'], '');
+                if (!id) return;
+                [id, normId(id)].forEach(key => {
+                    if (!dataMap[key]) dataMap[key] = [];
+                    dataMap[key].push(row);
+                });
+            });
+
+
+            // Build ขนาดกระจก map (keyed by JobID, one job may have multiple rows)
+            glassMap = {};
+            glasses.forEach(row => {
+                const id = fv(row, ['JobID','Job ID'], '');
+                if (!id) return;
+                [id, normId(id)].forEach(key => {
+                    if (!glassMap[key]) glassMap[key] = [];
+                    glassMap[key].push(row);
+                });
+            });
+
+            // Build customer map
+            const custMap = {};
+            customers.forEach(row => {
+                const id = fv(row, ['CustID','รหัสลูกค้า'], '');
+                if (id) { custMap[id] = row; custMap[normId(id)] = row; }
+            });
+
+            // Build PayIn map (keyed by JobID)
+            const payMap = {};
+            payIns.forEach(row => {
+                const jobId = fv(row, ['JobID','Job ID','jobid'], '');
+                if (jobId) {
+                    payMap[jobId] = row;
+                    payMap[normId(jobId)] = row;
+                }
+            });
+
+            // Build rows
+            allRows = bookings.map(row => {
+                const jobId = fv(row, ['JobID','Job ID'], '');
+                if (!jobId || jobId === '-') return null;
+
+                const status = fv(row, ['Status','สถานะ'], '-');
+                if (nh(status).includes(nh('ยกเลิก'))) return null;
+
+                const custId = tv(row['CustID'] || row['custid'], '');
+                const cust = custMap[custId] || custMap[normId(custId)] || {};
+                const pay  = payMap[jobId] || payMap[normId(jobId)] || {};
+                const hasPaymentInfo = Object.values(pay).some(value => {
+                    const text = tv(value, '');
+                    return text && text !== '-';
+                });
+
+                const installDate = fv(row, ['วันที่ติดตั้ง','วันที่'], '-');
+                const parsedDate  = parseDate(installDate);
+                const apptTime    = fv(row, ['เวลานัด','เวลา'], '-');
+
+                // PayIn fields (ชื่อคอลัมน์จริงจาก PayIn sheet)
+                const billNo    = fv(pay, ['เลขที่บิล/ใบเสร็จ','เลขที่บิล','เลขบิล','เลขที่ใบเสร็จ'], '-');
+                const payType   = fv(pay, ['ประเภทการชำระ','ประเภทชำระ','ประเภทการชำระเงิน','ประเภทชำระเงิน','payment type'], '-');
+                const amount    = parseNum(fv(pay, ['ยอดเงิน(บาท)','ยอดเงิน','ยอดชำระ'], '0'));
+                const payStatus = fv(pay, ['สถานะ'], '-');
+                const proof1    = fv(pay, ['หลักฐาน_1','หลักฐาน 1','หลักฐานการชำระเงิน','หลักฐาน','สลิป','Slip','Payment Proof'], '');
+                const proof2    = fv(pay, ['หลักฐาน_2','หลักฐาน 2','สลิป 2','Slip 2','Payment Proof 2'], '');
+
+                // Bookings fields
+                const productVal  = parseNum(tv(row['มูลค่าสินค้า'], '0').replace(/,/g, ''));
+                const discount    = parseNum(tv(row['ส่วนลด'], '0').replace(/,/g, ''));
+                const discountCode = tv(row['รหัสส่วนลด'], '-');
+                const warranty    = tv(row['การรับประกัน'], '-');
+                const note        = fv(row, ['หมายเหตุ'], '-');
+                const sales       = fv(row, ['พน.ขาย','พน ขาย','ฝ่ายขาย','พนง.ขาย','พนักงานขาย','เซลล์','เซล','Sale','Sales','Seller','sales'], '-');
+                const promotion   = fv(row, ['Pro_ID','โปรโมชั่น','Promotion'], '-');
+                const displayAmount = amount > 0 ? amount : parseNum(fv(row, ['ยอดขาย'], '0'));
+
+                // Extra detail rows
+                const detailRow    = detailMap[jobId] || detailMap[normId(jobId)] || null;
+                const installerRow = installerMap[jobId] || installerMap[normId(jobId)] || null;
+                const dataRows     = dataMap[jobId] || dataMap[normId(jobId)] || [];
+
+                return {
+                    jobId,
+                    jobStatus: fv(row, ['Status','สถานะ'], '-'),
+                    installDate,
+                    parsedDate,
+                    apptTime,
+                    custName     : fv(cust, ['ชื่อลูกค้า','ชื่อ'], '-'),
+                    custPhone    : fv(cust, ['เบอร์โทร','เบอร์','Tel','Phone'], '-'),
+                    custType     : fv(row, ['ประเภทลูกค้า'], '-'),
+                    sales,
+                    carModel     : fv(row, ['รุ่นรถยนต์','รุ่นรถ'], '-'),
+                    plate        : fv(row, ['ทะเบียนรถ','ทะเบียน'], '-'),
+                    film         : fv(row, ['ยี่ห้อฟิล์ม','ฟิล์ม'], '-'),
+                    installType  : fv(row, ['ตำแหน่งติดตั้ง','ตำแหน่งติดตั้ง ใหม่','ตำแหน่งติดตั้งใหม่','การติดตั้ง','ประเภทการติดตั้ง','ตำแหน่ง'], '-'),
+                    productVal,
+                    discount,
+                    discountCode,
+                    billNo,
+                    payType,
+                    amount      : displayAmount,
+                    payStatus,
+                    hasPaymentInfo,
+                    proof1,
+                    proof2,
+                    warranty,
+                    note,
+                    promotion,
+                    detailRow,
+                    installerRow,
+                    dataRows,
+                    rawRow      : row,
+                    searchText  : [jobId, installDate, fv(cust,['ชื่อลูกค้า','ชื่อ'],'-'), fv(cust,['เบอร์โทร','เบอร์','Tel','Phone'],'-'), fv(row,['ทะเบียนรถ','ทะเบียน'],'-'), billNo, payStatus, apptTime].join(' ').toLowerCase()
+                };
+            }).filter(Boolean);
+
+            // Sort by date descending
+            allRows.sort((a,b) => (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0));
+
+            document.getElementById('lastUpdated').textContent = `อัปเดต: ${new Date().toLocaleString('th-TH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})} น.`;
+            populateFilterOptions();
+            setUI('table');
+            applyFilters();
+        } catch(e) {
+            console.error(e);
+            setUI('error');
+        }
+    }
+
+    // ─── FILTERS ──────────────────────────────────────────────────────────
+    function toggleCustomDate() {
+        const preset = document.getElementById('filterDatePreset').value;
+        const customWrap = document.getElementById('customDateWrap');
+        if (preset === 'custom') {
+            customWrap.classList.remove('hidden');
+            customWrap.classList.add('flex');
+        } else {
+            customWrap.classList.add('hidden');
+            customWrap.classList.remove('flex');
+        }
+    }
+
+    function applyFilters() {
+        const preset    = document.getElementById('filterDatePreset').value;
+        const payStatus = document.getElementById('filterPayStatus').value;
+        const search    = document.getElementById('filterSearch').value.trim().toLowerCase();
+
+        let from = null;
+        let to = null;
+        const now = new Date();
+
+        if (preset === 'today') {
+            from = startOfDay(now);
+            to = endOfDay(now);
+        } else if (preset === 'yesterday') {
+            const y = new Date(now); y.setDate(y.getDate() - 1);
+            from = startOfDay(y);
+            to = endOfDay(y);
+        } else if (preset === 'thisMonth') {
+            from = new Date(now.getFullYear(), now.getMonth(), 1);
+            to = endOfDay(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+        } else if (preset === 'lastMonth') {
+            from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            to = endOfDay(new Date(now.getFullYear(), now.getMonth(), 0));
+        } else if (preset === 'custom') {
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo   = document.getElementById('filterDateTo').value;
+            from = dateFrom ? startOfDay(parseDate(dateFrom)) : null;
+            to   = dateTo ? endOfDay(parseDate(dateTo)) : null;
+            if (from && to && from > to) {
+                const originalFrom = from;
+                from = startOfDay(to);
+                to = endOfDay(originalFrom);
+            }
+        }
+
+        let rows = [...allRows];
+
+        if (from) {
+            rows = rows.filter(r => r.parsedDate && r.parsedDate >= from);
+        }
+        if (to) {
+            rows = rows.filter(r => r.parsedDate && r.parsedDate <= to);
+        }
+        if (payStatus) {
+            rows = rows.filter(r => filterKey(r.payStatus) === filterKey(payStatus));
+        }
+        if (search) {
+            rows = rows.filter(r => r.searchText.includes(search));
+        }
+
+        renderTable(rows);
+    }
+
+    function clearFilters() {
+        document.getElementById('filterDatePreset').value = 'thisMonth';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        document.getElementById('filterPayStatus').value = '';
+        document.getElementById('filterSearch').value = '';
+        toggleCustomDate();
+        applyFilters();
+    }
+
+    // ─── RENDER ───────────────────────────────────────────────────────────
+    function isDamageJob(custType) {
+        const n = nh(custType);
+        return n.includes(nh('เคลม')) || n.includes(nh('ปัญหา')) ||
+               n.includes(nh('งานแก้')) || n.includes(nh('แก้')) || n.includes(nh('ในวัน'));
+    }
+
+    function getPayStatusClass(s) {
+        const n = nh(s);
+        if (n.includes(nh('ชำระแล้ว'))) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+        if (n.includes(nh('ค้างชำระ'))) return 'bg-rose-100 text-rose-700 border-rose-200';
+        if (n.includes(nh('มัดจำ')))    return 'bg-amber-100 text-amber-700 border-amber-200';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
+    }
+
+    function getRowClass(r) {
+        const n = nh(r.payStatus);
+        const j = nh(r.jobStatus);
+        if (n.includes(nh('ค้างชำระ'))) return 'bg-rose-50 hover:bg-rose-100/70';
+        if (j.includes(nh('ติดตั้งเสร็จแล้ว'))) return 'bg-green-50 hover:bg-green-100/70';
+        if (n.includes(nh('ชำระแล้ว'))) return 'bg-emerald-50 hover:bg-emerald-100/70';
+        if (n.includes(nh('มัดจำ')))    return 'bg-amber-50 hover:bg-amber-100/70';
+        return 'bg-white hover:bg-slate-50';
+    }
+
+    function getCustTypeClass(s) {
+        const n = nh(s);
+        if (n.includes(nh('ลูกค้าใหม่'))) return 'bg-blue-100 text-blue-700 border-blue-200';
+        if (n.includes(nh('ลูกค้าเก่า'))) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        if (n.includes(nh('เคลม')))       return 'bg-rose-100 text-rose-700 border-rose-200';
+        if (n.includes(nh('แก้')))        return 'bg-orange-100 text-orange-700 border-orange-200';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
+    }
+
+    function hasPaymentProof(row) {
+        return Boolean(tv(row?.proof1, '') || tv(row?.proof2, ''));
+    }
+
+    function paymentProofIcon(row) {
+        if (!hasPaymentProof(row)) return '';
+        const count = [row.proof1, row.proof2].filter(Boolean).length;
+        return `
+            <span class="payment-proof-icon" title="มีรูปหลักฐานการชำระเงิน ${count} รูป" aria-label="มีรูปหลักฐานการชำระเงิน">
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+            </span>
+        `;
+    }
+
+    function renderTable(rows) {
+        const tbody = document.getElementById('tableBody');
+        const tfoot = document.getElementById('tableFoot');
+        const label = document.getElementById('filterResultLabel');
+
+        label.textContent = `แสดง ${rows.length.toLocaleString('th-TH')} รายการ`;
+
+        // Update summary cards
+        const normalRows  = rows.filter(r => !isDamageJob(r.custType));
+        const damageRows  = rows.filter(r => isDamageJob(r.custType));
+        const totalAmt    = normalRows.reduce((s,r) => s + r.amount, 0);
+        const totalDisc   = rows.reduce((s,r) => s + r.discount, 0);
+        const totalDamage = damageRows.reduce((s,r) => s + r.amount, 0);
+        const unpaidCount = rows.filter(r => nh(r.payStatus).includes(nh('ค้างชำระ'))).length;
+        document.getElementById('statTotal').textContent    = rows.length.toLocaleString('th-TH');
+        document.getElementById('statRevenue').textContent  = fmtMoney(totalAmt);
+        document.getElementById('statDiscount').textContent = fmtMoney(totalDisc);
+        document.getElementById('statUnpaid').textContent   = unpaidCount.toLocaleString('th-TH');
+        document.getElementById('statDamage').textContent   = fmtMoney(totalDamage);
+
+        filteredRows = rows;
+
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="13" class="px-6 py-12 text-center text-slate-400 text-sm">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
+            tfoot.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        let lastDate = null;
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            
+            if (r.installDate !== lastDate) {
+                html += `
+                <tr class="bg-slate-50 border-b border-slate-100">
+                    <td colspan="13" class="px-5 py-2">
+                        <span class="inline-flex items-center gap-1 text-[14px] font-bold text-blue-600">&bull; ${esc(r.installDate)}</span>
+                    </td>
+                </tr>`;
+                lastDate = r.installDate;
+            }
+
+            const timeDisplay = r.apptTime && r.apptTime !== '-' ? esc(r.apptTime) : '-';
+            html += `
+            <tr class="${getRowClass(r)} transition-colors duration-100 cursor-pointer" onclick="openDrawer(${i})" data-idx="${i}">
+                <td class="px-4 py-3 text-xs whitespace-nowrap tl-cell">
+                    <span class="tl-dot"></span>
+                    <span class="text-[13px] font-medium text-slate-600">${timeDisplay} ${timeDisplay !== '-' ? 'น.' : ''}</span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-slate-900 whitespace-nowrap">${esc(r.custName)}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="rounded-md border px-2 py-0.5 text-[10px] font-semibold ${getCustTypeClass(r.custType)}">${esc(r.custType)}</span>
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">${esc(r.carModel)}</td>
+                <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">${esc(r.plate)}</td>
+                <td class="px-4 py-3 text-xs text-slate-600 max-w-[160px] truncate" title="${esc(r.installType)}">${esc(r.installType)}</td>
+                <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap font-mono">
+                    <span class="inline-flex items-center gap-2">
+                        <span>${esc(r.billNo)}</span>
+                        ${paymentProofIcon(r)}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">${esc(r.payType)}</td>
+                <td class="px-4 py-3 text-xs text-right font-medium text-slate-900 whitespace-nowrap">${r.productVal > 0 ? fmt(r.productVal) : '-'}</td>
+                <td class="px-4 py-3 text-xs text-right whitespace-nowrap ${r.discount > 0 ? 'text-amber-700 font-semibold' : 'text-slate-400'}">${r.discount > 0 ? fmt(r.discount) : '-'}</td>
+                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${isDamageJob(r.custType) ? 'text-slate-300' : 'text-slate-900'}">${isDamageJob(r.custType) ? '-' : fmt(r.amount)}</td>
+                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${isDamageJob(r.custType) ? 'text-orange-700' : 'text-slate-300'}">${isDamageJob(r.custType) ? fmt(r.amount) : '-'}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                    <span class="rounded-md border px-2 py-0.5 text-[10px] font-semibold ${getPayStatusClass(r.payStatus)}">${esc(r.payStatus)}</span>
+                </td>
+            </tr>`;
+        }
+        tbody.innerHTML = html;
+
+        // Footer totals
+        tfoot.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-4 py-3 text-xs font-bold text-slate-500 text-right">รวมทั้งหมด ${rows.length.toLocaleString('th-TH')} รายการ</td>
+                <td colspan="2" class="px-4 py-3"></td>
+                <td class="px-4 py-3 text-right text-sm font-extrabold text-slate-900 whitespace-nowrap">${fmt(rows.reduce((s,r)=>s+r.productVal,0))}</td>
+                <td class="px-4 py-3 text-right text-sm font-extrabold text-amber-700 whitespace-nowrap">${fmt(totalDisc)}</td>
+                <td class="px-4 py-3 text-right text-sm font-extrabold text-indigo-700 whitespace-nowrap">${fmt(totalAmt)}</td>
+                <td class="px-4 py-3 text-right text-sm font-extrabold text-orange-700 whitespace-nowrap">${fmt(totalDamage)}</td>
+                <td class="px-4 py-3"></td>
+            </tr>
+        `;
+    }
+
+    // ─── EXPORT CSV ───────────────────────────────────────────────────────
+    function exportCsv() {
+        const headers = ['#','วันที่ติดตั้ง','เวลานัด','ชื่อลูกค้า','ประเภทลูกค้า','รุ่นรถยนต์','ทะเบียนรถ','ตำแหน่งติดตั้ง','เลขที่บิล/ใบเสร็จ','ประเภทการชำระ','มูลค่าสินค้า','ส่วนลด','ยอดเงิน (บาท)','ความเสียหาย','สถานะการชำระ'];
+        const rows = allRows; // export all
+        const csvContent = [
+            headers.join(','),
+            ...rows.map((r,i) => {
+                const dmg = isDamageJob(r.custType);
+                return [
+                    i+1, r.installDate, r.apptTime, r.custName, r.custType, r.carModel, r.plate,
+                    r.installType, r.billNo, r.payType,
+                    r.productVal, r.discount,
+                    dmg ? 0 : r.amount, dmg ? r.amount : 0,
+                    r.payStatus
+                ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+            })
+        ].join('\n');
+
+        const bom = '﻿';
+        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `accounting_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
+    }
+
+    // ─── DETAIL DRAWER ────────────────────────────────────────────────────
+function openDrawer(idx) {
+        const r = filteredRows[idx];
+        if (!r) return;
+
+        document.getElementById('dTitle').textContent = `${r.custName}  —  ${r.jobId}`;
+
+        const section = (title, color, content) => `
+            <div class="rounded-2xl border ${color} bg-white shadow-sm overflow-hidden">
+                <div class="px-4 py-2.5 text-xs font-extrabold uppercase tracking-wider ${color.replace('border-','bg-').replace('-200','100')} text-slate-600">${title}</div>
+                <div class="divide-y divide-slate-100 bg-white">${content}</div>
+            </div>`;
+
+        const row = (label, value) => {
+            if (!value || value === '-') return '';
+            return `<div class="flex items-start gap-2 px-4 py-2">
+                <span class="w-36 shrink-0 text-xs font-semibold text-slate-400">${label}</span>
+                <span class="text-xs text-slate-800">${esc(value)}</span>
+            </div>`;
+        };
+
+        const badge = (label, value, cls) => {
+            if (!value || value === '-') return '';
+            return `<div class="flex items-start gap-2 px-4 py-2">
+                <span class="w-36 shrink-0 text-xs font-semibold text-slate-400">${label}</span>
+                <span class="rounded-md border px-2 py-0.5 text-[10px] font-semibold ${cls}">${esc(value)}</span>
+            </div>`;
+        };
+
+        const warningBox = message => `
+            <div class="m-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm">
+                <div class="flex items-start gap-2">
+                    <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 text-xs font-black text-white">!</span>
+                    <span>${esc(message)}</span>
+                </div>
+            </div>
+        `;
+
+        // ── ข้อมูลทั่วไป ──
+        let html = section('📋 ข้อมูลทั่วไป', 'border-slate-200', [
+            row('Job ID', r.jobId),
+            row('วันที่ติดตั้ง', r.installDate),
+            row('เวลานัด', r.apptTime !== '-' ? r.apptTime + ' น.' : '-'),
+            badge('พน.ขาย', r.sales, 'bg-blue-50 text-blue-700 border-blue-200'),
+            row('ชื่อลูกค้า', r.custName),
+            row('เบอร์โทร', r.custPhone),
+            badge('ประเภทลูกค้า', r.custType, getCustTypeClass(r.custType)),
+            row('รุ่นรถยนต์', r.carModel),
+            row('ทะเบียนรถ', r.plate),
+            row('ยี่ห้อฟิล์ม', r.film),
+            row('ตำแหน่งติดตั้ง', r.installType),
+            row('โปรโมชั่น', r.promotion),
+            row('หมายเหตุ', r.note),
+        ].join(''));
+
+        // ── การชำระเงิน ──
+        const paymentItems = [
+            row('เลขที่บิล/ใบเสร็จ', r.billNo),
+            row('ประเภทการชำระ', r.payType),
+            row('มูลค่าสินค้า', r.productVal > 0 ? fmt(r.productVal) + ' บาท' : '-'),
+            row('ส่วนลด', r.discount > 0 ? fmt(r.discount) + ' บาท' : '-'),
+            row('สาเหตุที่ลด', r.discountCode),
+            isDamageJob(r.custType)
+                ? row('มูลค่าความเสียหาย', fmt(r.amount) + ' บาท')
+                : row('ยอดเงิน', fmt(r.amount) + ' บาท'),
+            badge('สถานะการชำระ', r.payStatus, getPayStatusClass(r.payStatus)),
+        ].join('');
+        html += section('💳 การชำระเงิน', 'border-indigo-200',
+            r.hasPaymentInfo ? paymentItems : warningBox('ยังไม่มีข้อมูลการชำระเงินในชีต PayIn'));
+
+        // ── หลักฐานการชำระเงิน ──
+        if (r.proof1 || r.proof2) {
+            const toImgUrl = url => {
+                if (!url) return '';
+                // กรณีที่เป็น Google Drive URL หรือ URL เต็ม
+                if (url.startsWith('http')) {
+                    if (url.includes('drive.google.com')) {
+                        const m = url.match(/[-\w]{25,}/);
+                        return m ? `https://lh3.googleusercontent.com/d/${m[0]}` : url;
+                    }
+                    return url;
+                }
+                
+                // สำหรับ Path ที่มาจาก AppSheet
+                let clean = url.replace(/\/\/+/g, '/');
+                if (clean.startsWith('/')) clean = clean.substring(1); 
+                
+                // ดึงชื่อ App จาก Path (โฟลเดอร์แรกสุด)
+                const appNameMatch = clean.match(/^([^\/]+)/);
+                const appName = appNameMatch ? appNameMatch[1] : 'CAR_CRM-691939189';
+                
+                // แปลง Path ของ Google Drive เป็นลิงก์ AppSheet API เพื่อให้เว็บดึงภาพมาแสดงได้
+                return `https://www.appsheet.com/template/gettablefileurl?appName=${encodeURIComponent(appName)}&tableName=PayIn&fileName=${encodeURIComponent(clean)}`;
+            };
+
+            const proofImgs = [r.proof1, r.proof2].filter(Boolean).map(url => {
+                const imgUrl = toImgUrl(url);
+                return `<a href="${esc(imgUrl)}" target="_blank" rel="noopener noreferrer">
+                    <img src="${esc(imgUrl)}" alt="หลักฐาน"
+                        class="rounded-lg border border-slate-200 object-cover w-full max-h-64 hover:opacity-90 transition-opacity"
+                        onerror="this.parentElement.innerHTML='<div class=\\'flex flex-col text-left\\'><span class=\\'text-xs text-red-400 font-semibold mb-1\\'>โหลดรูปไม่ได้</span><span class=\\'text-[10px] text-slate-400 break-all\\'>${esc(imgUrl)}</span></div>'">
+                </a>`;
+            }).join('');
+            const cols = [r.proof1, r.proof2].filter(Boolean).length === 1 ? '1' : '2';
+            html += section('🧾 หลักฐานการโอนเงิน', 'border-teal-200',
+                `<div class="px-4 py-3 grid grid-cols-${cols} gap-3">${proofImgs}</div>`);
+        }
+
+        // ── Warranty ──
+        const wRow = warantyMap[r.jobId] || warantyMap[normId(r.jobId)] || {};
+        const warrantyItems = [
+            r.warranty && r.warranty !== '-' ? row('รับประกันโดย', r.warranty) : null,
+            wRow['เลขที่ใบรับประกัน'] ? row('เลขที่ใบรับประกัน', tv(wRow['เลขที่ใบรับประกัน'], '')) : null,
+            wRow['ปีรับประกัน']       ? row('ปีรับประกัน',       tv(wRow['ปีรับประกัน'], ''))       : null,
+            wRow['วันที่เริ่ม']        ? row('วันที่เริ่ม',        tv(wRow['วันที่เริ่ม'], ''))        : null,
+            wRow['สิ้นสุด']           ? row('วันที่สิ้นสุด',      tv(wRow['สิ้นสุด'], ''))            : null,
+        ].filter(Boolean).join('');
+        html += section('🛡️ การรับประกัน', 'border-green-200',
+            warrantyItems || warningBox('ยังไม่มีข้อมูลการรับประกัน กรุณาตรวจสอบชีตการรับประกัน'));
+
+        // ── data sheet rows ──
+        const dataRows = r.dataRows || [];
+        const dataContent = dataRows.length ? `
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-xs">
+                    <thead class="bg-slate-50 text-slate-500">
+                        <tr>
+                            <th class="px-3 py-2 font-bold">ตำแหน่งติดตั้ง</th>
+                            <th class="px-3 py-2 font-bold">รุ่นฟิล์ม</th>
+                            <th class="px-3 py-2 font-bold text-center">กว้าง</th>
+                            <th class="px-3 py-2 font-bold text-center">ยาว</th>
+                            <th class="px-3 py-2 font-bold text-center">จำนวน</th>
+                            <th class="px-3 py-2 font-bold">ทีมช่าง</th>
+                            <th class="px-3 py-2 font-bold">เหตุผลขอตัดฟิล์ม</th>
+                            <th class="px-3 py-2 font-bold">หมายเหตุ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${dataRows.map(d => `
+                            <tr class="align-top">
+                                <td class="px-3 py-2 font-semibold text-slate-700">${esc(fv(d, ['ตำแหน่งติดตั้ง','ตำแหน่ง'], '-'))}</td>
+                                <td class="px-3 py-2 text-slate-800">${esc(fv(d, ['รุ่นฟิล์ม','ยี่ห้อ/รุ่นฟิล์ม','ยี่ห้อฟิล์ม'], '-'))}</td>
+                                <td class="px-3 py-2 text-center text-slate-700">${esc(fv(d, ['กว้าง','W','w'], '-'))}</td>
+                                <td class="px-3 py-2 text-center text-slate-700">${esc(fv(d, ['ยาว','H','h'], '-'))}</td>
+                                <td class="px-3 py-2 text-center font-semibold text-slate-900">${esc(fv(d, ['จำนวน','แผ่น'], '-'))}</td>
+                                <td class="px-3 py-2 text-slate-700">${esc(fv(d, ['ทีมช่าง','ช่าง'], '-'))}</td>
+                                <td class="px-3 py-2 text-slate-700">${esc(fv(d, ['เหตุผลขอตัดฟิล์ม','เหตุผล'], '-'))}</td>
+                                <td class="px-3 py-2 text-slate-500">${esc(fv(d, ['หมายเหตุ','Note','note'], '-'))}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        ` : warningBox('ยังไม่มีข้อมูลในชีต data สำหรับ JobID นี้');
+        html += section('📋 ข้อมูลจากชีต data', 'border-sky-200', dataContent);
+
+        document.getElementById('drawerBody').innerHTML = html;
+        document.getElementById('drawerOverlay').classList.remove('hidden');
+        document.getElementById('detailDrawer').classList.remove('translate-x-full');
+    }
+
+    function closeDrawer() {
+        document.getElementById('detailDrawer').classList.add('translate-x-full');
+        document.getElementById('drawerOverlay').classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+    // ─── UI STATE ─────────────────────────────────────────────────────────
+    function setUI(state) {
+        document.getElementById('loadingMessage').classList.toggle('hidden', state !== 'loading');
+        document.getElementById('errorMessage').classList.toggle('hidden', state !== 'error');
+        document.getElementById('tableWrapper').classList.toggle('hidden', state !== 'table');
+    }
+
+    // ─── INIT ─────────────────────────────────────────────────────────────
+    function setDefaultMonth() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+        document.getElementById('filterDateFrom').value = `${y}-${m}-01`;
+        document.getElementById('filterDateTo').value   = `${y}-${m}-${lastDay}`;
+    }
+
+    window.addEventListener('load', () => {
+        setDefaultMonth();
+        if (localStorage.getItem(LOGIN_KEY) === '1') {
+            document.getElementById('appContent').classList.remove('hidden');
+            fetchData();
+        } else {
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+        ['filterDateFrom','filterDateTo','filterSearch'].forEach(id => {
+            document.getElementById(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+        });
+    });
+    </script>
+</body>
+</html>
