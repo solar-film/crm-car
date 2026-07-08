@@ -1,0 +1,15 @@
+# Local data exports
+*.csv
+*.tsv
+
+# Temporary workspace files
+tmp/
+.codex-upload*/
+temp*.js
+*.tmp
+*.temp
+*.log
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
