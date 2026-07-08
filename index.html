@@ -570,6 +570,7 @@
                             <option value="claim">🔴 เคลม</option>
                             <option value="fix">🟠 งานแก้</option>
                         </select>
+                        <button type="button" id="showCancelledToggle" data-active="false" aria-pressed="false" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 whitespace-nowrap transition-colors">แสดงคิวที่ยกเลิก</button>
                         <input type="date" id="dateFilter" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto hidden">
                         <button id="clearDateBtn" class="text-xs text-red-500 hover:text-red-700 underline hidden whitespace-nowrap">ล้างตัวกรอง</button>
                     </div>
@@ -1861,7 +1862,7 @@
 
         const DOM_IDS = [
             'loadingMessage', 'tableContainer', 'errorMessage', 'lastUpdated', 'table-body',
-            'searchInput', 'dateFilter', 'datePreset', 'paymentStatusFilter', 'customerTypeFilter', 'clearDateBtn', 'jobModal', 'printPreviewModal',
+            'searchInput', 'dateFilter', 'datePreset', 'paymentStatusFilter', 'customerTypeFilter', 'showCancelledToggle', 'clearDateBtn', 'jobModal', 'printPreviewModal',
             'summaryFilteredLabel', 'summaryFilteredSales', 'summaryFilteredSalesExVat', 'summaryFilteredJobs',
             'summaryFilteredCard', 'summaryNewCard', 'summaryOldCard', 'summaryClaimCard', 'summaryFixCard',
             'summaryNewJobs', 'summaryNewSales', 'summaryOldJobs', 'summaryOldSales', 'summaryClaimJobs', 'summaryClaimSales',
@@ -2236,6 +2237,14 @@
             return normalizeHeader(job.status).includes(normalizeHeader('ยกเลิก'));
         }
 
+        function activeJobs(rows) {
+            return (rows || []).filter(job => !isCancelledJob(job));
+        }
+
+        function isSalesJob(job) {
+            return !isCancelledJob(job) && (isNewCustomerJob(job) || isOldCustomerJob(job));
+        }
+
         function isClaimCustomerJob(job) {
             const customerType = normalizeHeader(job.customerType);
             return customerType.includes(normalizeHeader('เคลม')) ||
@@ -2464,12 +2473,12 @@
         function renderDailySummary(filteredRows, dateRows, dateInput, presetValue) {
             const now = new Date();
             const todayStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543}`;
-            const todayRows = allData.filter(job => job.date === todayStr);
+            const todayRows = activeJobs(allData.filter(job => job.date === todayStr));
             const newRows = todayRows.filter(isNewCustomerJob);
             const oldRows = todayRows.filter(isOldCustomerJob);
             const claimRows = todayRows.filter(isClaimCustomerJob);
             const fixRows = todayRows.filter(isFixCustomerJob);
-            const todayRevenueRows = todayRows.filter(job => !isClaimCustomerJob(job) && !isFixCustomerJob(job));
+            const todayRevenueRows = todayRows.filter(isSalesJob);
 
             const filteredSales = sumJobSales(todayRevenueRows);
             const newSales = sumJobSales(newRows);
@@ -2757,7 +2766,7 @@
                         .join(' ')
                         .toLowerCase();
                     return job;
-                }).filter(job => job.id !== "-" && job.id !== "" && !isCancelledJob(job));
+                }).filter(job => job.id !== "-" && job.id !== "");
 
                 setVisible(dom.loadingMessage, false);
                 setVisible(dom.tableContainer, true);
@@ -2956,7 +2965,7 @@
             const sorted = [...data];
             const salesByDate = sorted.reduce((result, job) => {
                 const dateKey = job.date || '-';
-                const amount = (isNewCustomerJob(job) || isOldCustomerJob(job)) ? Number(job.price) || 0 : 0;
+                const amount = isSalesJob(job) ? Number(job.price) || 0 : 0;
                 result[dateKey] = (result[dateKey] || 0) + amount;
                 return result;
             }, {});
@@ -2987,8 +2996,8 @@
                 // ดึงคลาสสีสำหรับ Row ตามสถานะ
                 const rowClass = getRowBackgroundClass(job.status, job.colorStatus);
                 const timeDisplay = job.time && job.time !== '-' ? escapeHtml(job.time) : '-';
-                const salesAmount = (isNewCustomerJob(job) || isOldCustomerJob(job)) ? Number(job.price) || 0 : 0;
-                const damageAmount = (isClaimCustomerJob(job) || isFixCustomerJob(job)) ? Number(job.price) || 0 : 0;
+                const salesAmount = isSalesJob(job) ? Number(job.price) || 0 : 0;
+                const damageAmount = !isCancelledJob(job) && (isClaimCustomerJob(job) || isFixCustomerJob(job)) ? Number(job.price) || 0 : 0;
                 const filmModels = textValue(job.film, '-');
 
                 const plateWarning = '';
@@ -3091,10 +3100,11 @@
 
             // คำนวณผลรวม
             let totalBasePrice = 0, totalDiscount = 0, totalSales = 0, totalDamage = 0;
-            data.forEach(job => {
+            const activeData = activeJobs(data);
+            activeData.forEach(job => {
                 totalBasePrice += job.basePrice > 0 ? job.basePrice : 0;
                 totalDiscount  += job.discount  > 0 ? job.discount  : 0;
-                const sa = (isNewCustomerJob(job) || isOldCustomerJob(job)) ? Number(job.price) || 0 : 0;
+                const sa = isSalesJob(job) ? Number(job.price) || 0 : 0;
                 const da = (isClaimCustomerJob(job) || isFixCustomerJob(job)) ? Number(job.price) || 0 : 0;
                 totalSales  += sa;
                 totalDamage += da;
@@ -3102,7 +3112,7 @@
 
             html += `
             <tr class="border-t-2 border-slate-300 bg-slate-50 font-bold">
-                <td class="tl-cell px-3 py-2 text-[11px] text-slate-500 whitespace-nowrap" colspan="11">รวม ${data.length} รายการ</td>
+                <td class="tl-cell px-3 py-2 text-[11px] text-slate-500 whitespace-nowrap" colspan="11">รวม ${activeData.length} รายการ</td>
                 <td class="px-3 py-2 text-right text-[13px] text-slate-800 whitespace-nowrap">${totalBasePrice > 0 ? totalBasePrice.toLocaleString() : '-'}</td>
                 <td class="px-3 py-2 text-right text-[13px] ${totalDiscount > 0 ? 'text-orange-500' : 'text-slate-400'} whitespace-nowrap">${totalDiscount > 0 ? totalDiscount.toLocaleString() : '-'}</td>
                 <td class="px-3 py-2 text-right text-[14px] text-slate-900 whitespace-nowrap">${totalSales > 0 ? totalSales.toLocaleString() : '-'}</td>
@@ -3112,6 +3122,21 @@
             </tr>`;
 
             tbody.innerHTML = html;
+        }
+
+        function isShowCancelledEnabled() {
+            return dom.showCancelledToggle?.dataset.active === 'true';
+        }
+
+        function setShowCancelledToggleState(show) {
+            const btn = dom.showCancelledToggle;
+            if (!btn) return;
+            btn.dataset.active = show ? 'true' : 'false';
+            btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+            btn.textContent = show ? 'ซ่อนคิวที่ยกเลิก' : 'แสดงคิวที่ยกเลิก';
+            btn.className = show
+                ? 'rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100 whitespace-nowrap transition-colors'
+                : 'rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 whitespace-nowrap transition-colors';
         }
 
         function applyFilters() {
@@ -3225,8 +3250,13 @@
                 });
             }
 
+            const showCancelled = isShowCancelledEnabled();
+            if (!showCancelled) {
+                filteredData = filteredData.filter(job => !isCancelledJob(job));
+            }
+
             // จัดการปุ่ม Clear Date / Filters
-            if (presetValue !== 'today_pending' || searchTerm !== '' || presetValue === 'custom' || paymentFilter !== 'all' || typeFilter !== 'all') {
+            if (presetValue !== 'today_pending' || searchTerm !== '' || presetValue === 'custom' || paymentFilter !== 'all' || typeFilter !== 'all' || showCancelled) {
                 dom.clearDateBtn.classList.remove('hidden');
             } else {
                 dom.clearDateBtn.classList.add('hidden');
@@ -3334,6 +3364,14 @@
             if (dom.customerTypeFilter) {
                 dom.customerTypeFilter.addEventListener('change', applyFilters);
             }
+
+            if (dom.showCancelledToggle) {
+                setShowCancelledToggleState(false);
+                dom.showCancelledToggle.addEventListener('click', () => {
+                    setShowCancelledToggleState(!isShowCancelledEnabled());
+                    applyFilters();
+                });
+            }
             
             dom.clearDateBtn.addEventListener('click', () => {
                 dom.datePreset.value = 'today_pending';
@@ -3341,6 +3379,7 @@
                 dom.searchInput.value = '';
                 if (dom.paymentStatusFilter) dom.paymentStatusFilter.value = 'all';
                 if (dom.customerTypeFilter) dom.customerTypeFilter.value = 'all';
+                setShowCancelledToggleState(false);
                 applyFilters();
             });
 
@@ -4014,7 +4053,7 @@
             btn.disabled = true;
             btn.textContent = 'กำลังบันทึก...';
             try {
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
                 const result = await res.json();
                 if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
                 okEl.textContent = `บันทึกสำเร็จ ${rows.length} รายการ`;
@@ -4454,7 +4493,7 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...';
 
             try {
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     closeBookingModal();
@@ -4544,7 +4583,7 @@
                     recordId: jobId,
                     'Status': newStatus
                 };
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     // อัปเดตข้อมูลใน memory
@@ -4776,7 +4815,7 @@
             }
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
@@ -4893,7 +4932,7 @@
             }
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
@@ -5018,7 +5057,7 @@
             if (startEl && startEl.name) payload[startEl.name] = normalizeWarrantyDateForSheet(startEl.value);
             if (endEl && endEl.name) payload[endEl.name] = normalizeWarrantyDateForSheet(endEl.value);
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
@@ -5041,6 +5080,21 @@
 
         // ============ Apps Script URL (ใช้ร่วมกันทุก form) ============
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';  // ← วาง URL ที่นี่หลัง Deploy
+        const WRITE_TOKEN_KEY = 'carCrmWriteToken';
+
+        function getWriteToken() {
+            let token = localStorage.getItem(WRITE_TOKEN_KEY) || '';
+            if (!token) {
+                token = (window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
+                if (token) localStorage.setItem(WRITE_TOKEN_KEY, token);
+            }
+            if (!token) throw new Error('ไม่พบ Write Token');
+            return token;
+        }
+
+        function withWriteToken(payload) {
+            return { ...payload, token: getWriteToken() };
+        }
 
         function generateSizeId() {
             const now = new Date();
@@ -5083,7 +5137,7 @@
             const payload = { sheetName: 'ขนาดกระจก', JobID: job?.id||'', 'รุ่นรถยนต์': job?.carModel||'' };
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     okEl.textContent=`บันทึกสำเร็จ! ID: ${data.id}`;
@@ -5142,7 +5196,7 @@
             const payload = { sheetName: 'Detail_Installer', JobID: job?.id||'' };
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
                 const data = await res.json();
                 if (data.success) {
                     okEl.textContent=`บันทึกสำเร็จ! ID: ${data.id}`;
