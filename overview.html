@@ -489,10 +489,10 @@
                         <article class="premium-card p-6">
                             <div class="mb-6 flex items-center gap-3">
                                 <div class="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                                    <i class="ph-bold ph-medal"></i>
+                                    <i class="ph-bold ph-car-profile"></i>
                                 </div>
                                 <div>
-                                    <h2 class="text-base font-bold text-slate-700">อันดับยอดขายพนักงาน</h2>
+                                    <h2 class="text-base font-bold text-slate-700">10 อันดับรถยนต์</h2>
                                     <p id="salesRankingPeriod" class="period-chip mt-2">ข้อมูลเดือนที่เลือก</p>
                                 </div>
                             </div>
@@ -515,7 +515,7 @@
                         <article class="premium-card p-6">
                             <div class="mb-6 flex items-center gap-3">
                                 <div class="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-500">
-                                    <i class="ph-bold ph-car"></i>
+                                    <i class="ph-bold ph-package"></i>
                                 </div>
                                 <div>
                                     <h2 class="text-base font-bold text-slate-700">แพ็กเกจติดตั้ง</h2>
@@ -1447,9 +1447,9 @@
             renderDonutChart(dom.contactDonutChart, contactChannelItems, item => item.value, 'ครั้ง', contactSheetName ? 'ไม่มีข้อมูล' : 'ไม่พบชีตสถิติ');
             renderRankList(dom.contactChannels, contactChannelItems, item => `${formatMoney(item.value)} ครั้ง`, contactSheetName ? 'ไม่มีข้อมูลในช่วงที่เลือก' : 'ไม่พบชีตสถิติ');
 
-            renderRankList(dom.salesRanking, topItems(groupSum(revenueRows, item => item.sales, item => removeVat(item.price)), 6), item => `฿${formatMoney(item.value)}`);
-            renderRankList(dom.filmRanking, topItems(groupSum(activeBookingRows, item => item.film), 6), item => `${item.count} คิว`);
-            renderRankList(dom.installRanking, topItems(groupSum(activeBookingRows, item => item.installType, item => item.price), 6), item => `${item.count} คิว`);
+            renderRankList(dom.salesRanking, topItems(groupSum(activeBookingRows, item => item.carModel), 10), item => `${item.count} คัน`);
+            renderRankList(dom.filmRanking, topItems(groupSum(activeBookingRows, item => item.film), 10), item => `${item.count} คัน`);
+            renderRankList(dom.installRanking, topItems(groupSum(activeBookingRows, item => item.installType, item => item.price), 10), item => `${item.count} คิว`);
         }
 
         async function fetchOverviewData() {
