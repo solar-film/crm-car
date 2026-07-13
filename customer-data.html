@@ -495,7 +495,7 @@
                                 <p class="text-sm font-medium text-slate-500" id="tableCount">กำลังโหลด...</p>
                             </div>
                             <div class="relative w-full sm:w-[28rem] xl:max-w-md">
-                                <input type="text" id="searchInput" placeholder="ค้นหาจากชื่อลูกค้า หรือเบอร์โทร..." 
+                                <input type="text" id="searchInput" placeholder="ค้นหาจาก ID, ชื่อลูกค้า หรือเบอร์โทร..." 
                                     class="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                                     oninput="filterTable()">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -866,11 +866,13 @@
             }
 
             const filtered = allCustomers.filter(c => {
+                const id = String(c.id || '').toLowerCase();
                 const name = String(c.name || '').toLowerCase();
                 const phone = String(c.phone || '').toLowerCase();
                 const phoneClean = String(c.phoneClean || '');
                 const address = String(c.address || '').toLowerCase();
-                return name.includes(term) ||
+                return id.includes(term) ||
+                       name.includes(term) ||
                        phone.includes(term) ||
                        address.includes(term) ||
                        (phoneTerm.length > 0 && phoneClean.includes(phoneTerm));
