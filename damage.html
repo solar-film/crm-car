@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -52,11 +53,12 @@
 
         @media print {
             @page {
-                size: A4 portrait;
+                size: A4 landscape;
                 margin: 8mm;
             }
             body {
                 background-color: white !important;
+                zoom: 0.75;
             }
             [data-car-crm-sidebar],
             #loginScreen,
@@ -65,7 +67,9 @@
             input,
             select,
             #installerFilterContainer,
-            #reasonFilterContainer {
+            #reasonFilterContainer,
+            #installerDetailSection,
+            #filmDetailSection {
                 display: none !important;
             }
             main {
@@ -76,11 +80,11 @@
             }
             .damage-table {
                 min-width: 100% !important;
-                font-size: 11px !important;
+                font-size: 10px !important;
                 width: 100% !important;
             }
             .damage-table th, .damage-table td {
-                padding: 4px 6px !important;
+                padding: 2px 4px !important;
             }
             #tableWrap, .overflow-x-auto {
                 overflow: visible !important;
@@ -125,6 +129,20 @@
             details[open] summary {
                 border-bottom: 1px solid #e2e8f0;
             }
+        }
+        .is-saving-png .damage-table th,
+        .is-saving-png .damage-table td {
+            padding-top: 6px !important;
+            padding-bottom: 6px !important;
+        }
+        .is-saving-png .damage-table td div.mt-1 {
+            margin-top: 2px !important;
+        }
+        .is-saving-png main {
+            padding: 16px !important;
+        }
+        .is-saving-png .mb-8 {
+            margin-bottom: 16px !important;
         }
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
@@ -308,10 +326,14 @@
                         <h1 class="text-lg font-semibold text-slate-800">ตารางรายการความเสียหาย</h1>
                         <p id="lastUpdated" class="mt-1 text-sm text-slate-500">ดึงจาก Bookings ที่ Pro_ID = Mistake และเชื่อม data ด้วย JobID</p>
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
+                    <div id="actionButtonsArea" class="flex items-center gap-2 shrink-0">
                         <button type="button" onclick="window.print()" class="flex items-center justify-center whitespace-nowrap rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
                             <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                             พิมพ์
+                        </button>
+                        <button type="button" onclick="saveAsPng()" class="flex items-center justify-center whitespace-nowrap rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-100">
+                            <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            Save PNG
                         </button>
                         <button type="button" onclick="fetchDamageData()" class="flex items-center justify-center whitespace-nowrap rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100">
                             <svg class="mr-1.5 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -320,7 +342,7 @@
                     </div>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3">
+                <div id="filterArea" class="flex flex-wrap items-center gap-3">
                     <div class="flex items-center">
                         <label for="periodFilter" class="mr-2 whitespace-nowrap text-sm font-medium text-slate-600">ช่วง:</label>
                         <select id="periodFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 w-36">
@@ -1166,8 +1188,8 @@
                 return '<span class="text-sm font-semibold text-slate-500">-</span>';
             }
             return `
-                <span class="inline-flex max-w-[11rem] items-center rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-sm font-medium text-sky-800 shadow-sm">
-                    <span class="truncate">${escapeHtml(installer)}</span>
+                <span class="inline-block rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-sm font-medium text-sky-800 shadow-sm" style="word-break: break-word;">
+                    ${escapeHtml(installer)}
                 </span>
             `;
         }
@@ -1520,6 +1542,60 @@
                     <td colspan="2" class="px-6 py-3"></td>
                 </tr>
             `;
+        }
+
+        async function saveAsPng() {
+            document.body.classList.add('is-saving-png');
+            const elementsToHide = document.querySelectorAll('#filterArea, #actionButtonsArea, #loginScreen');
+            
+            // Store original display values
+            const originalDisplays = new Map();
+            elementsToHide.forEach(el => {
+                originalDisplays.set(el, el.style.display);
+                el.style.display = 'none';
+            });
+
+            // Ensure detail sections are open for the screenshot
+            const installerDetail = document.getElementById('installerDetailSection');
+            const filmDetail = document.getElementById('filmDetailSection');
+            const installerWasOpen = installerDetail.open;
+            const filmWasOpen = filmDetail.open;
+            installerDetail.open = true;
+            filmDetail.open = true;
+            
+            const mainContent = document.querySelector('main');
+            
+            try {
+                const canvas = await html2canvas(mainContent, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#f8fafc', // slate-50 to match page wrapper if needed, or white
+                    onclone: (clonedDoc) => {
+                        const truncates = clonedDoc.querySelectorAll('.truncate');
+                        truncates.forEach(el => {
+                            el.classList.remove('truncate');
+                            el.style.whiteSpace = 'normal';
+                            el.style.wordBreak = 'break-word';
+                        });
+                    }
+                });
+                
+                const link = document.createElement('a');
+                link.download = `รายงานความเสียหาย_${new Date().toISOString().slice(0,10)}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error("Error generating PNG:", err);
+                alert("เกิดข้อผิดพลาดในการสร้างไฟล์ PNG");
+            } finally {
+                // Restore original display values
+                elementsToHide.forEach(el => {
+                    el.style.display = originalDisplays.get(el);
+                });
+                installerDetail.open = installerWasOpen;
+                filmDetail.open = filmWasOpen;
+                document.body.classList.remove('is-saving-png');
+            }
         }
 
         async function fetchDamageData() {
