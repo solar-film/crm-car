@@ -260,6 +260,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">รุ่นรถยนต์</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ทะเบียนรถ</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ตำแหน่งติดตั้ง</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">รุ่นฟิล์ม</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">เลขที่บิล/ใบเสร็จ</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold whitespace-nowrap">ประเภทการชำระ</th>
                                 <th class="px-4 py-3 text-right text-xs font-semibold whitespace-nowrap">มูลค่าสินค้า</th>
@@ -804,6 +805,7 @@
                 <td class="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">${esc(r.carModel)}</td>
                 <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap">${esc(r.plate)}</td>
                 <td class="px-4 py-3 text-xs text-slate-600 max-w-[160px] truncate" title="${esc(r.installType)}">${esc(r.installType)}</td>
+                <td class="px-4 py-3 text-xs text-slate-600 max-w-[160px] truncate" title="${esc(r.film)}">${esc(r.film)}</td>
                 <td class="px-4 py-3 text-xs text-slate-600 whitespace-nowrap font-mono">
                     <span class="inline-flex items-center gap-2">
                         <span>${esc(r.billNo)}</span>
@@ -825,7 +827,7 @@
         // Footer totals
         tfoot.innerHTML = `
             <tr>
-                <td colspan="6" class="px-4 py-3 text-xs font-bold text-slate-500 text-right">รวมทั้งหมด ${rows.length.toLocaleString('th-TH')} รายการ</td>
+                <td colspan="7" class="px-4 py-3 text-xs font-bold text-slate-500 text-right">รวมทั้งหมด ${rows.length.toLocaleString('th-TH')} รายการ</td>
                 <td colspan="2" class="px-4 py-3"></td>
                 <td class="px-4 py-3 text-right text-sm font-extrabold text-slate-900 whitespace-nowrap">${fmt(rows.reduce((s,r)=>s+r.productVal,0))}</td>
                 <td class="px-4 py-3 text-right text-sm font-extrabold text-amber-700 whitespace-nowrap">${fmt(totalDisc)}</td>
@@ -838,7 +840,7 @@
 
     // ─── EXPORT EXCEL ───────────────────────────────────────────────────────
     function exportExcel() {
-        const headers = ['#','วันที่ติดตั้ง','เวลานัด','ชื่อลูกค้า','ประเภทลูกค้า','รุ่นรถยนต์','ทะเบียนรถ','ตำแหน่งติดตั้ง','เลขที่บิล/ใบเสร็จ','ประเภทการชำระ','มูลค่าสินค้า','ส่วนลด','ยอดเงิน (บาท)','ความเสียหาย','สถานะการชำระ'];
+        const headers = ['#','วันที่ติดตั้ง','เวลานัด','ชื่อลูกค้า','ประเภทลูกค้า','รุ่นรถยนต์','ทะเบียนรถ','ตำแหน่งติดตั้ง','รุ่นฟิล์ม','เลขที่บิล/ใบเสร็จ','ประเภทการชำระ','มูลค่าสินค้า','ส่วนลด','ยอดเงิน (บาท)','ความเสียหาย','สถานะการชำระ'];
         const rows = allRows; // export all
         const data = [
             headers,
@@ -846,7 +848,7 @@
                 const dmg = isDamageJob(r.custType);
                 return [
                     i+1, r.installDate, r.apptTime, r.custName, r.custType, r.carModel, r.plate,
-                    r.installType, r.billNo, r.payType,
+                    r.installType, r.film, r.billNo, r.payType,
                     r.productVal, r.discount,
                     dmg ? 0 : r.amount, dmg ? r.amount : 0,
                     r.payStatus
