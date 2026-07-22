@@ -394,6 +394,7 @@
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
     <script src="sidebar.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="text-slate-800 auth-locked">
     <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -579,10 +580,16 @@
                         <input type="text" id="searchInput" placeholder="ค้นหาชื่อลูกค้า, ทะเบียน, รหัสงาน, เซลล์..." class="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full">
                         <svg class="w-5 h-5 text-slate-400 absolute left-3 sm:left-5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
-                    <button onclick="fetchGoogleSheetData()" class="flex justify-center items-center px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors whitespace-nowrap">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        รีเฟรช
-                    </button>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="exportToExcel()" class="flex-1 sm:flex-none justify-center items-center px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors whitespace-nowrap flex">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            ส่งออก Excel
+                        </button>
+                        <button onclick="fetchGoogleSheetData()" class="flex-1 sm:flex-none justify-center items-center px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors whitespace-nowrap flex">
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            รีเฟรช
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -5239,6 +5246,30 @@
             setTimeout(() => {
                 modal.classList.add('hidden');
             }, 300);
+        }
+
+        function exportToExcel() {
+            const tableBody = document.getElementById('table-body');
+            if (!tableBody || tableBody.children.length === 0) {
+                showAlert('คำเตือน', 'ไม่มีข้อมูลสำหรับส่งออก', 'error');
+                return;
+            }
+            
+            try {
+                const table = tableBody.parentNode;
+                const wb = XLSX.utils.table_to_book(table, {sheet: "Data", raw: true});
+                
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                const filename = `car_crm_export_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                
+                showAlert('สำเร็จ', 'ส่งออกข้อมูล Excel เรียบร้อยแล้ว', 'success');
+            } catch (err) {
+                console.error('Export Error:', err);
+                showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถส่งออกข้อมูลได้', 'error');
+            }
         }
     </script>
 </body>
