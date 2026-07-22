@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script>
         tailwind.config = {
@@ -188,6 +189,10 @@
                             <button type="button" id="refreshBtn" title="รีเฟรชข้อมูล" class="flex h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-blue-600">
                                 <i class="ph-bold ph-arrows-clockwise text-base"></i>
                                 <span class="hidden sm:inline">รีเฟรช</span>
+                            </button>
+                            <button type="button" id="exportBtn" title="ดาวน์โหลดข้อมูลเป็น Excel" class="flex h-[38px] items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-emerald-700 shadow-sm transition hover:bg-emerald-50 hover:text-emerald-800">
+                                <i class="ph-bold ph-file-xls text-base"></i>
+                                <span class="hidden sm:inline">ส่งออก</span>
                             </button>
                             <button type="button" id="tableToggleBtn" class="flex h-[38px] items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
                                 <i class="ph-bold ph-table text-base"></i>
@@ -397,7 +402,7 @@
             'loginForm', 'loginUser', 'loginPass', 'loginError',
             'lastUpdated', 'loadingMessage', 'errorMessage', 'content',
             'dayInput', 'monthInput', 'yearInput', 'startInput', 'endInput',
-            'dayControl', 'monthControl', 'yearControl', 'rangeControl', 'refreshBtn', 'tableToggleBtn',
+            'dayControl', 'monthControl', 'yearControl', 'rangeControl', 'refreshBtn', 'exportBtn', 'tableToggleBtn',
             'contactTotal', 'contactChannelList',
             'newCustomerCount', 'newCustomerSales', 'newCustomerSalesExVat', 'newSuccessRate', 'newChannelList',
             'claimCount', 'claimDamage', 'claimDamageRate', 'claimBreakdownList',
@@ -1375,6 +1380,68 @@
             }
         }
 
+        function exportToExcel() {
+            if (typeof XLSX === 'undefined') {
+                alert('กำลังโหลดไลบรารีสำหรับสร้างไฟล์ Excel กรุณาลองใหม่อีกครั้ง');
+                return;
+            }
+
+            const range = selectedRange();
+            const rows = buildSummaryRows(range);
+            
+            if (range.emptySelection || !rows.length) {
+                alert('ไม่มีข้อมูลให้ส่งออก (กรุณาเลือกช่วงเวลาที่มีข้อมูล)');
+                return;
+            }
+
+            const totals = rows.reduce((acc, row) => {
+                acc.contacts += row.contacts;
+                acc.newCustomers += row.newCustomers;
+                acc.sales += row.sales;
+                acc.claims += row.claims;
+                acc.claimValue += row.claimValue;
+                acc.fixes += row.fixes;
+                acc.fixValue += row.fixValue;
+                return acc;
+            }, { contacts: 0, newCustomers: 0, sales: 0, claims: 0, claimValue: 0, fixes: 0, fixValue: 0 });
+
+            const exportData = [];
+            exportData.push(['วันที่', 'การติดต่อ', 'ลูกค้าใหม่', 'ยอดขายรวม', 'ยอดถอด VAT', 'รถเคลม', 'มูลค่าเคลม', 'แก้ในวัน', 'มูลค่าแก้ในวัน']);
+
+            rows.forEach(row => {
+                exportData.push([
+                    row.label,
+                    row.contacts,
+                    row.newCustomers,
+                    row.sales,
+                    Math.round(row.sales / 1.07),
+                    row.claims,
+                    row.claimValue,
+                    row.fixes,
+                    row.fixValue
+                ]);
+            });
+
+            exportData.push([
+                'รวมทั้งหมด',
+                totals.contacts,
+                totals.newCustomers,
+                totals.sales,
+                Math.round(totals.sales / 1.07),
+                totals.claims,
+                totals.claimValue,
+                totals.fixes,
+                totals.fixValue
+            ]);
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Summary");
+            
+            const fileName = `สรุปยอดขาย_${range.label.replace(/\\s+/g, '_')}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
         function setupDefaults() {
             const today = new Date();
             const currentMonth = currentMonthInput();
@@ -1397,6 +1464,7 @@
                 input.addEventListener('change', renderPage);
             });
             dom.refreshBtn.addEventListener('click', () => loadData(true));
+            dom.exportBtn.addEventListener('click', exportToExcel);
             dom.tableToggleBtn.addEventListener('click', () => {
                 tableVisible = !tableVisible;
                 renderPage();
