@@ -4633,7 +4633,10 @@
                     if (!Number.isNaN(hour) && !Number.isNaN(minute)) {
                         const returnDate = new Date();
                         returnDate.setHours(hour + addHours, minute, 0, 0);
-                        returnTime = `${returnDate.getHours()}:${String(returnDate.getMinutes()).padStart(2, '0')}`;
+                        const maxReturnDate = new Date(returnDate);
+                        maxReturnDate.setHours(17, 0, 0, 0);
+                        const displayReturnDate = returnDate > maxReturnDate ? maxReturnDate : returnDate;
+                        returnTime = `${displayReturnDate.getHours()}:${String(displayReturnDate.getMinutes()).padStart(2, '0')}`;
                     }
                 }
                 setVisible(dom['p-noteContainer'], true); setText('p-note', job.note);
