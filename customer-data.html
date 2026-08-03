@@ -285,7 +285,7 @@
                     <input type="hidden" id="bk-sales" required>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" data-val="พี่เมย์" onclick="setBtnGroup('bk-sales', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">พี่เมย์</button>
-                        <button type="button" data-val="นัท" onclick="setBtnGroup('bk-sales', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">นัท</button>
+                        <button type="button" data-val="พลอย" onclick="setBtnGroup('bk-sales', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50">พลอย</button>
                     </div>
                 </div>
 
@@ -688,7 +688,8 @@
                     if (!id || !String(id).trim()) continue;
                     const key = String(id).trim();
                     const get = (k) => (idx[k] !== -1 ? (r[idx[k]] || '') : '');
-                    if (isCancelledStatus(get('status'))) continue;
+                    // แสดงรวมเคสทั้งหมด (รวมเลิกด้วย) เฉพาะหน้านี้
+                    // if (isCancelledStatus(get('status'))) continue;
                     counts[key] = (counts[key] || 0) + 1;
                     if (!byCust[key]) byCust[key] = [];
                     byCust[key].push({
@@ -1480,7 +1481,7 @@
                         <tfoot class="bg-slate-50 border-t-2 border-slate-200">
                             <tr>
                                 <td colspan="6" class="px-3 py-3 text-right text-xs font-semibold text-slate-600">ยอดขายรวม</td>
-                                <td class="px-3 py-3 text-right font-mono font-bold text-emerald-700">${formatNum(sorted.reduce((sum, c) => sum + (parseFloat(String(c.sales).replace(/,/g, '')) || 0), 0))}</td>
+                                <td class="px-3 py-3 text-right font-mono font-bold text-emerald-700">${formatNum(sorted.reduce((sum, c) => isCancelledStatus(c.status) ? sum : sum + (parseFloat(String(c.sales).replace(/,/g, '')) || 0), 0))}</td>
                                 <td colspan="3"></td>
                             </tr>
                         </tfoot>
