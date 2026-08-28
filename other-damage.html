@@ -27,7 +27,7 @@
         }
 
         .damage-table {
-            min-width: 1360px;
+            min-width: 1460px;
         }
 
         .damage-table th,
@@ -272,6 +272,7 @@
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-slate-500">ลูกค้า</th>
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-slate-500">ข้อมูลรถ</th>
                             <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-slate-500">ความเสียหาย</th>
+                            <th scope="col" class="px-5 py-3 text-left text-xs font-semibold text-slate-500">ช่าง</th>
                             <th scope="col" class="px-5 py-3 text-right text-xs font-semibold text-slate-500">มูลค่า</th>
                         </tr>
                     </thead>
@@ -904,7 +905,7 @@
             renderSummary(rows);
 
             if (!rows.length) {
-                dom.damageTableBody.innerHTML = '<tr><td colspan="7" class="px-5 py-10 text-center text-slate-500">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
+                dom.damageTableBody.innerHTML = '<tr><td colspan="8" class="px-5 py-10 text-center text-slate-500">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>';
                 dom.damageTableFooter.innerHTML = '';
                 return;
             }
@@ -925,7 +926,7 @@
                     </td>
                     <td class="px-5 py-4">
                         <div class="text-sm font-semibold text-slate-900">${escapeHtml(row.customerName || '-')}</div>
-                        <div class="mt-1 text-xs text-slate-500">${escapeHtml(row.reference || `รายการ ${row.fallbackNo}`)}</div>
+                        ${row.reference ? `<div class="mt-1 text-xs text-slate-500">${escapeHtml(row.reference)}</div>` : ''}
                     </td>
                     <td class="px-5 py-4">
                         <div class="text-sm font-medium text-slate-900">${escapeHtml(row.plate || 'ไม่ระบุทะเบียน')}</div>
@@ -935,6 +936,7 @@
                         <div class="text-sm font-medium text-slate-900">${escapeHtml(row.damageItem || '-')}</div>
                         ${row.note ? `<div class="mt-1 max-w-sm text-xs leading-5 text-slate-500">${escapeHtml(row.note)}</div>` : ''}
                     </td>
+                    <td class="whitespace-nowrap px-5 py-4 text-sm font-medium text-slate-700">${escapeHtml(row.mechanic || '-')}</td>
                     <td class="whitespace-nowrap px-5 py-4 text-right text-sm font-bold ${row.amount > 0 ? 'text-rose-600' : 'text-slate-400'}">${row.amount > 0 ? `฿${formatMoney(row.amount)}` : '-'}</td>
                 </tr>
             `;
@@ -943,7 +945,7 @@
             const totalAmount = rows.reduce((sum, row) => sum + row.amount, 0);
             dom.damageTableFooter.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-5 py-4 text-right text-sm font-bold text-slate-700">รวม ${rows.length.toLocaleString('th-TH')} รายการ</td>
+                    <td colspan="7" class="px-5 py-4 text-right text-sm font-bold text-slate-700">รวม ${rows.length.toLocaleString('th-TH')} รายการ</td>
                     <td class="whitespace-nowrap px-5 py-4 text-right text-base font-extrabold text-rose-600">฿${formatMoney(totalAmount)}</td>
                 </tr>
             `;
