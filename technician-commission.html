@@ -613,6 +613,39 @@
             };
         }
 
+        function parseCommissionCycleStart(value) {
+            const match = textValue(value).match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{2,4})/);
+            if (!match) return null;
+
+            let year = parseInt(match[3], 10);
+            // รอบคอมในชีตบันทึกเป็น พ.ศ. แบบ 2 หลัก เช่น 69 = 2569
+            if (year < 100) year = year >= 50 ? year + 2500 : year + 2000;
+            if (year > 2400) year -= 543;
+
+            const date = new Date(year, parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+            return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        function otherDamageRecordedDate(row) {
+            return parseDate(findField(row, [
+                'วันที่ลงรายการ',
+                'วันที่บันทึก',
+                'วันที่เกิดเหตุ',
+                'วันที่ติดตั้ง',
+                'วันที่',
+                'Date'
+            ]));
+        }
+
+        function otherDamageCommissionMonthKey(row) {
+            const commissionCycle = findField(row, ['นำไปหักคอมรอบ', 'รอบหักคอม', 'รอบหักค่าคอม']);
+            const cycleStart = parseCommissionCycleStart(commissionCycle);
+
+            // ให้รอบในชีตเป็นแหล่งข้อมูลหลัก เช่น 26/7/69 - 25/8/69 = รอบ 2026-08
+            // รายการเก่าที่ยังไม่มีรอบหักคอมจึงค่อยคำนวณจากวันที่ลงรายการ
+            return monthKeyFromDate(cycleStart || otherDamageRecordedDate(row));
+        }
+
         function formatPeriodDate(date, includeYear = false) {
             const options = { day: 'numeric', month: 'short' };
             if (includeYear) options.year = 'numeric';
@@ -1053,18 +1086,16 @@
             
             let totalOtherDamage = 0;
             rawOtherDamage.forEach(row => {
-                const dateText = findField(row, ['วันที่', 'วันที่เกิดเหตุ', 'วันที่บันทึก', 'วันที่ติดตั้ง', 'Date']);
-                const date = parseDate(dateText);
-                if (!date) return;
+                const recordedDate = otherDamageRecordedDate(row);
                 
                 let include = false;
                 if (filterMode === 'month') {
                     const month = dom.monthFilter.value;
-                    if (!month || monthKeyFromDate(date) === month) include = true;
+                    if (!month || otherDamageCommissionMonthKey(row) === month) include = true;
                 } else if (filterMode === 'custom') {
                     const start = parseInputDate(dom.startDateInput.value);
                     const end = parseInputDate(dom.endDateInput.value);
-                    if ((!start || date >= start) && (!end || date <= end)) include = true;
+                    if (recordedDate && (!start || recordedDate >= start) && (!end || recordedDate <= end)) include = true;
                 }
                 
                 if (include) {
