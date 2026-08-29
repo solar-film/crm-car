@@ -38,6 +38,7 @@
 
         .damage-table td {
             color: #0f172a;
+            line-height: 1.25;
         }
 
         .damage-table .group-row td {
@@ -1170,14 +1171,14 @@
                 return `
                     <div class="text-right text-slate-400">
                         <span class="text-sm font-medium">-</span>
-                        ${sizeText && sizeText !== '-' ? `<div class="mt-1 text-xs leading-relaxed text-slate-500">${renderSizeText(sizeText)}</div>` : ''}
+                        ${sizeText && sizeText !== '-' ? `<div class="mt-0.5 text-xs leading-tight text-slate-500">${renderSizeText(sizeText)}</div>` : ''}
                     </div>
                 `;
             }
             return `
                 <div class="text-right">
                     <div>${value.toLocaleString('th-TH', { maximumFractionDigits: 2 })}</div>
-                    ${sizeText && sizeText !== '-' ? `<div class="mt-1 text-xs leading-relaxed text-slate-500">${renderSizeText(sizeText)}</div>` : ''}
+                    ${sizeText && sizeText !== '-' ? `<div class="mt-0.5 text-xs leading-tight text-slate-500">${renderSizeText(sizeText)}</div>` : ''}
                 </div>
             `;
         }
@@ -1188,7 +1189,7 @@
                 return '<span class="text-sm font-semibold text-slate-500">-</span>';
             }
             return `
-                <span class="inline-block rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1 text-sm font-medium text-sky-800 shadow-sm" style="word-break: break-word;">
+                <span class="inline-block rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-sm font-medium text-sky-800 shadow-sm" style="word-break: break-word;">
                     ${escapeHtml(installer)}
                 </span>
             `;
@@ -1208,7 +1209,7 @@
 
             return bookingRows.flatMap(booking => {
                 const status = String(findField(booking, ['Status', 'สถานะ'])).replace(/[\s._\-()（）/\\]+/g, '').toLowerCase().replace(/[^a-z0-9ก-๙]/g, '');
-                if (status === 'ยกเลิก' || status === 'ยกเลิกการติดตั้ง') return [];
+                if (status.includes('ยกเลิก')) return [];
 
                 const promotion = findField(booking, ['Pro_ID', 'โปรโมชั่น']);
                 const normalizedPromo = normalizeLookupId(promotion);
@@ -1356,12 +1357,12 @@
             const label = escapeHtml(value || '-');
             const kind = getCustomerTypeKind(value);
             if (kind === 'claim') {
-                return `<span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700">${label}</span>`;
+                return `<span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">${label}</span>`;
             }
             if (kind === 'repair') {
-                return `<span class="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700">${label}</span>`;
+                return `<span class="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-xs font-semibold text-sky-700">${label}</span>`;
             }
-            return `<span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">${label}</span>`;
+            return `<span class="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-semibold text-slate-600">${label}</span>`;
         }
 
         function aggregateByField(rows, field) {
@@ -1493,28 +1494,28 @@
                     const detailClass = row.hasDetail ? 'hover:bg-blue-50/40' : 'bg-yellow-50 hover:bg-yellow-100';
                     return `
                     <tr class="${detailClass}">
-                        <td class="whitespace-nowrap px-6 py-4">
+                        <td class="whitespace-nowrap px-6 py-2">
                             <div class="text-sm font-medium text-slate-900">${escapeHtml(row.dateText)}</div>
                             <div class="text-sm text-slate-500">${escapeHtml(row.monthText)}</div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-2">
                             <div class="whitespace-nowrap text-sm font-semibold text-slate-900">${escapeHtml(row.customerName)}</div>
-                            <div class="mt-1 whitespace-nowrap text-xs font-medium text-blue-700">${escapeHtml(row.jobId)}</div>
+                            <div class="mt-0.5 whitespace-nowrap text-xs font-medium text-blue-700">${escapeHtml(row.jobId)}</div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-2">
                             <div class="whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(row.plate || '-')}</div>
-                            <div class="mt-1 text-xs text-slate-500">${escapeHtml(row.carModel || '-')}</div>
+                            <div class="mt-0.5 text-xs text-slate-500">${escapeHtml(row.carModel || '-')}</div>
                         </td>
-                        <td class="px-6 py-4 w-36 max-w-[9rem]">
+                        <td class="px-6 py-2 w-36 max-w-[9rem]">
                             ${renderCustomerTypeBadge(row.customerType)}
-                            <div class="mt-1 text-xs font-semibold text-slate-600 truncate" title="${escapeHtml(row.film || '-')}">${escapeHtml(row.film || '-')}</div>
+                            <div class="mt-0.5 text-xs font-semibold text-slate-600 truncate" title="${escapeHtml(row.film || '-')}">${escapeHtml(row.film || '-')}</div>
                         </td>
-                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm text-slate-700">${renderSqfCell(row.sqf, row.glassSize)}</td>
-                        <td class="money-cell whitespace-nowrap px-6 py-4 text-right text-sm">฿${formatMoney(row.damageValue)}</td>
-                        <td class="whitespace-nowrap px-6 py-4 text-sm">${renderInstallerCell(row.installer)}</td>
-                        <td class="px-6 py-4">
+                        <td class="whitespace-nowrap px-6 py-2 text-right text-sm text-slate-700">${renderSqfCell(row.sqf, row.glassSize)}</td>
+                        <td class="money-cell whitespace-nowrap px-6 py-2 text-right text-sm">฿${formatMoney(row.damageValue)}</td>
+                        <td class="whitespace-nowrap px-6 py-2 text-sm">${renderInstallerCell(row.installer)}</td>
+                        <td class="px-6 py-2">
                             <div class="text-sm text-red-600">${escapeHtml(row.reasonText)}</div>
-                            ${hasDisplayText(row.note) ? `<div class="mt-1 text-xs text-slate-500">${escapeHtml(row.note)}</div>` : ''}
+                            ${hasDisplayText(row.note) ? `<div class="mt-0.5 text-xs text-slate-500">${escapeHtml(row.note)}</div>` : ''}
                         </td>
                     </tr>
                 `;

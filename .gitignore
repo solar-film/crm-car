@@ -5,6 +5,7 @@
 # Temporary workspace files
 tmp/
 .codex-upload*/
+.codex-mobile-payin-deploy/
 temp*.js
 *.tmp
 *.temp

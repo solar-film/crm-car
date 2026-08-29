@@ -1024,23 +1024,23 @@
                                     <span class="text-sm font-normal text-slate-600">${escapeHtml(row.time)} น.</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-2">
                                 <div class="text-sm font-normal text-slate-800">${escapeHtml(row.customerName)}</div>
                                 <div class="mt-1 font-mono text-xs font-normal text-blue-600">${escapeHtml(row.jobId)}</div>
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-2">
                                 <span class="inline-flex rounded-lg border px-2.5 py-1 text-xs font-normal ${getCustomerTypeBadge(row.customerType)}">${escapeHtml(customerStatusLabel(row.customerType))}</span>
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-2">
                                 <div class="text-sm font-normal text-slate-700">${escapeHtml(row.carModel)}</div>
                                 <div class="mt-1 text-xs text-slate-500">${escapeHtml(row.plate)}${row.plateType && row.plateType !== '-' ? ` ${escapeHtml(row.plateType)}` : ''}</div>
                             </td>
-                            <td class="px-3 py-4 text-sm font-normal text-slate-600">${escapeHtml(row.installType)}</td>
-                            <td class="px-4 py-4 text-sm font-normal text-slate-600">${escapeHtml(row.film)}</td>
-                            <td class="px-4 py-4">
+                            <td class="px-3 py-2 text-sm font-normal text-slate-600">${escapeHtml(row.installType)}</td>
+                            <td class="px-4 py-2 text-sm font-normal text-slate-600">${escapeHtml(row.film)}</td>
+                            <td class="px-4 py-2">
                                 <span class="inline-flex rounded-lg border px-2.5 py-1 text-xs font-normal ${getStatusBadge(row.status)}">${escapeHtml(row.status)}</span>
                             </td>
-                            <td class="px-5 py-4">${dataBadge}</td>
+                            <td class="px-5 py-2">${dataBadge}</td>
                         </tr>
                     `;
                 }).join('');

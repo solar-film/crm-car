@@ -101,12 +101,27 @@ function ensureCarCrmSidebarStyles() {
         }
 
         .car-crm-sidebar-panel .car-crm-close {
-            color: rgba(71, 85, 105, 0.70) !important;
+            background: rgba(255, 255, 255, 0.94) !important;
+            border-color: rgba(37, 99, 235, 0.26) !important;
+            color: #1d4ed8 !important;
+            box-shadow: 0 5px 14px rgba(37, 99, 235, 0.14) !important;
         }
 
         .car-crm-sidebar-panel .car-crm-close:hover {
-            background: rgba(37, 99, 235, 0.08) !important;
-            color: #1e40af !important;
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.26) !important;
+            transform: translateY(-1px);
+        }
+
+        .car-crm-sidebar-panel .car-crm-close:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.30);
+            outline-offset: 2px;
+        }
+
+        .car-crm-sidebar-panel .car-crm-close:active {
+            transform: translateY(0) scale(0.96);
         }
 
         .car-crm-sales-card {
@@ -161,10 +176,10 @@ function navItemHtml(item, activePage) {
     const isActive = item.href === activePage;
 
     const linkClass = isActive
-        ? 'car-crm-nav-link car-crm-nav-link-active flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3 text-sm font-bold text-white shadow-sm'
-        : 'car-crm-nav-link flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900';
+        ? 'car-crm-nav-link car-crm-nav-link-active flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm'
+        : 'car-crm-nav-link flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900';
 
-    const iconClass = `car-crm-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base font-bold ${iconColorClass(item.color, isActive)}`;
+    const iconClass = `car-crm-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base font-bold ${iconColorClass(item.color, isActive)}`;
 
     return `
         <a href="${item.href}" class="${linkClass}">
@@ -205,8 +220,11 @@ function renderCarCrmSidebar() {
                         <div class="car-crm-brand-subtitle mt-0.5 text-xs font-medium text-slate-500">จัดการคิวติดตั้งฟิล์ม</div>
                     </div>
 
-                    <button type="button" data-sidebar-close class="car-crm-close ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700">
-                        ×
+                    <button type="button" data-sidebar-close aria-label="ปิดเมนูด้านข้าง" title="ปิดเมนู" class="car-crm-close ml-auto inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-blue-200 bg-white/90 px-3 text-sm font-bold text-blue-700 shadow-sm transition-all">
+                        <span>ปิด</span>
+                        <svg aria-hidden="true" focusable="false" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" d="M6 6l12 12M18 6 6 18"></path>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -219,7 +237,7 @@ function renderCarCrmSidebar() {
                         Main
                     </div>
 
-                    <div class="space-y-1">
+                    <div class="space-y-0.5">
                         ${navLinks}
                     </div>
                 </div>
@@ -229,23 +247,23 @@ function renderCarCrmSidebar() {
                         Operations
                     </div>
 
-                    <a href="${CAR_CRM_ADMIN_URL}" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-                        <span class="car-crm-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-base font-bold text-indigo-600">↗</span>
+                    <a href="${CAR_CRM_ADMIN_URL}" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                        <span class="car-crm-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-base font-bold text-indigo-600">↗</span>
                         <span class="flex-1">Admin Panel</span>
                     </a>
 
-                    <a href="https://solar-film.github.io/BB/" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-                        <span class="car-crm-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-base font-bold text-sky-600">BB</span>
+                    <a href="https://solar-film.github.io/BB/" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-0.5 flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                        <span class="car-crm-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-base font-bold text-sky-600">BB</span>
                         <span class="flex-1">meeting</span>
                     </a>
 
-                    <a href="accounting.html" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-                        <span class="car-crm-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-base">💳</span>
+                    <a href="accounting.html" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-0.5 flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                        <span class="car-crm-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-base">💳</span>
                         <span class="flex-1">ฝ่ายบัญชี</span>
                     </a>
 
-                    <a href="technician-queue.html" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-1 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
-                        <span class="car-crm-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-base">🔧</span>
+                    <a href="technician-queue.html" target="_blank" rel="noopener noreferrer" class="car-crm-nav-link mt-0.5 flex items-center gap-3 rounded-2xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-900">
+                        <span class="car-crm-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-base">🔧</span>
                         <span class="flex-1">ทีมช่าง</span>
                     </a>
                 </div>

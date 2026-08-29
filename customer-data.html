@@ -75,6 +75,49 @@
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
         .bk-pill.active i { color: white !important; }
+
+        #bookingModal .booking-compact label {
+            margin-bottom: 0.25rem;
+            line-height: 1rem;
+        }
+
+        #bookingModal .booking-compact input:not([type="hidden"]),
+        #bookingModal .booking-compact select,
+        #bookingModal .booking-compact textarea,
+        #bookingModal .booking-compact button[type="button"] {
+            min-height: 36px;
+            padding-top: 0.45rem;
+            padding-bottom: 0.45rem;
+            border-radius: 0.75rem;
+        }
+
+        #bookingModal .booking-compact .bk-pill {
+            min-height: 34px;
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+
+        /* แยกข้อความที่กรอกจริงออกจาก placeholder ให้เห็นชัดเจน */
+        #customerForm input:not([type="hidden"]):not([type="radio"]),
+        #customerForm select,
+        #customerForm textarea {
+            color: #0f172a;
+            font-size: 0.95rem;
+            font-weight: 500;
+            caret-color: #2563eb;
+        }
+
+        #customerForm input::placeholder,
+        #customerForm textarea::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+            opacity: 1;
+        }
+
+        #customerForm select:invalid {
+            color: #64748b;
+            font-weight: 400;
+        }
     </style>
     <script src="sidebar.js" defer></script>
 </head>
@@ -127,16 +170,16 @@
     </div>
 
     <!-- Booking Modal (เพิ่มคิวจอง) -->
-    <div id="bookingModal" class="fixed inset-0 z-[90] flex hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
-        <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-8 overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="bookingModal" class="fixed inset-0 z-[90] flex hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-3 overflow-y-auto">
+        <div class="w-full max-w-2xl rounded-3xl bg-white shadow-2xl my-3 overflow-hidden flex flex-col max-h-[94vh]">
             <!-- Modal Header -->
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3 flex items-center justify-between text-white flex-shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                        <i class="fas fa-calendar-plus text-lg"></i>
+                    <div class="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
+                        <i class="fas fa-calendar-plus text-base"></i>
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold">เพิ่มคิวจองใหม่</h3>
+                        <h3 class="text-lg font-bold">เพิ่มคิวใหม่</h3>
                         <p class="text-xs text-blue-100" id="bk-customerInfo">ลูกค้า: -</p>
                     </div>
                 </div>
@@ -145,10 +188,10 @@
                 </button>
             </div>
             <!-- Modal Body -->
-            <form id="bookingForm" onsubmit="submitBooking(event)" class="overflow-y-auto p-6 space-y-4">
+            <form id="bookingForm" onsubmit="submitBooking(event)" class="booking-compact overflow-y-auto p-4 space-y-3">
                 <input type="hidden" id="bk-custId">
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">วันที่ติดตั้ง <span class="text-rose-500">*</span></label>
                         <input type="date" id="bk-installDate" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10">
@@ -171,7 +214,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">รุ่นรถยนต์ <span class="text-rose-500">*</span></label>
                         <input type="text" id="bk-carModel" list="bk-carModelOptions" required autocomplete="off" placeholder="พิมพ์เพื่อค้นหารุ่นรถ..." class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white">
@@ -196,7 +239,7 @@
                 </div>
 
                 <!-- ยี่ห้อฟิล์ม + การรับประกัน -->
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">ยี่ห้อฟิล์ม <span class="text-rose-500">*</span></label>
                         <select id="bk-filmBrand" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white">
@@ -239,12 +282,19 @@
                 <!-- โปรโมชั่น (Pro_ID) -->
                 <div>
                     <label class="block mb-1.5 text-xs font-semibold text-slate-700">โปรโมชั่น <span class="text-rose-500">*</span></label>
-                    <select id="bk-proId" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                        <option value="">-- กำลังโหลด --</option>
-                    </select>
+                    <input type="hidden" id="bk-proId" required>
+                    <div class="relative" id="bk-proIdWrap">
+                        <button type="button" onclick="togglePromotionDropdown()" class="w-full text-left rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white hover:bg-white transition-colors min-h-[42px] flex items-center justify-between gap-2">
+                            <span id="bk-proIdLabel" class="text-slate-400 flex-1 min-w-0 truncate">-- กำลังโหลด --</span>
+                            <i class="fas fa-chevron-down text-xs text-slate-400 flex-shrink-0"></i>
+                        </button>
+                        <div id="bk-proIdPanel" class="hidden absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl max-h-80 overflow-y-auto p-2">
+                            <div class="px-3 py-4 text-center text-xs text-slate-400">กำลังโหลด...</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-3 gap-3">
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">มูลค่าสินค้า <span class="text-rose-500">*</span></label>
                         <input type="number" id="bk-price" required min="0" step="1" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white font-mono" placeholder="0" oninput="calcSales()">
@@ -276,7 +326,7 @@
 
                 <div>
                     <label class="block mb-1.5 text-xs font-semibold text-slate-700">หมายเหตุ</label>
-                    <textarea id="bk-note" rows="2" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white resize-none" placeholder="ข้อมูลเพิ่มเติม..."></textarea>
+                    <textarea id="bk-note" rows="1" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white resize-none" placeholder="ข้อมูลเพิ่มเติม..."></textarea>
                 </div>
 
                 <!-- พน.ขาย (button group) -->
@@ -337,18 +387,15 @@
                 <!-- LEFT COLUMN: Form (จะเป็นตัวกำหนดความสูงของ Grid ในหน้าจอ Desktop) -->
                 <div class="flex min-w-0 flex-col gap-6 w-full h-full relative z-10">
                     
-                    <!-- การ์ดเพิ่มลูกค้าใหม่ - เพิ่มสีพื้นหลังไล่เฉดน้ำเงิน-ฟ้า ให้เด่นและดึงดูดสายตา -->
-                    <form id="customerForm" class="relative flex h-full flex-col overflow-hidden rounded-[2rem] p-6 sm:p-8 shadow-2xl shadow-blue-500/20 border-2 border-blue-200/60 bg-gradient-to-br from-blue-50 via-white to-indigo-50" onsubmit="submitForm(event)">
-                        <!-- Decorative gradient blobs -->
-                        <div class="absolute -top-12 -right-12 w-40 h-40 bg-blue-400/25 rounded-full blur-3xl pointer-events-none"></div>
-                        <div class="absolute -bottom-16 -left-16 w-48 h-48 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
-                        <div class="absolute top-1/2 right-0 w-24 h-24 bg-sky-300/20 rounded-full blur-2xl pointer-events-none"></div>
+                    <!-- การ์ดเพิ่มลูกค้าใหม่ -->
+                    <form id="customerForm" class="relative flex h-full flex-col overflow-hidden rounded-[2rem] border-2 border-blue-300 bg-gradient-to-b from-blue-100 via-sky-100 to-indigo-100 p-6 shadow-[0_24px_70px_rgba(37,99,235,0.22)] ring-4 ring-blue-100/80 sm:p-8" onsubmit="submitForm(event)">
+                        <div class="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-600"></div>
 
-                        <h2 id="formTitle" class="text-lg font-bold text-slate-900 mb-5 flex items-center gap-2 border-b border-blue-200/60 pb-3 relative z-10">
-                            <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30">
+                        <h2 id="formTitle" class="relative z-10 mb-5 flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3 text-lg font-bold text-white shadow-lg shadow-blue-500/25">
+                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/18 text-white shadow-inner">
                                 <i class="fas fa-user-plus text-sm"></i>
                             </span>
-                            <span class="bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">เพิ่มลูกค้าใหม่</span>
+                            <span>เพิ่มลูกค้าใหม่</span>
                         </h2>
 
                         <div class="space-y-4 relative z-10">
@@ -495,7 +542,7 @@
                                 <p class="text-sm font-medium text-slate-500" id="tableCount">กำลังโหลด...</p>
                             </div>
                             <div class="relative w-full sm:w-[28rem] xl:max-w-md">
-                                <input type="text" id="searchInput" placeholder="ค้นหาจาก ID, ชื่อลูกค้า หรือเบอร์โทร..." 
+                                <input type="text" id="searchInput" placeholder="ค้นหาจาก ID, ชื่อลูกค้า หรือเบอร์โทร..."
                                     class="w-full rounded-full border border-slate-200 bg-slate-50 py-2 pl-10 pr-4 text-sm outline-none transition-all focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
                                     oninput="filterTable()">
                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -506,19 +553,32 @@
 
                         <!-- Table Wrapper (เพิ่ม min-h-0 เพื่อให้ Flex Scroll ทำงานได้สมบูรณ์) -->
                         <div class="flex-1 overflow-auto bg-transparent relative w-full min-h-0">
-                            <table class="w-full min-w-[1500px] text-left text-sm whitespace-nowrap">
+                            <table class="w-full min-w-[1400px] table-fixed text-left text-sm whitespace-nowrap">
+                                <colgroup>
+                                    <col class="w-[96px]">
+                                    <col class="w-14">
+                                    <col class="w-[220px]">
+                                    <col class="w-[96px]">
+                                    <col class="w-[130px]">
+                                    <col class="w-[150px]">
+                                    <col class="w-[150px]">
+                                    <col class="w-[260px]">
+                                    <col class="w-[135px]">
+                                    <col class="w-[145px]">
+                                    <col class="w-[110px]">
+                                </colgroup>
                                 <thead class="bg-white/80 backdrop-blur-md text-slate-600 font-semibold sticky top-0 z-10 shadow-sm border-b border-slate-200">
                                     <tr>
-                                        <th class="px-2 py-3 font-semibold text-center w-12" title="เพิ่มคิวจอง"><i class="fas fa-calendar-plus text-blue-500"></i></th>
+                                        <th class="px-2 py-3 text-center text-xs font-semibold" title="เพิ่มคิวใหม่">เพิ่มคิวใหม่</th>
                                         <th class="px-2 py-3 font-semibold text-center w-14">เคส</th>
-                                        <th class="px-3 py-3 font-semibold">ชื่อลูกค้า</th>
-                                        <th class="px-2 py-3 font-semibold text-center w-12" title="แก้ไขข้อมูล"><i class="fas fa-pen-to-square text-blue-500"></i></th>
-                                        <th class="px-3 py-3 font-semibold">เบอร์โทรศัพท์</th>
-                                        <th class="px-3 py-3 font-semibold">ช่องทางติดต่อ</th>
+                                        <th class="px-2 py-3 font-semibold">ชื่อลูกค้า</th>
+                                        <th class="px-2 py-3 text-center text-xs font-semibold" title="แก้ไขข้อมูล">แก้ไขข้อมูล</th>
+                                        <th class="px-2 py-3 font-semibold">เบอร์โทรศัพท์</th>
+                                        <th class="px-2 py-3 font-semibold">ช่องทางติดต่อ</th>
                                         <th class="px-3 py-3 font-semibold">ชื่อ/บริษัทออกบิล</th>
                                         <th class="px-3 py-3 font-semibold">ที่อยู่</th>
-                                        <th class="px-3 py-3 font-semibold">รู้จักครั้งแรก</th>
                                         <th class="px-3 py-3 font-semibold">หมายเหตุ</th>
+                                        <th class="px-3 py-3 font-semibold">รู้จักครั้งแรก</th>
                                         <th class="px-3 py-3 font-semibold">วันที่บันทึก</th>
                                     </tr>
                                 </thead>
@@ -544,9 +604,9 @@
 
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';
-        const WRITE_TOKEN_KEY = 'carCrmWriteToken';
         const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
         const FIRST_KNOWN_SHEET_NAME = 'รู้จักครั้งแรก.รายการ';
+        const WRITE_TOKEN_KEY = 'carCrmWriteToken';
 
         function readWriteToken() {
             try {
@@ -560,7 +620,7 @@
             try {
                 localStorage.setItem(WRITE_TOKEN_KEY, token);
             } catch (error) {
-                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาต localStorage
+                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาตให้บันทึก localStorage
             }
         }
 
@@ -572,14 +632,13 @@
             }
         }
 
-        function getWriteToken(forceNewToken = false) {
+        function requestWriteToken(forceNewToken = false) {
             if (forceNewToken) clearWriteToken();
 
-            let token = forceNewToken ? '' : readWriteToken();
+            let token = readWriteToken();
             if (!token) {
-                token = String(window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
-                if (!token) throw new Error('ไม่พบ Write Token');
-                saveWriteToken(token);
+                token = (window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
+                if (token) saveWriteToken(token);
             }
             return token;
         }
@@ -589,8 +648,10 @@
         }
 
         async function postWithWriteToken(payload) {
+            let token = requestWriteToken();
+            if (!token) return { success: false, error: 'ไม่ได้ระบุ Write Token' };
+
             for (let attempt = 0; attempt < 2; attempt += 1) {
-                const token = getWriteToken(attempt > 0);
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: JSON.stringify({ ...payload, token })
@@ -599,11 +660,17 @@
 
                 if (!result.success && isWriteTokenError(result.error)) {
                     clearWriteToken();
-                    if (attempt === 0) continue;
+                    if (attempt === 0) {
+                        token = requestWriteToken(true);
+                        if (token) continue;
+                        return { success: false, error: 'ยกเลิกการยืนยันสิทธิ์การบันทึก' };
+                    }
                 }
+
                 return result;
             }
-            throw new Error('Write token ไม่ถูกต้อง');
+
+            return { success: false, error: 'Write token ไม่ถูกต้อง' };
         }
 
         let existingPhones = new Set();
@@ -747,8 +814,7 @@
                     if (!id || !String(id).trim()) continue;
                     const key = String(id).trim();
                     const get = (k) => (idx[k] !== -1 ? (r[idx[k]] || '') : '');
-                    // แสดงรวมเคสทั้งหมด (รวมเลิกด้วย) เฉพาะหน้านี้
-                    // if (isCancelledStatus(get('status'))) continue;
+                    if (isCancelledStatus(get('status'))) continue;
                     counts[key] = (counts[key] || 0) + 1;
                     if (!byCust[key]) byCust[key] = [];
                     byCust[key].push({
@@ -867,47 +933,49 @@
             const html = data.map(c => {
                 const caseCount = (c.id && bookingCountMap[c.id]) ? bookingCountMap[c.id] : 0;
                 const caseBadge = caseCount > 0
-                    ? `<span class="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">${caseCount}</span>`
-                    : `<span class="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200 text-xs font-medium">0</span>`;
+                    ? `<span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">${caseCount}</span>`
+                    : `<span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200 text-[11px] font-medium">0</span>`;
                 const safeId = String(c.id || '').replace(/'/g, "\\'");
                 const safeName = String(c.name || '').replace(/'/g, "\\'");
                 return `
                 <tr class="hover:bg-slate-50/80 transition-colors group">
-                    <td class="px-2 py-2.5 text-center">
-                        <button type="button" onclick="openBookingModal('${safeId}','${safeName}')" class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md" title="เพิ่มคิวจองให้ลูกค้ารายนี้">
-                            <i class="fas fa-calendar-plus text-xs"></i>
+                    <td class="px-2 py-1.5 text-center">
+                        <button type="button" onclick="openBookingModal('${safeId}','${safeName}')" class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md" title="เพิ่มคิวใหม่">
+                            <i class="fas fa-calendar-plus text-[11px]"></i>
                         </button>
                     </td>
-                    <td class="px-2 py-2.5 text-center">${caseBadge}</td>
-                    <td class="px-3 py-2.5">
-                        <button type="button" onclick="openCasesModal('${safeId}','${safeName}')" class="text-left hover:underline group/name" title="ดูรายละเอียดเคส">
-                            <div class="font-semibold text-slate-900 group-hover/name:text-emerald-600 transition-colors">${c.name}</div>
-                            <div class="font-mono text-[10px] text-slate-400 mt-0.5">${c.id}</div>
+                    <td class="px-2 py-1.5 text-center">${caseBadge}</td>
+                    <td class="px-2 py-1.5">
+                        <button type="button" onclick="openCasesModal('${safeId}','${safeName}')" class="block max-w-full text-left hover:underline group/name" title="ดูรายละเอียดเคส">
+                            <div class="truncate font-semibold text-slate-900 group-hover/name:text-emerald-600 transition-colors">${c.name}</div>
+                            <div class="font-mono text-[9px] text-slate-400">${c.id}</div>
                         </button>
                     </td>
-                    <td class="px-2 py-2.5 text-center">
-                        <button type="button" onclick="editCustomer('${c.phoneClean}')" class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md" title="แก้ไขข้อมูล">
-                            <i class="fas fa-pen-to-square text-xs"></i>
+                    <td class="px-2 py-1.5 text-center">
+                        <button type="button" onclick="editCustomer('${c.phoneClean}')" class="inline-flex h-6 w-6 items-center justify-center rounded-md bg-slate-50 text-slate-500 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow-md" title="แก้ไขข้อมูล">
+                            <i class="fas fa-pen-to-square text-[11px]"></i>
                         </button>
                     </td>
-                    <td class="px-3 py-2.5 font-mono text-slate-700 text-xs">${c.phone}</td>
-                    <td class="px-3 py-2.5">
+                    <td class="px-2 py-1.5 font-mono text-slate-700 text-xs">
+                        <div class="truncate" title="${c.phone || ''}">${c.phone}</div>
+                    </td>
+                    <td class="px-2 py-1.5">
                         ${getChannelBadge(c.channel)}
-                        ${c.contactName && c.contactName !== '-' ? `<div class="text-xs text-slate-400 mt-0.5">${c.contactName}</div>` : ''}
+                        ${c.contactName && c.contactName !== '-' ? `<div class="truncate text-[11px] leading-tight text-slate-400" title="${c.contactName}">${c.contactName}</div>` : ''}
                     </td>
-                    <td class="px-3 py-2.5 text-slate-600 text-xs">
+                    <td class="px-3 py-1.5 text-slate-600 text-xs">
                         <div class="truncate max-w-[130px]" title="${c.billingName}">${c.billingName !== '-' ? c.billingName : '<span class="text-slate-300">-</span>'}</div>
                     </td>
-                    <td class="px-3 py-2.5 text-slate-600 text-xs whitespace-normal align-top">
-                        <div class="max-w-[300px] leading-relaxed break-words" title="${c.address || ''}">${c.address && c.address !== '-' ? c.address : '<span class="text-slate-300">-</span>'}</div>
+                    <td class="px-3 py-1.5 text-slate-600 text-xs align-middle">
+                        <div class="truncate max-w-[250px]" title="${c.address || ''}">${c.address && c.address !== '-' ? c.address : '<span class="text-slate-300">-</span>'}</div>
                     </td>
-                    <td class="px-3 py-2.5 text-slate-600 text-xs">
-                        <div class="truncate max-w-[140px]" title="${c.firstKnown || ''}">${c.firstKnown && c.firstKnown !== '-' ? c.firstKnown : '<span class="text-slate-300">-</span>'}</div>
+                    <td class="px-3 py-1.5 text-slate-600 text-xs align-middle">
+                        <div class="truncate max-w-[190px]" title="${c.note || ''}">${c.note && c.note !== '-' ? c.note : '<span class="text-slate-300">-</span>'}</div>
                     </td>
-                    <td class="px-3 py-2.5 text-slate-600 text-xs whitespace-normal align-top">
-                        <div class="max-w-[220px] leading-relaxed break-words" title="${c.note || ''}">${c.note && c.note !== '-' ? c.note : '<span class="text-slate-300">-</span>'}</div>
+                    <td class="px-2 py-1.5 text-slate-600 text-xs">
+                        <div class="truncate max-w-[125px]" title="${c.firstKnown || ''}">${c.firstKnown && c.firstKnown !== '-' ? c.firstKnown : '<span class="text-slate-300">-</span>'}</div>
                     </td>
-                    <td class="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">${c.date}</td>
+                    <td class="px-3 py-1.5 text-xs text-slate-500 whitespace-nowrap">${c.date}</td>
                 </tr>`;
             }).join('');
             tbody.innerHTML = html;
@@ -1124,7 +1192,7 @@
                     showAlert('เกิดข้อผิดพลาด', result.error || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
                 }
             } catch (error) {
-                showAlert('เกิดข้อผิดพลาด', error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+                showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
             }
@@ -1219,13 +1287,99 @@
             fetchPromotions();
         }
 
+        let promotionOptions = [];
+
+        function renderPromotionMessage(message) {
+            const panel = document.getElementById('bk-proIdPanel');
+            const label = document.getElementById('bk-proIdLabel');
+            if (panel) panel.innerHTML = `<div class="px-3 py-4 text-center text-xs text-slate-400">${message}</div>`;
+            if (label) {
+                label.className = 'text-slate-400 flex-1 min-w-0 truncate';
+                label.textContent = message;
+            }
+        }
+
+        function renderPromotionList() {
+            const panel = document.getElementById('bk-proIdPanel');
+            const selected = document.getElementById('bk-proId').value;
+            if (!panel) return;
+            panel.innerHTML = '';
+            if (promotionOptions.length === 0) {
+                panel.innerHTML = '<div class="px-3 py-4 text-center text-xs text-slate-400">-- ไม่มีโปรโมชั่นที่เปิดใช้งาน --</div>';
+                return;
+            }
+            promotionOptions.forEach(item => {
+                const isSelected = item.proId === selected;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `mb-2 w-full rounded-xl border px-3 py-2 text-left transition-all last:mb-0 ${isSelected ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-sky-50'}`;
+                btn.onclick = () => selectPromotion(item.proId);
+
+                const status = document.createElement('span');
+                status.className = 'inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200';
+                status.textContent = item.status || 'ON';
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3';
+
+                const name = document.createElement('div');
+                name.className = 'min-w-0 whitespace-normal text-sm font-semibold leading-snug text-slate-700';
+                name.textContent = item.name || item.proId;
+
+                row.append(name, status);
+                btn.append(row);
+                panel.appendChild(btn);
+            });
+        }
+
+        function updatePromotionLabel() {
+            const input = document.getElementById('bk-proId');
+            const label = document.getElementById('bk-proIdLabel');
+            if (!input || !label) return;
+            const item = promotionOptions.find(p => p.proId === input.value);
+            if (!input.value) {
+                label.className = 'text-slate-400 flex-1 min-w-0 truncate';
+                label.textContent = '-- เลือกโปรโมชั่น --';
+                return;
+            }
+            label.className = 'text-slate-700 flex-1 min-w-0 truncate font-medium';
+            label.textContent = item && item.name ? item.name : input.value;
+        }
+
+        function selectPromotion(proId) {
+            document.getElementById('bk-proId').value = proId;
+            updatePromotionLabel();
+            renderPromotionList();
+            document.getElementById('bk-proIdPanel').classList.add('hidden');
+        }
+
+        function setPromotionValue(proId) {
+            document.getElementById('bk-proId').value = proId || '';
+            updatePromotionLabel();
+            renderPromotionList();
+        }
+
+        function resetPromotionSelection() {
+            setPromotionValue('');
+        }
+
+        function togglePromotionDropdown() {
+            const panel = document.getElementById('bk-proIdPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) renderPromotionList();
+        }
+
         async function fetchPromotions() {
             try {
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Promotion')}`;
                 const res = await fetch(url);
                 const csvText = await res.text();
                 const rows = parseCSV(csvText);
-                if (rows.length === 0) return;
+                if (rows.length === 0) {
+                    promotionOptions = [];
+                    renderPromotionMessage('-- ไม่มีข้อมูลโปรโมชั่น --');
+                    return;
+                }
 
                 const header = rows[0].map(h => String(h).trim());
                 const proIdIdx = header.findIndex(h => h.toLowerCase().replace(/\s+/g, '') === 'pro_id' || h === 'Pro_ID');
@@ -1234,12 +1388,12 @@
                 const nameIdx = header.findIndex(h => h.includes('ชื่อโปร') || h.toLowerCase().includes('name') || h.includes('โปรโมชั่น'));
 
                 if (proIdIdx === -1) {
-                    document.getElementById('bk-proId').innerHTML = '<option value="">ไม่พบคอลัมน์ Pro_ID</option>';
+                    promotionOptions = [];
+                    renderPromotionMessage('ไม่พบคอลัมน์ Pro_ID');
                     return;
                 }
 
-                const select = document.getElementById('bk-proId');
-                select.innerHTML = '<option value="">-- เลือกโปรโมชั่น --</option>';
+                promotionOptions = [];
 
                 for (let i = 1; i < rows.length; i++) {
                     const r = rows[i];
@@ -1251,14 +1405,14 @@
                         if (st !== 'ON') continue;
                     }
                     const name = (nameIdx !== -1 && r[nameIdx]) ? String(r[nameIdx]).trim() : '';
-                    const opt = document.createElement('option');
-                    opt.value = proId;
-                    opt.textContent = name ? `${proId} — ${name}` : proId;
-                    select.appendChild(opt);
+                    promotionOptions.push({ proId, name, status: 'ON' });
                 }
+                renderPromotionList();
+                updatePromotionLabel();
             } catch (err) {
                 console.error('โหลด Promotion ไม่สำเร็จ:', err);
-                document.getElementById('bk-proId').innerHTML = '<option value="">โหลดไม่สำเร็จ</option>';
+                promotionOptions = [];
+                renderPromotionMessage('โหลดโปรโมชั่นไม่สำเร็จ');
             }
         }
 
@@ -1434,6 +1588,11 @@
             if (wrap2 && panel2 && !wrap2.contains(e.target) && !panel2.classList.contains('hidden')) {
                 panel2.classList.add('hidden');
             }
+            const wrap3 = document.getElementById('bk-proIdWrap');
+            const panel3 = document.getElementById('bk-proIdPanel');
+            if (wrap3 && panel3 && !wrap3.contains(e.target) && !panel3.classList.contains('hidden')) {
+                panel3.classList.add('hidden');
+            }
         });
 
         // ============= Cases Modal (รายละเอียดเคส) =============
@@ -1580,7 +1739,7 @@
             document.getElementById('bk-customerInfo').innerText = `ลูกค้า: ${custName} (${custId})`;
             // หัวข้อ modal
             const modalHeader = document.getElementById('bookingModal').querySelector('h3');
-            if (modalHeader) modalHeader.innerText = 'เพิ่มคิวจองใหม่';
+            if (modalHeader) modalHeader.innerText = 'เพิ่มคิวใหม่';
 
             // ตั้งค่า default = วันนี้
             const today = new Date();
@@ -1595,9 +1754,10 @@
                 document.getElementById(id).value = '';
             });
             // ล้าง select
-            ['bk-carModel','bk-filmBrand','bk-proId'].forEach(id => {
+            ['bk-carModel','bk-filmBrand'].forEach(id => {
                 document.getElementById(id).value = '';
             });
+            resetPromotionSelection();
             // ล้างรหัสส่วนลด (multi-select)
             resetDiscountCodeSelection();
             // ล้าง button group
@@ -1660,7 +1820,7 @@
             };
             setSelectVal('bk-carModel', c.carModel);
             setSelectVal('bk-filmBrand', c.filmBrand);
-            setSelectVal('bk-proId', c.proId);
+            setPromotionValue(c.proId);
 
             // button groups
             const setBtnVal = (hiddenId, val) => {
@@ -1744,6 +1904,12 @@
             const price = parseFloat(document.getElementById('bk-price').value) || 0;
             const discount = parseFloat(document.getElementById('bk-discount').value) || 0;
             const sales = Math.max(0, price - discount);
+            if (!document.getElementById('bk-proId').value) {
+                showAlert('กรุณาเลือกโปรโมชั่น', 'ต้องเลือกโปรโมชั่นก่อนบันทึกคิวใหม่', 'error');
+                document.getElementById('bk-proIdPanel').classList.remove('hidden');
+                renderPromotionList();
+                return;
+            }
 
             const payload = {
                 sheetName: 'Bookings',
@@ -1793,7 +1959,7 @@
                     showAlert('เกิดข้อผิดพลาด', data.error || 'ไม่สามารถบันทึกได้', 'error');
                 }
             } catch (err) {
-                showAlert('เกิดข้อผิดพลาด', err.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+                showAlert('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
             } finally {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('loadingText').innerText = 'กำลังบันทึกข้อมูล...';

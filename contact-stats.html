@@ -49,8 +49,38 @@
         .progress-bar-anim {
             transition: width 1s ease-in-out;
         }
+
+        .booking-channel-table th,
+        .booking-channel-table td {
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .booking-channel-table .summary-cell {
+            border-bottom-color: rgba(14, 165, 233, 0.2);
+        }
+
+        .booking-channel-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
+    <style>
+        .booking-channel-table th,
+        .booking-channel-table td {
+            border-width: 0 0 1px 0 !important;
+            border-style: solid !important;
+            border-color: rgba(15, 23, 42, 0.08) !important;
+            outline: 0 !important;
+        }
+
+        .booking-channel-table .summary-cell {
+            border-bottom-color: rgba(14, 165, 233, 0.2) !important;
+        }
+
+        .booking-channel-table tbody tr:last-child td {
+            border-bottom-width: 0 !important;
+        }
+    </style>
     <script src="sidebar.js" defer></script>
 </head>
 <body class="text-slate-900 bg-slate-50 auth-locked min-h-screen">
@@ -193,47 +223,64 @@
                 </div>
             </section>
 
-            <!-- Detailed Table -->
-            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-                <div class="border-b border-slate-200 px-6 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-900">รายละเอียดข้อมูลรายวัน</h2>
-                        <p id="tableSummary" class="text-sm text-slate-500 mt-0.5">แสดงข้อมูลตามตัวกรอง</p>
+            <!-- Daily Details / Booking Channel Summary -->
+            <section class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                    <div class="border-b border-slate-200 px-6 py-5 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-slate-50/50">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">รายละเอียดการติดต่อ</h2>
+                            <p id="tableSummary" class="text-sm text-slate-500 mt-0.5">แสดงข้อมูลตามตัวกรอง</p>
+                        </div>
+                        <button onclick="document.querySelector('.custom-scrollbar').scrollIntoView({behavior: 'smooth'})" class="hidden sm:flex text-sm text-blue-600 hover:text-blue-800 font-medium items-center gap-1">
+                            เลื่อนดูข้อมูล <i data-lucide="arrow-down" class="h-4 w-4"></i>
+                        </button>
                     </div>
-                    <button onclick="document.querySelector('.custom-scrollbar').scrollIntoView({behavior: 'smooth'})" class="hidden sm:flex text-sm text-blue-600 hover:text-blue-800 font-medium items-center gap-1">
-                        เลื่อนดูข้อมูล <i data-lucide="arrow-down" class="h-4 w-4"></i>
-                    </button>
-                </div>
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs">วันที่</th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
-                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="phone" class="h-3.5 w-3.5"></i> โทร</div>
-                                </th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
-                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="message-circle" class="h-3.5 w-3.5"></i> Line</div>
-                                </th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
-                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="facebook" class="h-3.5 w-3.5"></i> FB</div>
-                                </th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
-                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="video" class="h-3.5 w-3.5"></i> Tiktok</div>
-                                </th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
-                                    <div class="flex items-center justify-end gap-1.5"><i data-lucide="footprints" class="h-3.5 w-3.5"></i> WalkIn</div>
-                                </th>
-                                <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-800 uppercase tracking-wider text-xs text-right bg-slate-100/50">
-                                    รวม
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
-                            <!-- Rows inserted via JS -->
-                        </tbody>
-                    </table>
-                </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs">วันที่</th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                        <div class="flex items-center justify-end gap-1.5"><i data-lucide="phone" class="h-3.5 w-3.5"></i> โทร</div>
+                                    </th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                        <div class="flex items-center justify-end gap-1.5"><i data-lucide="message-circle" class="h-3.5 w-3.5"></i> Line</div>
+                                    </th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                        <div class="flex items-center justify-end gap-1.5"><i data-lucide="facebook" class="h-3.5 w-3.5"></i> FB</div>
+                                    </th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                        <div class="flex items-center justify-end gap-1.5"><i data-lucide="video" class="h-3.5 w-3.5"></i> Tiktok</div>
+                                    </th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-xs text-right">
+                                        <div class="flex items-center justify-end gap-1.5"><i data-lucide="footprints" class="h-3.5 w-3.5"></i> WalkIn</div>
+                                    </th>
+                                    <th class="whitespace-nowrap px-6 py-4 font-bold text-slate-800 uppercase tracking-wider text-xs text-right bg-slate-100/50">
+                                        รวม
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 bg-white">
+                                <!-- Rows inserted via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+                    <div class="border-b border-slate-200 px-6 py-5 flex flex-col gap-3 bg-slate-50/50 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h2 class="flex items-center gap-2 text-lg font-bold text-slate-900">
+                                <i data-lucide="map-pin" class="h-5 w-5 text-blue-600"></i>
+                                สรุปจำนวนลูกค้าใหม่/ลูกค้าเก่าตามช่องทาง
+                            </h2>
+                            <p id="bookingChannelSummaryPeriod" class="mt-0.5 text-sm text-slate-500">ข้อมูลเดือนที่เลือก</p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar px-4 pb-4">
+                        <div id="bookingChannelSummaryList" class="space-y-3"></div>
+                    </div>
+                </section>
             </section>
         </div>
     </main>
@@ -314,67 +361,11 @@
         const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';
         const WRITE_TOKEN_KEY = 'carCrmWriteToken';
+        const BOOKINGS_SHEET_NAME = 'Bookings';
+        const CUSTOMER_SHEET_NAME = 'Customer';
         const CONTACT_SHEET_NAMES = ['สถิตการติดต่อ', 'สถิติดการติดต่อ', 'สถิติการติดต่อ', 'สถิติ ติดต่อ', 'ContactStats'];
         const SALES_RECORDER_SHEET_NAME = 'พนักงานขาย';
         const DEFAULT_RECORDERS = ['พี่เมย์', 'พลอย'];
-
-        function readWriteToken() {
-            try {
-                return String(localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
-            } catch (error) {
-                return '';
-            }
-        }
-
-        function saveWriteToken(token) {
-            try {
-                localStorage.setItem(WRITE_TOKEN_KEY, token);
-            } catch (error) {
-                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาต localStorage
-            }
-        }
-
-        function clearWriteToken() {
-            try {
-                localStorage.removeItem(WRITE_TOKEN_KEY);
-            } catch (error) {
-                // ไม่มีค่าที่ต้องล้างเมื่อ browser ปิดกั้น localStorage
-            }
-        }
-
-        function getWriteToken(forceNewToken = false) {
-            if (forceNewToken) clearWriteToken();
-
-            let token = forceNewToken ? '' : readWriteToken();
-            if (!token) {
-                token = String(window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
-                if (!token) throw new Error('ไม่พบ Write Token');
-                saveWriteToken(token);
-            }
-            return token;
-        }
-
-        function isWriteTokenError(message) {
-            return /write token/i.test(String(message || ''));
-        }
-
-        async function postWithWriteToken(payload) {
-            for (let attempt = 0; attempt < 2; attempt += 1) {
-                const token = getWriteToken(attempt > 0);
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ ...payload, token })
-                });
-                const result = await response.json();
-
-                if (!result.success && isWriteTokenError(result.error)) {
-                    clearWriteToken();
-                    if (attempt === 0) continue;
-                }
-                return result;
-            }
-            throw new Error('Write token ไม่ถูกต้อง');
-        }
         
         // Settings for parsing channels (Added HEX color for Chart.js)
         const CONTACT_CHANNELS = [
@@ -394,12 +385,15 @@
             'loginForm', 'loginUser', 'loginPass', 'loginError',
             'monthFilter', 'lastUpdated', 'loadingMessage', 'errorMessage', 'content',
             'channelRanking', 'monthlyBarChart', 'dailyTrendChart', 'tableSummary', 'tableBody',
+            'bookingChannelSummaryPeriod', 'bookingChannelSummaryList',
             'addStatsModal', 'addStatsForm', 'addStatsStatus', 'statsDate', 'statsRecorder',
             'statsPhone', 'statsLine', 'statsFb', 'statsTiktok', 'statsWalkin', 'statsNote',
             'addStatsSubmitBtn'
         ];
 
         let rows = [];
+        let bookings = [];
+        let customers = [];
         let sheetName = CONTACT_SHEET_NAMES[0];
         let appHasStarted = false;
         let dailyChartInstance = null;
@@ -426,6 +420,18 @@
 
         function normalizeText(value) {
             return textValue(value).replace(/[\s._\-()（）/\\]+/g, '').toLowerCase();
+        }
+
+        function findField(row, candidates) {
+            if (!row) return '';
+            const keys = Object.keys(row).filter(key => normalizeText(key));
+            const normalizedCandidates = candidates.map(normalizeText).filter(Boolean);
+            const key = keys.find(item => normalizedCandidates.includes(normalizeText(item))) ||
+                keys.find(item => normalizedCandidates.some(candidate => {
+                    const normalizedItem = normalizeText(item);
+                    return normalizedItem.includes(candidate) || candidate.includes(normalizedItem);
+                }));
+            return key ? textValue(row[key]) : '';
         }
 
         function parseNumber(value) {
@@ -494,6 +500,70 @@
             return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
         }
 
+        function readStoredWriteToken() {
+            try {
+                return (localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function storeWriteToken(token) {
+            try {
+                localStorage.setItem(WRITE_TOKEN_KEY, token);
+            } catch (error) {
+                // Continue with the in-memory value when storage is unavailable.
+            }
+        }
+
+        function clearStoredWriteToken() {
+            try {
+                localStorage.removeItem(WRITE_TOKEN_KEY);
+            } catch (error) {
+                // A failed cleanup should not hide the original authentication error.
+            }
+        }
+
+        function requestWriteToken(forceNewToken = false) {
+            const storedToken = forceNewToken ? '' : readStoredWriteToken();
+            if (storedToken) return storedToken;
+
+            const message = forceNewToken
+                ? 'Write Token ไม่ถูกต้อง กรุณากรอกใหม่'
+                : 'กรุณาใส่ Write Token สำหรับบันทึกข้อมูล';
+            const token = (window.prompt(message) || '').trim();
+            if (!token) throw new Error('ไม่พบ Write Token');
+
+            storeWriteToken(token);
+            return token;
+        }
+
+        function isWriteTokenError(message) {
+            return /write token/i.test(String(message || ''));
+        }
+
+        async function postWithWriteToken(payload) {
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const token = requestWriteToken(attempt > 0);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, token })
+                });
+                const result = await response.json();
+
+                if (result.success) return result;
+
+                const message = result.error || 'บันทึกไม่สำเร็จ';
+                if (isWriteTokenError(message)) {
+                    clearStoredWriteToken();
+                    if (attempt === 0) continue;
+                }
+                throw new Error(message);
+            }
+
+            throw new Error('Write Token ไม่ถูกต้อง');
+        }
+
         async function fetchCsvText(name) {
             const response = await fetch(sheetCsvUrl(name));
             if (!response.ok) throw new Error(`Cannot load ${name}`);
@@ -516,6 +586,17 @@
                 }
             }
             throw lastError || new Error('Contact sheet not found');
+        }
+
+        function parseCsvRows(csvText) {
+            return new Promise(resolve => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    transformHeader: header => header.trim(),
+                    complete: results => resolve(results.data)
+                });
+            });
         }
 
         function getPreferredRecorder() {
@@ -629,7 +710,7 @@
             const currentMonth = monthKeyFromDate(new Date());
             const current = dom.monthFilter.value || currentMonth;
             
-            const months = [...new Map(rows.map(row => [row.monthKey, monthLabel(row.monthKey)])).entries()]
+            const months = [...new Map([...rows, ...bookings].map(row => [row.monthKey, monthLabel(row.monthKey)])).entries()]
                 .sort((a, b) => b[0].localeCompare(a[0])); // Sort descending usually, but localeCompare does asc string. For YYYY-MM b[0] vs a[0] does desc.
                 
             dom.monthFilter.innerHTML = '<option value="">ทุกเดือน (ตลอดกาล)</option>' + months
@@ -651,6 +732,220 @@
                 result[key].value += valueFn ? valueFn(row) : row.total;
                 return result;
             }, {});
+        }
+
+        function dateKey(date) {
+            if (!date) return '';
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function formatCount(value) {
+            return (Number(value) || 0).toLocaleString('th-TH');
+        }
+
+        function classifyCustomerType(value) {
+            const normalized = normalizeText(value);
+            if (!normalized) return '';
+            if (normalized.includes('เคลม') || normalized.includes('ปัญหา')) return 'งานเคลม';
+            if (normalized.includes('แก้') || normalized.includes('ในวัน')) return 'งานแก้';
+            if (normalized.includes('เก่า')) return 'ลูกค้าเก่า';
+            if (normalized.includes('ใหม่')) return 'ลูกค้าใหม่';
+            return '';
+        }
+
+        function buildBookings(rowsData) {
+            return rowsData.map(row => {
+                const date = parseDate(findField(row, ['วันที่ติดตั้ง', 'วันที่', 'Date']));
+                const customerType = findField(row, ['ประเภทลูกค้า']);
+                return {
+                    jobId: findField(row, ['JobID', 'Job ID', 'รหัสงาน']),
+                    custId: findField(row, ['CustID', 'Customer ID', 'รหัสลูกค้า']),
+                    date,
+                    monthKey: monthKeyFromDate(date),
+                    status: findField(row, ['Status', 'สถานะ']),
+                    customerGroup: classifyCustomerType(customerType),
+                    channel: findField(row, ['ช่องทาง', 'ช่องทางติดต่อ', 'แหล่งที่มา', 'Source', 'Channel']) || 'ไม่ระบุ'
+                };
+            }).filter(item => item.jobId);
+        }
+
+        function buildCustomerChannelMap(rowsData) {
+            return rowsData.reduce((map, row) => {
+                const custId = findField(row, ['CustID', 'Customer ID', 'รหัสลูกค้า']);
+                if (!custId) return map;
+                const channel = findField(row, ['ช่องทางติดต่อ', 'ช่องทาง', 'แหล่งที่มา', 'Source', 'Channel']);
+                const channelName = findField(row, ['ชื่อช่องทางติดต่อ', 'ชื่อช่องทาง', 'Channel Name']);
+                map[normalizeText(custId)] = [channel, channelName].filter(Boolean).join(' : ') || 'ไม่ระบุ';
+                return map;
+            }, {});
+        }
+
+        function isActiveBooking(item) {
+            return !normalizeText(item.status).includes('ยกเลิก');
+        }
+
+        function isRevenueCustomerBooking(item) {
+            return item.customerGroup === 'ลูกค้าใหม่' || item.customerGroup === 'ลูกค้าเก่า';
+        }
+
+        function classifyBookingChannel(value) {
+            const raw = textValue(value, 'ไม่ระบุ');
+            const normalized = normalizeText(raw);
+            if (!normalized || normalized === normalizeText('ไม่ระบุ')) return 'ไม่ระบุ';
+            if (normalized.includes('facebook') || normalized.includes('fb') || normalized.includes('เฟซ')) return 'FB';
+            if (normalized.includes('line') || normalized.includes('ไลน์')) return 'Line';
+            if (normalized.includes('tiktok') || normalized.includes('ติ๊ก')) return 'Tiktok';
+            if (normalized.includes('walkin') || normalized.includes('หน้าร้าน')) return 'WalkIn';
+            if (normalized.includes('tel') || normalized.includes('phone') || normalized.includes('โทร')) return 'โทร';
+            return raw.split(/[:：]/)[0].trim() || 'ไม่ระบุ';
+        }
+
+        function groupBookingChannels(data, customerChannelMap) {
+            return data.reduce((map, item) => {
+                const label = classifyBookingChannel(customerChannelMap[normalizeText(item.custId)] || item.channel);
+                if (!map[label]) map[label] = { label, count: 0 };
+                map[label].count += 1;
+                return map;
+            }, {});
+        }
+
+        function buildBookingChannelDailyRows(data, customerChannelMap) {
+            const dailyMap = data.reduce((map, item) => {
+                const key = dateKey(item.date) || 'ไม่ระบุวันที่';
+                const label = classifyBookingChannel(customerChannelMap[normalizeText(item.custId)] || item.channel);
+                if (!map[key]) {
+                    map[key] = {
+                        key,
+                        dateObj: item.date,
+                        channels: {},
+                        total: 0
+                    };
+                }
+                if (!map[key].channels[label]) map[key].channels[label] = { label, count: 0 };
+                map[key].channels[label].count += 1;
+                map[key].total += 1;
+                return map;
+            }, {});
+
+            return Object.values(dailyMap).sort((a, b) => {
+                if (a.dateObj && b.dateObj) return b.dateObj - a.dateObj;
+                if (a.dateObj) return -1;
+                if (b.dateObj) return 1;
+                return a.key.localeCompare(b.key);
+            });
+        }
+
+        function buildAlignedDailyRows(contactRows, bookingDailyRows) {
+            const map = {};
+            contactRows.forEach(row => {
+                const key = dateKey(row.date);
+                if (!key) return;
+                map[key] = { key, dateObj: row.date };
+            });
+            bookingDailyRows.forEach(row => {
+                const key = row.key;
+                if (!key || key === 'ไม่ระบุวันที่') return;
+                if (!map[key]) map[key] = { key, dateObj: row.dateObj };
+            });
+
+            return Object.values(map).sort((a, b) => {
+                if (a.dateObj && b.dateObj) return b.dateObj - a.dateObj;
+                if (a.dateObj) return -1;
+                if (b.dateObj) return 1;
+                return a.key.localeCompare(b.key);
+            });
+        }
+
+        function getBookingChannelContext() {
+            const month = dom.monthFilter.value;
+            const customerChannelMap = buildCustomerChannelMap(customers);
+            const bookingRows = bookings
+                .filter(item => !month || item.monthKey === month)
+                .filter(isActiveBooking)
+                .filter(isRevenueCustomerBooking);
+            const channelGroups = groupBookingChannels(bookingRows, customerChannelMap);
+            const channelItems = Object.values(channelGroups)
+                .filter(item => item.count > 0)
+                .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+                .slice(0, 8);
+            const dailyRows = buildBookingChannelDailyRows(bookingRows, customerChannelMap);
+
+            return {
+                month,
+                channelGroups,
+                channelItems,
+                dailyRows,
+                total: bookingRows.length
+            };
+        }
+
+        function renderBookingChannelSummary(context = getBookingChannelContext(), alignedRows = null) {
+            if (!dom.bookingChannelSummaryList) return;
+
+            const { month, channelGroups, channelItems, dailyRows, total } = context;
+
+            dom.bookingChannelSummaryPeriod.innerText = month ? `ข้อมูลเดือน ${monthLabel(month)}` : 'ข้อมูลทุกเดือน';
+
+            if ((!channelItems.length || !total || !dailyRows.length) && !alignedRows?.length) {
+                dom.bookingChannelSummaryList.innerHTML = `
+                    <div class="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
+                        ไม่มีข้อมูลลูกค้าใหม่/ลูกค้าเก่าในช่วงที่เลือก
+                    </div>
+                `;
+                return;
+            }
+
+            const channelLabels = channelItems.map(item => item.label);
+            const dailyMap = dailyRows.reduce((map, row) => {
+                map[row.key] = row;
+                return map;
+            }, {});
+            const displayRows = alignedRows?.length ? alignedRows : dailyRows;
+            const summaryCells = channelLabels.map(label => `
+                <td class="summary-cell px-3 py-[13.5px] text-center text-sm text-slate-800">
+                    ${formatCount(channelGroups[label]?.count || 0)}
+                </td>
+            `).join('');
+            const dayRows = displayRows.map(alignedRow => {
+                const day = dailyMap[alignedRow.key] || {
+                    key: alignedRow.key,
+                    dateObj: alignedRow.dateObj,
+                    channels: {},
+                    total: 0
+                };
+                const dayCells = channelLabels.map(label => `
+                    <td class="px-3 py-[13.5px] text-center text-sm text-slate-700">
+                        ${formatCount(day.channels[label]?.count || 0)}
+                    </td>
+                `).join('');
+                return `
+                    <tr class="transition-colors hover:bg-blue-50/40">
+                        <td class="sticky left-0 z-10 bg-white px-3 py-[13.5px] text-sm text-slate-700">${escapeHtml(formatDate(day.dateObj))}</td>
+                        ${dayCells}
+                        <td class="px-3 py-[13.5px] text-center text-sm font-bold text-blue-700">${formatCount(day.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            dom.bookingChannelSummaryList.innerHTML = `
+                <table class="booking-channel-table w-full min-w-[640px] border-separate border-spacing-0 overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-xs text-slate-500">
+                            <th class="sticky left-0 z-20 bg-slate-100 px-3 py-[15px] text-left font-medium">วันที่</th>
+                            ${channelLabels.map(label => `<th class="px-3 py-[15px] text-center font-medium">${escapeHtml(label)}</th>`).join('')}
+                            <th class="px-3 py-[15px] text-center font-bold text-slate-700">รวม</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${dayRows}
+                        <tr class="bg-blue-50/80">
+                            <td class="summary-cell sticky left-0 z-10 bg-blue-50 px-3 py-[13.5px] text-sm font-bold text-blue-800">รวมเดือน</td>
+                            ${summaryCells}
+                            <td class="summary-cell px-3 py-[13.5px] text-center text-sm font-bold text-blue-800">${formatCount(total)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
         }
 
         function renderProgressRanking(element, items, emptyText, useColors = false) {
@@ -694,13 +989,26 @@
                 ...ch,
                 value: data.reduce((sum, row) => sum + row[ch.key], 0)
             }));
+            const bookingChannelContext = getBookingChannelContext();
+            const alignedDailyRows = buildAlignedDailyRows(data, bookingChannelContext.dailyRows);
+            const contactRowsByDate = data.reduce((map, row) => {
+                const key = dateKey(row.date);
+                if (key) map[key] = row;
+                return map;
+            }, {});
+            const alignedRowsByDate = [...alignedDailyRows].sort((a, b) => {
+                if (a.dateObj && b.dateObj) return b.dateObj - a.dateObj;
+                if (a.dateObj) return -1;
+                if (b.dateObj) return 1;
+                return a.key.localeCompare(b.key);
+            });
             
             dom.tableSummary.innerText = data.length > 0 ? 
                 `แสดง ${data.length.toLocaleString('th-TH')} วันที่มีการติดต่อ จากทั้งหมด ${rows.length.toLocaleString('th-TH')} วัน` : 
                 'ไม่มีข้อมูลในเดือนนี้';
 
             // 1. Channel Ranking
-            const channelItems = totals.sort((a, b) => b.value - a.value).filter(item => item.value > 0);
+            const channelItems = [...totals].sort((a, b) => b.value - a.value).filter(item => item.value > 0);
             renderProgressRanking(dom.channelRanking, channelItems, 'ยังไม่มีข้อมูลการติดต่อ', true);
 
             // 2. Monthly Bar Chart (12 เดือนย้อนหลัง) - ใช้ข้อมูล 'rows' ทั้งหมด ไม่ถูกตีกรอบด้วย monthFilter
@@ -893,26 +1201,53 @@
             });
 
             // Table Body
-            if (!data.length) {
+            if (!alignedRowsByDate.length) {
                 dom.tableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-12 text-center text-slate-500"><i data-lucide="inbox" class="mx-auto mb-3 h-8 w-8 text-slate-300"></i> ไม่พบข้อมูลสถิติตามตัวกรองที่เลือก</td></tr>`;
+                renderBookingChannelSummary(bookingChannelContext, alignedRowsByDate);
                 lucide.createIcons();
                 return;
             }
 
-            dom.tableBody.innerHTML = data
-                .sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0))
-                .map(row => `
+            const contactValue = value => value > 0 ? value.toLocaleString('th-TH') : '-';
+            const contactTotal = totals.reduce((sum, item) => sum + item.value, 0);
+            const summaryRow = `
+                <tr class="bg-blue-50/80">
+                    <td class="whitespace-nowrap px-6 py-3.5 text-sm font-bold text-blue-800">รวมเดือน</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-800">${contactValue(totals.find(item => item.key === 'phone')?.value || 0)}</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-800">${contactValue(totals.find(item => item.key === 'line')?.value || 0)}</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-800">${contactValue(totals.find(item => item.key === 'fb')?.value || 0)}</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-800">${contactValue(totals.find(item => item.key === 'tiktok')?.value || 0)}</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-800">${contactValue(totals.find(item => item.key === 'walkin')?.value || 0)}</td>
+                    <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm font-bold text-blue-800">${contactTotal.toLocaleString('th-TH')}</td>
+                </tr>
+            `;
+
+            dom.tableBody.innerHTML = alignedRowsByDate
+                .map(alignedRow => {
+                    const row = contactRowsByDate[alignedRow.key] || {
+                        date: alignedRow.dateObj,
+                        phone: 0,
+                        line: 0,
+                        fb: 0,
+                        tiktok: 0,
+                        walkin: 0,
+                        total: 0
+                    };
+                    return `
                     <tr class="hover:bg-blue-50/50 transition-colors group">
                         <td class="whitespace-nowrap px-6 py-3.5 text-sm font-medium text-slate-700">${escapeHtml(formatDate(row.date))}</td>
-                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.phone > 0 ? 'font-semibold text-slate-900' : ''}">${row.phone > 0 ? row.phone.toLocaleString('th-TH') : '-'}</td>
-                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.line > 0 ? 'font-semibold text-slate-900' : ''}">${row.line > 0 ? row.line.toLocaleString('th-TH') : '-'}</td>
-                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.fb > 0 ? 'font-semibold text-slate-900' : ''}">${row.fb > 0 ? row.fb.toLocaleString('th-TH') : '-'}</td>
-                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.tiktok > 0 ? 'font-semibold text-slate-900' : ''}">${row.tiktok > 0 ? row.tiktok.toLocaleString('th-TH') : '-'}</td>
-                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.walkin > 0 ? 'font-semibold text-slate-900' : ''}">${row.walkin > 0 ? row.walkin.toLocaleString('th-TH') : '-'}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.phone > 0 ? 'font-semibold text-slate-900' : ''}">${contactValue(row.phone)}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.line > 0 ? 'font-semibold text-slate-900' : ''}">${contactValue(row.line)}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.fb > 0 ? 'font-semibold text-slate-900' : ''}">${contactValue(row.fb)}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.tiktok > 0 ? 'font-semibold text-slate-900' : ''}">${contactValue(row.tiktok)}</td>
+                        <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm text-slate-600 ${row.walkin > 0 ? 'font-semibold text-slate-900' : ''}">${contactValue(row.walkin)}</td>
                         <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm font-bold text-blue-700 bg-slate-50/50 group-hover:bg-transparent">${row.total.toLocaleString('th-TH')}</td>
                     </tr>
-                `).join('');
+                    `;
+                }).join('') + summaryRow;
                 
+            renderBookingChannelSummary(bookingChannelContext, alignedRowsByDate);
+
             // Re-initialize icons for newly added HTML
             lucide.createIcons();
         }
@@ -1011,7 +1346,6 @@
 
             try {
                 const result = await postWithWriteToken(payload);
-                if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
 
                 setAddStatsStatus('success', `บันทึกสำเร็จ (${result.id || 'เพิ่มรายการแล้ว'})`);
                 dom.addStatsSubmitBtn.innerHTML = '<i data-lucide="check" class="h-4 w-4"></i> บันทึกแล้ว';
@@ -1035,9 +1369,21 @@
             dom.content.classList.add('hidden');
 
             try {
-                const result = await fetchContactSheet();
+                const [result, bookingText, customerText] = await Promise.all([
+                    fetchContactSheet(),
+                    fetchCsvText(BOOKINGS_SHEET_NAME).catch(error => {
+                        console.warn('Cannot load Bookings:', error);
+                        return '';
+                    }),
+                    fetchCsvText(CUSTOMER_SHEET_NAME).catch(error => {
+                        console.warn('Cannot load Customer:', error);
+                        return '';
+                    })
+                ]);
                 sheetName = result.name;
                 rows = await parseCsvDataRobust(result.text);
+                bookings = bookingText ? buildBookings(await parseCsvRows(bookingText)) : [];
+                customers = customerText ? await parseCsvRows(customerText) : [];
                 
                 populateMonthFilter();
                 renderStats();

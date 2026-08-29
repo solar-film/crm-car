@@ -14,7 +14,8 @@ const PAYIN_IMAGE_FOLDER_ID_PROPERTY = 'CAR_CRM_PAYIN_FOLDER_ID';
 const APPSHEET_APP_FOLDER_NAME = 'CAR_CRM-691939189';
 const PAYIN_IMAGE_RELATIVE_FOLDER = 'Images/Pay_In';
 const PAYIN_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
-const PAYIN_MAX_POST_BYTES = 5 * 1024 * 1024;
+const PAYIN_MAX_POST_BYTES = 10 * 1024 * 1024;
+const PAYIN_MUTATION_CACHE_SECONDS = 6 * 60 * 60;
 
 // ─── Column definitions ───────────────────────────────────────
 const SCHEMA = {
@@ -43,8 +44,8 @@ const SCHEMA = {
     idPrefix: 'CUS',
     idField: 'CustID',
     columns: [
-      'CustID', 'ชื่อลูกค้า', 'เพศ', 'เบอร์โทรศัพท์', 'ช่องทางติดต่อ', 
-      'ชื่อช่องทางติดต่อ', 'ชื่อ/บริษัทออกบิล', 'ที่อยู่สำหรับออกบิล', 
+      'CustID', 'ชื่อลูกค้า', 'เพศ', 'เบอร์โทรศัพท์', 'ช่องทางติดต่อ',
+      'ชื่อช่องทางติดต่อ', 'ชื่อ/บริษัทออกบิล', 'ที่อยู่สำหรับออกบิล',
       'เลขประจำตัวผู้เสียภาษี', 'หมายเหตุ', 'รู้จักครั้งแรก', 'วันที่บันทึก'
     ]
   },
@@ -282,6 +283,25 @@ function verifyWriteToken_(body) {
   }
 }
 
+function payInMutationCacheKey_(body) {
+  const mutationId = String(body && body.mutationId ? body.mutationId : '').trim();
+  if (!mutationId) return '';
+  if (!/^[a-zA-Z0-9_-]{8,80}$/.test(mutationId)) throw new Error('mutationId ของ PayIn ไม่ถูกต้อง');
+  return `payin-mutation-${mutationId}`;
+}
+
+function readPayInMutationResult_(cacheKey) {
+  if (!cacheKey) return '';
+  try { return CacheService.getScriptCache().get(cacheKey) || ''; }
+  catch (error) { return ''; }
+}
+
+function rememberPayInMutationResult_(cacheKey, result) {
+  if (!cacheKey) return;
+  try { CacheService.getScriptCache().put(cacheKey, JSON.stringify(result), PAYIN_MUTATION_CACHE_SECONDS); }
+  catch (error) { /* cache is best effort; the sheet write already succeeded */ }
+}
+
 function sanitizeCellValue_(value) {
   if (value === null || value === undefined) return '';
   if (value instanceof Date) return value;
@@ -301,22 +321,79 @@ function jsonOutput_(payload) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function getPayInImageFolder_() {
-  const folderId = String(PropertiesService.getScriptProperties().getProperty(PAYIN_IMAGE_FOLDER_ID_PROPERTY) || '').trim();
-  if (!folderId) {
-    throw new Error(`ยังไม่ได้ตั้งค่า Script Property: ${PAYIN_IMAGE_FOLDER_ID_PROPERTY}`);
+function isLikelyAppSheetRootFolder_(folder) {
+  const parents = folder.getParents();
+  while (parents.hasNext()) {
+    const parent = parents.next();
+    if (String(parent.getName() || '').toLowerCase() !== 'data') continue;
+    const grandparents = parent.getParents();
+    while (grandparents.hasNext()) {
+      if (String(grandparents.next().getName() || '').toLowerCase() === 'appsheet') return true;
+    }
   }
-  return DriveApp.getFolderById(folderId);
+  return false;
+}
+
+function findAppSheetRootFolder_() {
+  const matches = DriveApp.getFoldersByName(APPSHEET_APP_FOLDER_NAME);
+  const folders = [];
+  while (matches.hasNext()) folders.push(matches.next());
+  if (!folders.length) {
+    throw new Error(`ไม่พบโฟลเดอร์ AppSheet "${APPSHEET_APP_FOLDER_NAME}" ใน Google Drive`);
+  }
+
+  const preferred = folders.filter(isLikelyAppSheetRootFolder_);
+  if (preferred.length === 1) return preferred[0];
+  if (folders.length === 1) {
+    throw new Error(`ไม่สามารถยืนยันว่าโฟลเดอร์ "${APPSHEET_APP_FOLDER_NAME}" เป็นโฟลเดอร์ข้อมูล AppSheet กรุณาตั้ง Script Property ${PAYIN_IMAGE_FOLDER_ID_PROPERTY} เป็น Folder ID ของโฟลเดอร์ Pay_In`);
+  }
+  throw new Error(`พบโฟลเดอร์ "${APPSHEET_APP_FOLDER_NAME}" มากกว่า 1 แห่ง กรุณาตั้ง Script Property ${PAYIN_IMAGE_FOLDER_ID_PROPERTY} เป็น Folder ID ของโฟลเดอร์ Pay_In`);
+}
+
+function getOrCreateChildFolder_(parent, name) {
+  const matches = parent.getFoldersByName(name);
+  return matches.hasNext() ? matches.next() : parent.createFolder(name);
+}
+
+function isValidConfiguredPayInFolder_(folder) {
+  if (String(folder.getName() || '') !== 'Pay_In') return false;
+  const imageParents = folder.getParents();
+  while (imageParents.hasNext()) {
+    const imagesFolder = imageParents.next();
+    if (String(imagesFolder.getName() || '') !== 'Images') continue;
+    const appRoots = imagesFolder.getParents();
+    while (appRoots.hasNext()) {
+      if (String(appRoots.next().getName() || '') === APPSHEET_APP_FOLDER_NAME) return true;
+    }
+  }
+  return false;
+}
+
+function getPayInImageFolder_() {
+  const configuredFolderId = String(PropertiesService.getScriptProperties().getProperty(PAYIN_IMAGE_FOLDER_ID_PROPERTY) || '').trim();
+  if (configuredFolderId) {
+    const configuredFolder = DriveApp.getFolderById(configuredFolderId);
+    if (!isValidConfiguredPayInFolder_(configuredFolder)) {
+      throw new Error(`Script Property ${PAYIN_IMAGE_FOLDER_ID_PROPERTY} ต้องชี้ไปที่โฟลเดอร์ ${APPSHEET_APP_FOLDER_NAME}/Images/Pay_In`);
+    }
+    return configuredFolder;
+  }
+
+  const appRoot = findAppSheetRootFolder_();
+  const imagesFolder = getOrCreateChildFolder_(appRoot, 'Images');
+  const payInFolder = getOrCreateChildFolder_(imagesFolder, 'Pay_In');
+  if (!isValidConfiguredPayInFolder_(payInFolder)) throw new Error('โครงสร้างโฟลเดอร์ PayIn ไม่ถูกต้อง');
+  return payInFolder;
 }
 
 function hasExpectedImageSignature_(bytes, mimeType) {
-  const byteAt = function(index) { return Number(bytes[index]) & 255; };
+  const byteAt = function (index) { return Number(bytes[index]) & 255; };
   if (mimeType === 'image/jpeg') {
     return bytes.length >= 3 && byteAt(0) === 0xFF && byteAt(1) === 0xD8 && byteAt(2) === 0xFF;
   }
   if (mimeType === 'image/png') {
     const png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-    return bytes.length >= png.length && png.every(function(value, index) { return byteAt(index) === value; });
+    return bytes.length >= png.length && png.every(function (value, index) { return byteAt(index) === value; });
   }
   if (mimeType === 'image/webp') {
     return bytes.length >= 12 &&
@@ -324,6 +401,85 @@ function hasExpectedImageSignature_(bytes, mimeType) {
       String.fromCharCode(byteAt(8), byteAt(9), byteAt(10), byteAt(11)) === 'WEBP';
   }
   return false;
+}
+
+function decodePayInProofUploads_(body) {
+  if (body.payInProofUploads === undefined) return [];
+  if (!Array.isArray(body.payInProofUploads)) throw new Error('รูปหลักฐานมีรูปแบบข้อมูลไม่ถูกต้อง');
+  if (body.payInProofUploads.length > 2) throw new Error('แนบรูปหลักฐานได้สูงสุด 2 รูป');
+
+  const allowedMimeTypes = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp'
+  };
+  const seenSlots = {};
+
+  return body.payInProofUploads.map(function (upload) {
+    const slot = Number(upload && upload.slot);
+    if ((slot !== 1 && slot !== 2) || seenSlots[slot]) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
+    seenSlots[slot] = true;
+
+    let mimeType = String(upload.mimeType || '').toLowerCase().trim();
+    let base64 = String(upload.base64 || '').trim();
+    const dataUrlMatch = base64.match(/^data:([^;]+);base64,(.+)$/);
+    if (dataUrlMatch) {
+      mimeType = String(dataUrlMatch[1] || mimeType).toLowerCase().trim();
+      base64 = dataUrlMatch[2];
+    }
+    if (!allowedMimeTypes[mimeType]) throw new Error('รองรับรูปหลักฐานเฉพาะ JPG, PNG และ WebP');
+
+    let bytes;
+    try {
+      bytes = Utilities.base64Decode(base64.replace(/\s/g, ''));
+    } catch (error) {
+      throw new Error(`อ่านข้อมูลหลักฐาน ${slot} ไม่สำเร็จ`);
+    }
+    if (!bytes.length) throw new Error(`หลักฐาน ${slot} ไม่มีข้อมูลรูป`);
+    if (bytes.length > PAYIN_IMAGE_MAX_BYTES) throw new Error(`หลักฐาน ${slot} มีขนาดเกิน 3 MB`);
+    if (!hasExpectedImageSignature_(bytes, mimeType)) throw new Error(`หลักฐาน ${slot} ไม่ใช่ไฟล์รูป ${allowedMimeTypes[mimeType].toUpperCase()} ที่ถูกต้อง`);
+
+    return {
+      slot: slot,
+      column: `หลักฐาน_${slot}`,
+      mimeType: mimeType,
+      extension: allowedMimeTypes[mimeType],
+      bytes: bytes
+    };
+  });
+}
+
+function trashFilesQuietly_(files) {
+  (files || []).forEach(function (file) {
+    try { file.setTrashed(true); } catch (error) { /* best effort cleanup */ }
+  });
+}
+
+function savePayInProofUploads_(body, payId) {
+  const uploads = decodePayInProofUploads_(body);
+  if (!uploads.length) return [];
+
+  const folder = getPayInImageFolder_();
+  const safePayId = String(payId || 'PAY').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Bangkok', 'yyyyMMdd_HHmmss');
+  const createdFiles = [];
+
+  try {
+    uploads.forEach(function (upload) {
+      const suffix = Utilities.getUuid().replace(/-/g, '').slice(0, 8);
+      const fileName = `${safePayId}_${upload.slot}_${timestamp}_${suffix}.${upload.extension}`;
+      const blob = Utilities.newBlob(upload.bytes, upload.mimeType, fileName);
+      const file = folder.createFile(blob);
+      createdFiles.push(file);
+      file.setDescription(`CAR CRM PayIn ${payId} หลักฐาน ${upload.slot}`);
+      body[upload.column] = `${APPSHEET_APP_FOLDER_NAME}/${PAYIN_IMAGE_RELATIVE_FOLDER}/${fileName}`;
+    });
+  } catch (error) {
+    trashFilesQuietly_(createdFiles);
+    throw error;
+  }
+
+  return createdFiles;
 }
 
 function decodePayInProof_(body) {
@@ -340,45 +496,23 @@ function decodePayInProof_(body) {
     throw new Error('รหัสคำขออัปโหลดไม่ถูกต้อง');
   }
 
-  const allowedMimeTypes = {
-    'image/jpeg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp'
-  };
-  let mimeType = String(body.mimeType || '').toLowerCase().trim();
-  let base64 = String(body.base64 || '').trim();
-  const dataUrlMatch = base64.match(/^data:([^;]+);base64,(.+)$/);
-  if (dataUrlMatch) {
-    mimeType = String(dataUrlMatch[1] || mimeType).toLowerCase().trim();
-    base64 = dataUrlMatch[2];
-  }
-  if (!allowedMimeTypes[mimeType]) throw new Error('รองรับรูปหลักฐานเฉพาะ JPG, PNG และ WebP');
-
-  base64 = base64.replace(/\s/g, '');
-  const maxBase64Chars = Math.ceil(PAYIN_IMAGE_MAX_BYTES / 3) * 4 + 4;
-  if (!base64 || base64.length > maxBase64Chars) throw new Error('รูปหลักฐานมีขนาดเกิน 3 MB');
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) throw new Error('ข้อมูลรูปหลักฐานไม่ถูกต้อง');
-
-  let bytes;
-  try {
-    bytes = Utilities.base64Decode(base64);
-  } catch (error) {
-    throw new Error('อ่านข้อมูลรูปหลักฐานไม่สำเร็จ');
-  }
-  if (!bytes.length || bytes.length > PAYIN_IMAGE_MAX_BYTES) throw new Error('รูปหลักฐานมีขนาดเกิน 3 MB');
-  if (!hasExpectedImageSignature_(bytes, mimeType)) {
-    throw new Error(`ไฟล์หลักฐานไม่ใช่รูป ${allowedMimeTypes[mimeType].toUpperCase()} ที่ถูกต้อง`);
-  }
+  const decoded = decodePayInProofUploads_({
+    payInProofUploads: [{
+      slot: slot,
+      mimeType: body.mimeType,
+      base64: body.base64
+    }]
+  })[0];
 
   return {
     recordId: recordId,
     jobId: jobId,
     slot: slot,
-    column: `หลักฐาน_${slot}`,
     requestId: requestId,
-    mimeType: mimeType,
-    extension: allowedMimeTypes[mimeType],
-    bytes: bytes
+    column: decoded.column,
+    mimeType: decoded.mimeType,
+    extension: decoded.extension,
+    bytes: decoded.bytes
   };
 }
 
@@ -422,7 +556,7 @@ function attachPayInProof_(body) {
       action: 'attachPayInProof',
       slot: proof.slot,
       relativePath: relativePath,
-      duplicate: true
+      reused: true
     });
   }
 
@@ -451,6 +585,7 @@ function attachPayInProof_(body) {
       sheet.getRange(latestTarget.rowNumber, latestProofIndex + 1).setValue(sanitizeCellValue_(relativePath));
       const timestampIndex = latestTarget.header.indexOf('วันที่บันทึกรายการ');
       if (timestampIndex !== -1) sheet.getRange(latestTarget.rowNumber, timestampIndex + 1).setValue(thaiTimestamp());
+      SpreadsheetApp.flush();
     }
     committed = true;
     return jsonOutput_({
@@ -459,8 +594,7 @@ function attachPayInProof_(body) {
       action: 'attachPayInProof',
       slot: proof.slot,
       relativePath: relativePath,
-      bytes: proof.bytes.length,
-      mimeType: proof.mimeType
+      reused: !createdNow
     });
   } catch (error) {
     if (createdNow && !committed && file) {
@@ -468,7 +602,7 @@ function attachPayInProof_(body) {
     }
     throw error;
   } finally {
-    if (lock) lock.releaseLock();
+    if (lock && lock.hasLock()) lock.releaseLock();
   }
 }
 
@@ -482,7 +616,7 @@ function upsertPayIn_(sheet, schema, body) {
     return String(header[index] || '').trim() !== column;
   });
   if (headerMismatch) {
-    throw new Error('หัวตาราง PayIn ไม่ตรงกับโครงสร้างที่ระบบกำหนด — ยกเลิกการบันทึกเพื่อป้องกันคอลัมน์สลับ');
+    throw new Error('หัวตาราง PayIn ไม่ตรงกับโครงสร้างที่ระบบกำหนด - ยกเลิกการบันทึกเพื่อป้องกันคอลัมน์สลับ');
   }
   const idIndex = header.indexOf(schema.idField);
   const jobIndex = header.indexOf('JobID');
@@ -494,7 +628,7 @@ function upsertPayIn_(sheet, schema, body) {
     for (let index = 1; index < values.length; index++) {
       if (String(values[index][idIndex] || '').trim() !== requestedId) continue;
       if (String(values[index][jobIndex] || '').trim() !== jobId) {
-        throw new Error('Pay_ID ไม่ตรงกับ JobID — ยกเลิกการบันทึกเพื่อป้องกันข้อมูลผิดงาน');
+        throw new Error('Pay_ID ไม่ตรงกับ JobID - ยกเลิกการบันทึกเพื่อป้องกันข้อมูลผิดงาน');
       }
       targetRowIndex = index + 1;
       break;
@@ -511,7 +645,7 @@ function upsertPayIn_(sheet, schema, body) {
       }
     }
     if (matchingRows.length > 1) {
-      throw new Error('พบ PayIn ซ้ำสำหรับ JobID นี้ — ยกเลิกการบันทึกเพื่อป้องกันแก้ไขผิดรายการ');
+      throw new Error('พบ PayIn ซ้ำสำหรับ JobID นี้ - ยกเลิกการบันทึกเพื่อป้องกันแก้ไขผิดรายการ');
     }
     if (matchingRows.length === 1) targetRowIndex = matchingRows[0];
   }
@@ -555,6 +689,7 @@ function upsertPayIn_(sheet, schema, body) {
     action = 'insert';
   }
 
+  SpreadsheetApp.flush();
   return jsonOutput_({ success: true, id: payId, action: action, sheetName: 'PayIn' });
 }
 
@@ -575,11 +710,11 @@ function formatErrorMessage_(err) {
   const lowerMessage = message.toLowerCase();
   const isDriveScopeError =
     lowerMessage.indexOf('driveapp.') !== -1 ||
-    lowerMessage.indexOf('googleapis.com/auth/drive') !== -1 ||
-    lowerMessage.indexOf('drive.google.com') !== -1;
+    lowerMessage.indexOf('googleapis.com/auth/drive') !== -1;
   if (isDriveScopeError) {
-    return `Apps Script ยังไม่ได้รับสิทธิ์หรือหาโฟลเดอร์รูปไม่พบ: ตรวจ ${PAYIN_IMAGE_FOLDER_ID_PROPERTY} แล้วรัน authorizeOnce()`;
+    return 'Apps Script ยังไม่ได้รับสิทธิ์เข้าถึง Google Drive: ให้เพิ่ม appsscript.json เวอร์ชันล่าสุด รัน authorizeOnce() แล้ว Deploy เป็นเวอร์ชันใหม่';
   }
+
   const isSpreadsheetScopeError =
     lowerMessage.indexOf('spreadsheetapp.openbyid') !== -1 ||
     lowerMessage.indexOf('googleapis.com/auth/spreadsheets') !== -1 ||
@@ -594,13 +729,17 @@ function formatErrorMessage_(err) {
 
 function doPost(e) {
   let lock = null;
+  let uploadedProofFiles = [];
+  let proofFilesCommitted = false;
+  let payInMutationCacheKey = '';
   try {
     const rawPost = String(e && e.postData && e.postData.contents ? e.postData.contents : '');
     const contentLength = Number(e && e.contentLength ? e.contentLength : rawPost.length);
     if (!rawPost) throw new Error('ไม่พบข้อมูลที่ส่งมา');
     if (contentLength > PAYIN_MAX_POST_BYTES || rawPost.length > PAYIN_MAX_POST_BYTES) {
-      throw new Error('ข้อมูลที่ส่งมามีขนาดใหญ่เกิน 5 MB');
+      throw new Error('ข้อมูลที่ส่งมามีขนาดใหญ่เกิน 10 MB');
     }
+
     const body = JSON.parse(rawPost);
     verifyWriteToken_(body);
 
@@ -618,6 +757,16 @@ function doPost(e) {
 
     if (!sheetName || !SCHEMA[sheetName]) {
       throw new Error(`ไม่รู้จัก sheetName: "${sheetName}"`);
+    }
+
+    if (sheetName === 'PayIn') {
+      payInMutationCacheKey = payInMutationCacheKey_(body);
+      const cachedResult = readPayInMutationResult_(payInMutationCacheKey);
+      if (cachedResult) {
+        return ContentService
+          .createTextOutput(cachedResult)
+          .setMimeType(ContentService.MimeType.JSON);
+      }
     }
 
     const schema = SCHEMA[sheetName];
@@ -643,7 +792,9 @@ function doPost(e) {
     }
 
     if (sheetName === 'data' && Array.isArray(body.rows)) {
-      return saveDataRows(sheet, schema, body);
+      const batchResult = saveDataRows(sheet, schema, body);
+      SpreadsheetApp.flush();
+      return batchResult;
     }
 
     if (body.action === 'update' && (body.custId || body.matchPhone || body.recordId || (['PayIn', 'Waranty'].indexOf(sheetName) !== -1 && body.JobID))) {
@@ -700,6 +851,7 @@ function doPost(e) {
       }
 
       if (targetRowIndex !== -1) {
+        if (sheetName === 'PayIn') uploadedProofFiles = savePayInProofUploads_(body, matchedId);
         const timestamp = thaiTimestamp();
         const existingRow = sheetValues[targetRowIndex - 1]; // แถวเดิม สำหรับเก็บค่าฟิลด์ที่ไม่ได้ส่งมา
         const rowData = schema.columns.map((col, colIdx) => {
@@ -713,8 +865,12 @@ function doPost(e) {
         });
 
         sheet.getRange(targetRowIndex, 1, 1, schema.columns.length).setValues([sanitizeRowValues_(rowData)]);
+        SpreadsheetApp.flush();
+        proofFilesCommitted = true;
+        const updateResult = { success: true, id: matchedId, action: 'update', sheetName };
+        rememberPayInMutationResult_(payInMutationCacheKey, updateResult);
         return ContentService
-          .createTextOutput(JSON.stringify({ success: true, id: matchedId, action: 'update', sheetName }))
+          .createTextOutput(JSON.stringify(updateResult))
           .setMimeType(ContentService.MimeType.JSON);
       }
 
@@ -740,6 +896,7 @@ function doPost(e) {
 
       if (targetRowIndex > -1) {
         sheet.deleteRow(targetRowIndex);
+        SpreadsheetApp.flush();
         return ContentService
           .createTextOutput(JSON.stringify({ success: true, id: lookupId, action: 'delete', sheetName }))
           .setMimeType(ContentService.MimeType.JSON);
@@ -758,6 +915,8 @@ function doPost(e) {
       attempts++;
     }
 
+    if (sheetName === 'PayIn') uploadedProofFiles = savePayInProofUploads_(body, id);
+
     const timestamp = thaiTimestamp();
 
     const row = schema.columns.map(col => {
@@ -770,24 +929,31 @@ function doPost(e) {
     });
 
     sheet.appendRow(sanitizeRowValues_(row));
+    SpreadsheetApp.flush();
+    proofFilesCommitted = true;
+    const insertResult = { success: true, id, sheetName, action: 'insert' };
+    rememberPayInMutationResult_(payInMutationCacheKey, insertResult);
 
     return ContentService
-      .createTextOutput(JSON.stringify({ success: true, id, sheetName, action: 'insert' }))
+      .createTextOutput(JSON.stringify(insertResult))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
+    if (!proofFilesCommitted && uploadedProofFiles.length) trashFilesQuietly_(uploadedProofFiles);
     return ContentService
       .createTextOutput(JSON.stringify({ success: false, error: formatErrorMessage_(err) }))
       .setMimeType(ContentService.MimeType.JSON);
   } finally {
-    if (lock) lock.releaseLock();
+    if (lock && lock.hasLock()) {
+      lock.releaseLock();
+    }
   }
 }
 
 // ─── ฟังก์ชันสำหรับ "กดอนุญาตสิทธิ์" (รันครั้งเดียว) ──────────────
 // เลือกฟังก์ชันนี้ในเมนูด้านบนแล้วกด "เรียกใช้/Run"
-// จะมีกล่องขออนุญาตเด้งขึ้น → Allow ให้เข้าถึง Google Sheets
-// (doGet ไม่ทำให้สิทธิ์ถูกขอ เพราะไม่ได้แตะ Sheets)
+// จะมีกล่องขออนุญาตเด้งขึ้น → Allow ให้เข้าถึง Google Sheets และ Google Drive
+// (doGet ไม่ทำให้สิทธิ์ถูกขอ เพราะไม่ได้แตะ Sheets/Drive)
 function authorizeOnce() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const names = ss.getSheets().map(function (s) { return s.getName(); });

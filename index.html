@@ -5,18 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบจัดการคิวติดตั้งฟิล์มรถยนต์</title>
     <link rel="icon" type="image/svg+xml" href="images/favicon-bookings.svg">
-    
+
     <!-- เรียกใช้งาน Tailwind CSS สำหรับการตกแต่งให้สวยงามและรองรับมือถือ -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- นำเข้าฟอนต์ภาษาไทย (Prompt) เพื่อให้อ่านง่าย -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <!-- นำเข้า PapaParse สำหรับอ่านไฟล์ CSV จาก Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- FontAwesome (สำหรับ Booking Edit Modal) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         /* กำหนดให้ทั้งหน้าเว็บใช้ฟอนต์ Prompt */
         body {
@@ -548,7 +548,7 @@
             </article>
 
         </section>
-        
+
         <div class="bg-white shadow-sm rounded-xl border border-slate-200 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-slate-50 gap-4">
                 <h2 class="text-lg font-semibold text-slate-800">ตารางนัดหมายติดตั้งฟิล์ม</h2>
@@ -602,7 +602,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- สถานะกำลังโหลด หรือ Error -->
             <div id="loadingMessage" class="px-6 py-12 text-center text-slate-500">
                 <svg class="animate-spin h-10 w-10 mx-auto mb-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -611,7 +611,7 @@
                 </svg>
                 <p class="font-medium text-lg text-slate-700">กำลังซิงค์ข้อมูลจาก Google Sheet...</p>
             </div>
-            
+
             <div id="errorMessage" class="px-6 py-10 text-center text-red-500 hidden bg-red-50">
                 <svg class="h-12 w-12 mx-auto mb-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 <p class="font-semibold text-lg">ไม่สามารถเข้าถึง Google Sheet ได้</p>
@@ -648,7 +648,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 text-sm flex justify-between items-center text-slate-500">
                 <span>🟢 เชื่อมต่อข้อมูลสดเรียบร้อย</span>
                 <span id="lastUpdated" class="text-slate-600 font-medium"></span>
@@ -665,7 +665,7 @@
             <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16">
                 <!-- Slide-over panel -->
                 <div id="jobModalPanel" class="pointer-events-auto w-screen max-w-2xl transform transition ease-in-out duration-300 translate-x-full bg-white shadow-2xl flex flex-col h-full border-l border-slate-200">
-                    
+
                     <!-- Header -->
                     <div class="px-4 py-5 sm:px-6 border-b border-slate-200 bg-white sticky top-0 z-10 flex items-center justify-between gap-3">
                         <h3 class="text-xl font-semibold text-slate-900" id="slide-over-title">รายละเอียดงานติดตั้ง</h3>
@@ -683,7 +683,7 @@
                     <!-- Body (Scrollable) -->
                     <div class="flex-1 overflow-y-auto p-4 sm:p-6 bg-white">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                            
+
                             <div class="col-span-1 md:col-span-2 mb-1">
                                 <h4 class="font-semibold text-slate-700 mb-2 flex items-center justify-between">
                                     <span class="flex items-center">
@@ -700,7 +700,7 @@
 
                             <div><span class="font-medium text-slate-500">รหัสงาน :</span> <span id="m-jobId" class="text-slate-800 font-medium"></span></div>
                             <div><span class="font-medium text-slate-500">สถานะ:</span> <span id="m-status" class="px-2 py-1 text-xs rounded-full border"></span></div>
-                            
+
                             <div><span class="font-medium text-slate-500">วันที่ติดตั้ง:</span> <span id="m-date" class="text-slate-800"></span></div>
                             <div><span class="font-medium text-slate-500">เวลานัด:</span> <span id="m-time" class="text-slate-800"></span> น.</div>
 
@@ -713,15 +713,15 @@
                             </div>
 
                             <div class="col-span-1 md:col-span-2 border-t pt-3 mt-1"></div>
-                            
+
                             <div><span class="font-medium text-slate-500">รุ่นรถยนต์:</span> <span id="m-carModel" class="text-slate-800 font-medium"></span></div>
                             <div><span class="font-medium text-slate-500">ทะเบียน/ป้าย:</span> <span id="m-plate" class="text-slate-800"></span> (<span id="m-plateType" class="text-slate-800"></span>)</div>
                             <div id="m-plateWarning" class="hidden col-span-1 md:col-span-2 rounded-lg border-2 border-red-300 bg-red-50 px-4 py-3 text-center text-lg font-extrabold text-red-700">
                                 กรุณากรอกทะเบียนรถให้ครบ
                             </div>
-                            
+
                             <div class="col-span-1 md:col-span-2 border-t pt-3 mt-1"></div>
-                            
+
                             <div><span class="font-medium text-slate-500">ยี่ห้อฟิล์ม:</span> <span id="m-film" class="text-indigo-600 font-semibold"></span></div>
                             <div><span class="font-medium text-slate-500">ตำแหน่งติดตั้ง:</span> <span id="m-installType" class="text-slate-800"></span></div>
                             <div><span class="font-medium text-slate-500">โปรโมชั่น:</span> <span id="m-promotion" class="text-orange-600"></span></div>
@@ -732,9 +732,9 @@
                             <div><span class="font-medium text-slate-500">ยอดเงินสุทธิ:</span> <span id="m-price" class="text-green-600 font-bold"></span> บาท</div>
                             <div id="m-discountCodeWrapper"><span class="font-medium text-slate-500">รหัสส่วนลด:</span> <span id="m-discountCode" class="text-orange-600 font-semibold"></span></div>
                             <div><span class="font-medium text-slate-500">สถานะการชำระ:</span> <span id="m-paymentStatus" class="px-2 py-1 text-xs rounded-full border"></span></div>
-                            
+
                             <div class="col-span-1 md:col-span-2 mt-2 bg-slate-50 p-3 rounded-lg border border-slate-100" id="m-noteWrapper" style="display: none;">
-                                <span class="font-medium text-slate-500 block mb-1">หมายเหตุ:</span> 
+                                <span class="font-medium text-slate-500 block mb-1">หมายเหตุ:</span>
                                 <span id="m-note" class="text-slate-800 italic"></span>
                             </div>
 
@@ -1039,9 +1039,16 @@
 
                 <div>
                     <label class="block mb-1.5 text-xs font-semibold text-slate-700">โปรโมชั่น <span class="text-rose-500">*</span></label>
-                    <select id="bk-proId" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                        <option value="">-- กำลังโหลด --</option>
-                    </select>
+                    <input type="hidden" id="bk-proId" required>
+                    <div class="relative" id="bk-proIdWrap">
+                        <button type="button" onclick="togglePromotionDropdown()" class="w-full text-left rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white hover:bg-white transition-colors min-h-[42px] flex items-center justify-between gap-2">
+                            <span id="bk-proIdLabel" class="text-slate-400 flex-1 min-w-0 truncate">-- กำลังโหลด --</span>
+                            <i class="fas fa-chevron-down text-xs text-slate-400 flex-shrink-0"></i>
+                        </button>
+                        <div id="bk-proIdPanel" class="hidden absolute z-50 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-xl max-h-80 overflow-y-auto p-2">
+                            <div class="px-3 py-4 text-center text-xs text-slate-400">กำลังโหลด...</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
@@ -1179,17 +1186,17 @@
 
     <!-- Modal: กรอก PayIn -->
     <div id="payInModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[calc(100vh-2rem)] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
                 <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 002 2v6z"></path></svg>
-                    กรอกการชำระเงิน (PayIn)
+                    <span id="pi-modalTitle">กรอกการชำระเงิน (PayIn)</span>
                 </h3>
                 <button onclick="closePayInModal()" class="text-slate-400 hover:text-slate-600 rounded-lg p-1 hover:bg-slate-100">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <form id="payInForm" class="px-6 py-5 space-y-4" onsubmit="submitPayIn(event)">
+            <form id="payInForm" class="px-6 py-5 space-y-4 overflow-y-auto" onsubmit="submitPayIn(event)" oninput="resetPayInMutationId()">
                 <!-- Info -->
                 <div class="grid grid-cols-2 gap-x-6 gap-y-2 bg-emerald-50 rounded-xl p-3 text-sm">
                     <div><span class="text-slate-500 font-medium">JobID:</span> <span id="pi-jobId" class="font-bold text-slate-800"></span></div>
@@ -1227,7 +1234,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่บิล/ใบเสร็จ</label>
-                        <input type="text" name="เลขที่บิล/ใบเสร็จ" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="CV-...">
+                        <input type="text" name="เลขที่บิล/ใบเสร็จ" id="pi-billNo" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="CV-...">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">ใบเสนอราคา</label>
@@ -1238,6 +1245,46 @@
                         <input type="text" name="หมายเหตุ" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400">
                     </div>
                 </div>
+
+                <section class="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3" aria-labelledby="pi-proof-heading">
+                    <div class="mb-3">
+                        <h4 id="pi-proof-heading" class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h3l2-3h8l2 3h3v12H3V7zm9 3a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                            รูปหลักฐานการชำระเงิน
+                        </h4>
+                        <p class="mt-1 text-[11px] leading-4 text-slate-500">ถ่ายรูปจากกล้องหรือเลือกรูปได้สูงสุด 2 รูป (JPG, PNG, WebP) ระบบจะย่อรูปก่อนบันทึกลง Google Drive</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-slate-200 bg-white p-2.5">
+                            <div class="mb-2 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">หลักฐาน 1</span>
+                                <button type="button" id="pi-proof-remove-1" onclick="removePayInProof(1)" class="hidden text-[11px] font-semibold text-rose-600 hover:text-rose-700">ล้างรูป</button>
+                            </div>
+                            <div id="pi-proof-preview-1" class="h-32 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50"></div>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <label for="pi-proof-camera-1" class="cursor-pointer rounded-lg bg-emerald-600 px-2 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700">📷 ถ่ายรูป</label>
+                                <label for="pi-proof-file-1" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">เลือกรูป</label>
+                            </div>
+                            <input id="pi-proof-camera-1" type="file" accept="image/*" capture="environment" class="hidden" onchange="selectPayInProof(event, 1)">
+                            <input id="pi-proof-file-1" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="selectPayInProof(event, 1)">
+                            <p id="pi-proof-status-1" class="mt-1.5 min-h-4 text-[10px] text-slate-500"></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 bg-white p-2.5">
+                            <div class="mb-2 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">หลักฐาน 2</span>
+                                <button type="button" id="pi-proof-remove-2" onclick="removePayInProof(2)" class="hidden text-[11px] font-semibold text-rose-600 hover:text-rose-700">ล้างรูป</button>
+                            </div>
+                            <div id="pi-proof-preview-2" class="h-32 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50"></div>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <label for="pi-proof-camera-2" class="cursor-pointer rounded-lg bg-emerald-600 px-2 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700">📷 ถ่ายรูป</label>
+                                <label for="pi-proof-file-2" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">เลือกรูป</label>
+                            </div>
+                            <input id="pi-proof-camera-2" type="file" accept="image/*" capture="environment" class="hidden" onchange="selectPayInProof(event, 2)">
+                            <input id="pi-proof-file-2" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="selectPayInProof(event, 2)">
+                            <p id="pi-proof-status-2" class="mt-1.5 min-h-4 text-[10px] text-slate-500"></p>
+                        </div>
+                    </div>
+                </section>
 
                 <p id="pi-error" class="hidden text-sm font-semibold text-red-600 text-center"></p>
                 <p id="pi-success" class="hidden text-sm font-semibold text-emerald-600 text-center"></p>
@@ -1259,7 +1306,7 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่บิล/ใบเสร็จ</label>
-                        <input type="text" name="เลขที่บิล/ใบเสร็จ" id="pi-billNo" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="เช่น CV-6905001">
+                        <input type="text" name="เลขที่บิล/ใบเสร็จ" id="legacy-pi-billNo" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="เช่น CV-6905001">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">สถานะ <span class="text-red-500">*</span></label>
@@ -1282,7 +1329,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">ยอดเงิน (บาท) <span class="text-red-500">*</span></label>
-                        <input type="number" name="ยอดเงิน(บาท)" id="pi-amount" required min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="0">
+                        <input type="number" name="ยอดเงิน(บาท)" id="legacy-pi-amount" required min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" placeholder="0">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">ใบเสนอราคา</label>
@@ -1294,12 +1341,12 @@
                     </div>
                 </div>
 
-                <p id="pi-error" class="hidden text-sm font-semibold text-red-600 text-center"></p>
-                <p id="pi-success" class="hidden text-sm font-semibold text-emerald-600 text-center"></p>
+                <p id="legacy-pi-error" class="hidden text-sm font-semibold text-red-600 text-center"></p>
+                <p id="legacy-pi-success" class="hidden text-sm font-semibold text-emerald-600 text-center"></p>
 
                 <div class="flex gap-3 pt-1">
                     <button type="button" onclick="closePayInModal()" class="flex-1 rounded-xl border border-slate-300 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">ยกเลิก</button>
-                    <button type="submit" id="pi-submitBtn" class="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">บันทึกข้อมูล</button>
+                    <button type="submit" id="legacy-pi-submitBtn" class="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
@@ -1514,7 +1561,7 @@
 
     <!-- Modal ตัวใหม่สำหรับ Print Preview (แสดงจำลองกระดาษ A4) -->
     <div id="printPreviewModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-800 bg-opacity-90 backdrop-blur-sm">
-        
+
         <!-- แถบเมนูด้านบน (ซ่อนตอนปริ้นต์จริง) -->
         <div class="sticky top-0 z-10 bg-white shadow-md px-6 py-4 flex justify-between items-center print-hidden">
             <h3 class="text-lg font-bold text-slate-800">ตัวอย่างก่อนพิมพ์ (A4)</h3>
@@ -1533,7 +1580,7 @@
         <div class="py-8 w-full flex justify-center min-h-screen items-center" id="printAreaWrapper">
             <!-- ขนาด A4 210mm x 297mm ปล่อยให้ไหลตาม content -->
             <div id="printArea" class="bg-white w-[210mm] min-h-[297mm] mx-auto py-[12mm] px-[12mm] shadow-2xl text-black text-[11px] leading-tight flex flex-col box-border">
-                
+
                 <!-- ================= ส่วนบน: ใบรับ/ส่งรถยนต์ ================= -->
                 <div class="relative flex-none">
                     <!-- Header -->
@@ -1558,7 +1605,7 @@
 
                     <!-- Content Split ซ้าย(ข้อมูล+ตาราง) 68% / ขวา(ยอดชำระ+QR) 32% -->
                     <div class="flex gap-4">
-                        
+
                         <!-- ฝั่งซ้าย 68% -->
                         <div class="w-[68%]">
                             <!-- ข้อมูลลูกค้าแบบ Grid คงที่ (ป้องกันบรรทัดเบี้ยว) -->
@@ -1644,21 +1691,21 @@
                                 <span class="font-bold text-[11px]">ยอดเงินที่ต้องชำระ :</span>
                                 <span class="text-red-600 font-bold text-[16px]" id="p-price"></span>
                             </div>
-                            
+
                             <!-- กล่องชำระเงิน Prompt Pay ใหญ่อลังการ -->
                             <div class="prompt-pay-card w-full flex flex-col items-center text-center justify-start border border-black p-3 bg-white">
                                 <div class="prompt-pay-title bg-[#113566] text-white px-4 py-1.5 font-bold rounded-sm text-[12px] mb-3 w-full">Prompt Pay</div>
-                                
+
                                 <!-- QR Code ธนาคาร -->
                                 <div class="prompt-pay-qr w-[120px] h-[120px] bg-white border border-gray-300 flex flex-col items-center justify-center text-gray-400 mb-3 shrink-0 relative overflow-hidden">
                                     <img src="images/qrcode_mhl.png" alt="QR Code ธนาคาร บริษัท มโหฬารฟิล์ม จำกัด" class="w-full h-full object-contain">
                                 </div>
-                                
+
                                 <div class="text-[10px] leading-[1.4] mb-3 font-medium">
                                     บริษัท มโหฬารฟิล์ม จำกัด<br>
                                     Biller ID : 010556214343699
                                 </div>
-                                
+
                                 <div class="border border-purple-800 rounded-md py-1.5 px-2 w-full bg-purple-50/30">
                                     <div class="text-purple-800 font-bold text-[11px]">SCB ไทยพาณิชย์</div>
                                     <div class="text-[16px] font-bold font-sans tracking-widest leading-none my-1">430-0-43329-0</div>
@@ -1679,7 +1726,7 @@
                                 <div class="w-4 h-4 border border-black rounded-full mr-2 shrink-0"></div>
                                 <span>เคลือบน้ำยาพ่นหยดน้ำ 3M (บานหน้า) <b class="text-red-600">ฟรี!</b> เป็นลูกค้าตามเงื่อนไขที่บริษัทกำหนด</span>
                             </div>
-                            
+
                             <!-- พื้นที่หมายเหตุ (จะแสดงถ้ามีข้อมูล) -->
                             <div class="mt-1 text-[10px] text-red-600 font-semibold" id="p-noteContainer" style="display:none;">
                                 หมายเหตุ: <span class="text-slate-800 font-normal" id="p-note"></span>
@@ -1716,9 +1763,9 @@
                             <h2 class="font-bold text-[16px]">ใบสั่งตัดฟิล์ม สำหรับรถยนต์</h2>
                             <div class="text-[11px] font-bold flex items-end">
                                 <span class="mr-1">วันที่</span>
-                                <span class="border-b border-dotted border-black px-4 mr-4 text-center min-w-[80px] pb-0.5" id="p2-date"></span> 
+                                <span class="border-b border-dotted border-black px-4 mr-4 text-center min-w-[80px] pb-0.5" id="p2-date"></span>
                                 <span class="mr-1">เวลานัดติดตั้ง</span>
-                                <span class="border-b border-dotted border-black pl-1 pr-4 mr-1 text-left min-w-[60px] pb-0.5" id="p2-time"></span> 
+                                <span class="border-b border-dotted border-black pl-1 pr-4 mr-1 text-left min-w-[60px] pb-0.5" id="p2-time"></span>
                                 <span>น.</span>
                             </div>
                         </div>
@@ -1737,7 +1784,7 @@
                                 <span class="font-semibold pb-0.5">ทะเบียนรถ :</span>
                                 <span class="border-b border-dotted border-black px-1 pb-0.5 font-bold whitespace-nowrap overflow-hidden text-ellipsis" id="p2-plate"></span>
                             </div>
-                            
+
                             <div class="grid grid-cols-[60px_1fr] items-end gap-1">
                                 <span class="font-semibold pb-0.5">เบอร์โทร :</span>
                                 <span class="border-b border-dotted border-black px-1 pb-0.5 whitespace-nowrap overflow-hidden text-ellipsis" id="p2-phone"></span>
@@ -1802,7 +1849,7 @@
                                 <span class="pb-0.5">ผู้ตรวจสอบ</span>
                                 <div class="border-b border-dotted border-black h-4 text-center"></div>
                             </div>
-                            
+
                             <div class="grid grid-cols-[60px_1fr] items-end gap-1">
                                 <span class="pb-0.5">พนักงานขาย</span>
                                 <div class="flex h-5 items-start justify-center border-b border-dotted border-black pt-0.5 text-center font-bold leading-none text-blue-800" id="p2-salesName"></div>
@@ -1876,6 +1923,15 @@
         let filmSeriesOptions = []; // รายชื่อฟิล์ม
         let reasonOptions = [];     // รายชื่อเหตุผลขอตัดฟิล์ม [{id, text}]
         let currentViewJobId = null; // ตัวแปรเก็บ ID งานที่เปิดดูอยู่ปัจจุบัน เพื่อใช้สั่งพิมพ์
+        const PAYIN_PROOF_SLOT_COUNT = 2;
+        const PAYIN_PROOF_MAX_SOURCE_BYTES = 20 * 1024 * 1024;
+        const PAYIN_PROOF_MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+        const payInProofState = {
+            1: { existing: '', upload: null, removed: false, processing: false, requestId: 0 },
+            2: { existing: '', upload: null, removed: false, processing: false, requestId: 0 }
+        };
+        let payInSubmitInFlight = false;
+        let payInPendingMutationId = '';
         const dom = {};
 
         const DOM_IDS = [
@@ -2106,13 +2162,22 @@
                     const k = key.replace(/\s/g, '').toLowerCase();
                     return k.includes('หลักฐาน') || k.includes('สลิป') || k.includes('slip') || k.includes('รูป') || k.includes('image') || k.includes('แนบ');
                 });
+                const proofSlots = [1, 2].map(slot => {
+                    const proofKey = findKey(keys, key => {
+                        const k = key.replace(/\s/g, '').toLowerCase();
+                        return k === `หลักฐาน_${slot}` || k === `หลักฐาน${slot}` || k === `proof_${slot}` || k === `proof${slot}`;
+                    });
+                    return proofKey ? textValue(row[proofKey], '') : '';
+                });
 
                 if (!jobKey) return;
 
                 const jobId = textValue(row[jobKey], "");
                 const status = statusKey ? textValue(row[statusKey], "-") : "-";
-                const proofs = proofKeys.map(key => textValue(row[key], "")).filter(value => value && value !== "-");
-                
+                const slotProofs = proofSlots.filter(value => value && value !== '-');
+                const proofs = (slotProofs.length ? slotProofs : proofKeys.map(key => textValue(row[key], "")))
+                    .filter(value => value && value !== "-");
+
                 if (!jobId) return;
                 const payIdKey = findKey(keys, key => {
                     const k = key.replace(/\s/g, '').toLowerCase();
@@ -2127,6 +2192,7 @@
                     amount: amountKey ? parseFloat(textValue(row[amountKey], "0").replace(/[^\d.-]/g, '')) || 0 : 0,
                     productValue: productValueKey ? parseFloat(textValue(row[productValueKey], "0").replace(/[^\d.-]/g, '')) || 0 : 0,
                     proofs,
+                    proofSlots,
                     hasSlip: proofs.some(value => value.length > 5),
                     rawRow: row // เก็บ raw row ไว้สำหรับ pre-fill ฟอร์มแก้ไข (เช่น ใบเสนอราคา, หมายเหตุ)
                 };
@@ -2217,20 +2283,20 @@
         // ฟังก์ชันแปลงข้อความเวลาให้รัดกุมยิ่งขึ้น
         function timeToNumber(timeStr) {
             if (!timeStr || timeStr === "-" || typeof timeStr !== 'string') return Number.MAX_SAFE_INTEGER;
-            
+
             // ลบช่องว่างหน้า-หลัง และแปลงเป็นพิมพ์เล็กเผื่อมี am/pm (แม้ในตัวอย่างจะไม่มี)
             const cleanTime = timeStr.trim().toLowerCase();
-            
+
             // ใช้ Regular Expression เพื่อดึงแค่ตัวเลขที่คั่นด้วย : ออกมา
             const match = cleanTime.match(/(\d+):(\d+)(?::(\d+))?/);
-            
+
             if (match) {
                 const h = parseInt(match[1], 10) || 0;
                 const m = parseInt(match[2], 10) || 0;
                 const s = parseInt(match[3], 10) || 0;
                 return (h * 3600) + (m * 60) + s;
             }
-            
+
             return Number.MAX_SAFE_INTEGER;
         }
 
@@ -2584,7 +2650,7 @@
                        memoCsvText, glassSizeCsvText, installerCsvText, warrantyCsvText, teamCsvText, filmSeriesCsvText] = await Promise.all(
                     responses.map(response => response ? response.text() : Promise.resolve(""))
                 );
-                
+
                 // ตรวจสอบสิทธิ์
                 if ([csvText, detailCsvText, reasonCsvText, customerCsvText, payInCsvText, contactCsvText].some(text => {
                     return isInvalidSheetResponseText(text);
@@ -2629,7 +2695,7 @@
 
                 // 0.5 สร้างพจนานุกรมข้อมูลลูกค้า (customerMap)
                 const customerMap = makeLookupMap(customerRows, key => key.replace(/\s/g, '').toLowerCase() === 'custid' || key.toLowerCase().includes('cust'));
-                
+
                 // 1. แปลงข้อมูล Detail_film เพื่อเตรียมนำมาเทียบ
                 const filmDetailsMap = makeLookupMap(detailRows, key => key.replace(/\s/g, '').toLowerCase() === 'jobid' || key.toLowerCase().includes('job'));
                 payInDetailsMap = buildPayInDetailsMap(payInRows);
@@ -2714,7 +2780,7 @@
                     const dateKey = findKey(keys, key => key.includes('วันที่'));
                     const timeKey = findKey(keys, key => key.includes('เวลา'));
                     const statusKey = findKey(keys, key => key.includes('Status'));
-                    
+
                     // ดึงคีย์ใหม่สำหรับตาราง
                     const receiptKey = findKey(keys, key => {
                         const k = normalizeHeader(key);
@@ -2752,10 +2818,10 @@
                         const normalizedKey = normalizeHeader(key);
                         return normalizedKey.includes('ช่องทางติดต่อ') && !normalizedKey.includes('ชื่อ');
                     }) || findKey(customerKeys, key => key.includes('ช่องทาง') && key !== channelNameKey);
-                    
+
                     const price = parseFloat(textValue(priceKey ? row[priceKey] : "0", "0").replace(/,/g, '')) || 0;
                     const warrantyValue = warrantyKey ? textValue(row[warrantyKey], "") : "";
-                    
+
                     const payInDetails = payInDetailsMap[jobId] || payInDetailsMap[normalizeLookupId(jobId)] || { status: "-", hasSlip: false };
 
                     // Parse the new numeric fields
@@ -2824,7 +2890,7 @@
 
                 setVisible(dom.loadingMessage, false);
                 setVisible(dom.tableContainer, true);
-                
+
                 const now = new Date();
                 setText('lastUpdated', `อัปเดตล่าสุด: ${now.toLocaleTimeString('th-TH', { hour: 'numeric', minute: '2-digit', hour12: false })} น.`);
 
@@ -3197,16 +3263,16 @@
             const searchTerm = dom.searchInput.value.trim().toLowerCase();
             const presetValue = dom.datePreset.value;
             const dateInput = dom.dateFilter.value; // ค่าจะเป็นรูปแบบ YYYY-MM-DD
-            
+
             let dateFilteredData = allData;
 
             const now = new Date();
             const todayStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543}`;
-            
+
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = `${yesterday.getDate()}/${yesterday.getMonth() + 1}/${yesterday.getFullYear() + 543}`;
-            
+
             const thisMonth = now.getMonth() + 1;
             const thisYearThai = now.getFullYear() + 543;
 
@@ -3386,12 +3452,12 @@
         function initApp() {
             cacheDom();
             dom.searchInput.addEventListener('input', applyFilters);
-            
+
             dom['table-body'].addEventListener('click', event => {
                 const row = event.target.closest('tr[data-job-id]');
                 if (row) openJobModal(row.dataset.jobId);
             });
-            
+
             // จับ Event เมื่อเปลี่ยน Dropdown ตัวกรอง
             dom.datePreset.addEventListener('change', () => {
                 if (dom.datePreset.value === 'custom') {
@@ -3442,7 +3508,7 @@
                     if (event.target === dom.memoAlertModal) closeMemoAlertModal();
                 });
             }
-            
+
             dom.clearDateBtn.addEventListener('click', () => {
                 dom.datePreset.value = 'today_pending';
                 dom.dateFilter.classList.add('hidden');
@@ -3506,7 +3572,7 @@
                 setVisible(dom['m-discountCodeWrapper'], false);
             }
             setText('m-price', job.price.toLocaleString());
-            
+
             const paymentBadge = dom['m-paymentStatus'];
             let paymentHtml = getPaymentStatusHTML(job.paymentStatus);
             if(job.hasSlip) {
@@ -3516,7 +3582,7 @@
                 paymentBadge.innerHTML = paymentHtml;
                 paymentBadge.className = `px-2 py-1 inline-flex items-center text-xs rounded-full border ${getPaymentStatusColorClass(job.paymentStatus)}`;
             }
-            
+
             if (job.note && job.note.trim() !== "" && job.note.trim() !== "-") {
                 setVisible(dom['m-noteWrapper'], true);
                 setText('m-note', job.note);
@@ -4175,6 +4241,7 @@
             'Review: Google Map', 'Review: facebook',
             'ส่วนลดลูกค้าเก่า', 'ส่วนลดพิเศษคุณปอ', 'ส่วนลดพิเศษคุณโอเล่'
         ];
+        let promotionOptions = [];
         let discountCodeSelected = new Set();
         let bkDropdownsLoaded = false;
 
@@ -4253,20 +4320,103 @@
             }
         }
 
+        function renderPromotionMessage(message) {
+            const panel = document.getElementById('bk-proIdPanel');
+            const label = document.getElementById('bk-proIdLabel');
+            if (panel) panel.innerHTML = `<div class="px-3 py-4 text-center text-xs text-slate-400">${message}</div>`;
+            if (label) {
+                label.className = 'text-slate-400 flex-1 min-w-0 truncate';
+                label.textContent = message;
+            }
+        }
+
+        function renderPromotionList() {
+            const panel = document.getElementById('bk-proIdPanel');
+            const selected = document.getElementById('bk-proId')?.value || '';
+            if (!panel) return;
+            panel.innerHTML = '';
+            if (promotionOptions.length === 0) {
+                panel.innerHTML = '<div class="px-3 py-4 text-center text-xs text-slate-400">-- ไม่มีโปรโมชั่นที่เปิดใช้งาน --</div>';
+                return;
+            }
+            promotionOptions.forEach(item => {
+                const isSelected = item.proId === selected;
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `mb-2 w-full rounded-xl border px-3 py-2 text-left transition-all last:mb-0 ${isSelected ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-sky-50'}`;
+                btn.onclick = () => selectPromotion(item.proId);
+
+                const status = document.createElement('span');
+                status.className = 'inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200';
+                status.textContent = item.status || 'ON';
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3';
+
+                const name = document.createElement('div');
+                name.className = 'min-w-0 whitespace-normal text-sm font-semibold leading-snug text-slate-700';
+                name.textContent = item.name || item.proId;
+
+                row.append(name, status);
+                btn.append(row);
+                panel.appendChild(btn);
+            });
+        }
+
+        function updatePromotionLabel() {
+            const input = document.getElementById('bk-proId');
+            const label = document.getElementById('bk-proIdLabel');
+            if (!input || !label) return;
+            const item = promotionOptions.find(p => p.proId === input.value);
+            if (!input.value) {
+                label.className = 'text-slate-400 flex-1 min-w-0 truncate';
+                label.textContent = '-- เลือกโปรโมชั่น --';
+                return;
+            }
+            label.className = 'text-slate-700 flex-1 min-w-0 truncate font-medium';
+            label.textContent = item && item.name ? item.name : input.value;
+        }
+
+        function selectPromotion(proId) {
+            document.getElementById('bk-proId').value = proId;
+            updatePromotionLabel();
+            renderPromotionList();
+            document.getElementById('bk-proIdPanel').classList.add('hidden');
+        }
+
+        function setPromotionValue(proId) {
+            document.getElementById('bk-proId').value = proId || '';
+            updatePromotionLabel();
+            renderPromotionList();
+        }
+
+        function togglePromotionDropdown() {
+            const panel = document.getElementById('bk-proIdPanel');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) renderPromotionList();
+        }
+
         async function bkFetchPromotions() {
             try {
                 const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Promotion')}`;
                 const res = await fetch(url);
                 const csvText = await res.text();
                 const rows = bkParseCSV(csvText);
-                if (rows.length === 0) return;
+                if (rows.length === 0) {
+                    promotionOptions = [];
+                    renderPromotionMessage('-- ไม่มีข้อมูลโปรโมชั่น --');
+                    return;
+                }
                 const header = rows[0].map(h => String(h).trim());
                 const proIdIdx = header.findIndex(h => h.toLowerCase().replace(/\s+/g, '') === 'pro_id' || h === 'Pro_ID');
                 const statusIdx = header.findIndex(h => h.toLowerCase() === 'status' || h === 'Status');
                 const nameIdx = header.findIndex(h => h.includes('ชื่อโปร') || h.toLowerCase().includes('name') || h.includes('โปรโมชั่น'));
-                if (proIdIdx === -1) return;
-                const select = document.getElementById('bk-proId');
-                select.innerHTML = '<option value="">-- เลือกโปรโมชั่น --</option>';
+                if (proIdIdx === -1) {
+                    promotionOptions = [];
+                    renderPromotionMessage('ไม่พบคอลัมน์ Pro_ID');
+                    return;
+                }
+                promotionOptions = [];
                 for (let i = 1; i < rows.length; i++) {
                     const r = rows[i];
                     const proId = r[proIdIdx] ? String(r[proIdIdx]).trim() : '';
@@ -4276,13 +4426,14 @@
                         if (st !== 'ON') continue;
                     }
                     const name = (nameIdx !== -1 && r[nameIdx]) ? String(r[nameIdx]).trim() : '';
-                    const opt = document.createElement('option');
-                    opt.value = proId;
-                    opt.textContent = name ? `${proId} — ${name}` : proId;
-                    select.appendChild(opt);
+                    promotionOptions.push({ proId, name, status: 'ON' });
                 }
+                renderPromotionList();
+                updatePromotionLabel();
             } catch (err) {
                 console.error('โหลด Promotion ไม่สำเร็จ:', err);
+                promotionOptions = [];
+                renderPromotionMessage('โหลดโปรโมชั่นไม่สำเร็จ');
             }
         }
 
@@ -4416,6 +4567,9 @@
             const w2 = document.getElementById('bk-discountCodeWrap');
             const p2 = document.getElementById('bk-discountCodePanel');
             if (w2 && p2 && !w2.contains(e.target) && !p2.classList.contains('hidden')) p2.classList.add('hidden');
+            const w3 = document.getElementById('bk-proIdWrap');
+            const p3 = document.getElementById('bk-proIdPanel');
+            if (w3 && p3 && !w3.contains(e.target) && !p3.classList.contains('hidden')) p3.classList.add('hidden');
         });
 
         function setBtnGroup(hiddenId, btn) {
@@ -4486,7 +4640,7 @@
             };
             setSelectVal('bk-carModel', job.carModel);
             setSelectVal('bk-filmBrand', job.film);
-            setSelectVal('bk-proId', job.promotion);
+            setPromotionValue(job.promotion);
 
             const setBtnVal = (hiddenId, val) => {
                 if (!val) return;
@@ -4532,6 +4686,12 @@
             const price = parseFloat(document.getElementById('bk-price').value) || 0;
             const discount = parseFloat(document.getElementById('bk-discount').value) || 0;
             const sales = Math.max(0, price - discount);
+            if (!document.getElementById('bk-proId').value) {
+                showAlert('กรุณาเลือกโปรโมชั่น', 'ต้องเลือกโปรโมชั่นก่อนบันทึกคิวจอง', 'error');
+                document.getElementById('bk-proIdPanel').classList.remove('hidden');
+                renderPromotionList();
+                return;
+            }
 
             const payload = {
                 sheetName: 'Bookings',
@@ -4774,10 +4934,367 @@
 
 
         // ============ PayIn Form ============
+        function revokePayInProofPreview(state) {
+            if (state?.upload?.previewUrl) {
+                URL.revokeObjectURL(state.upload.previewUrl);
+            }
+        }
+
+        function payInProofView(rawValue) {
+            const raw = textValue(rawValue, '').trim();
+            if (!raw) return null;
+            const drivePatterns = [
+                /\/file\/d\/([-\w]{10,})/,
+                /[?&]id=([-\w]{10,})/,
+                /\/d\/([-\w]{10,})/,
+                /^([-\w]{20,})$/
+            ];
+            for (const pattern of drivePatterns) {
+                const match = raw.match(pattern);
+                if (match) {
+                    return {
+                        src: `https://drive.google.com/thumbnail?id=${match[1]}&sz=w800`,
+                        href: `https://drive.google.com/file/d/${match[1]}/view`
+                    };
+                }
+            }
+            if (/^https?:\/\//i.test(raw)) {
+                const canPreview = /\.(png|jpe?g|gif|webp)(\?|#|$)/i.test(raw) || /googleusercontent\.com/i.test(raw);
+                return { src: canPreview ? raw : '', href: raw };
+            }
+            let clean = raw.replace(/\/+/g, '/').replace(/^\//, '');
+            const appNameMatch = clean.match(/^([^/]+)/);
+            const appName = appNameMatch ? appNameMatch[1] : 'CAR_CRM-691939189';
+            const appsheetUrl = `https://www.appsheet.com/template/gettablefileurl?appName=${encodeURIComponent(appName)}&tableName=PayIn&fileName=${encodeURIComponent(clean)}`;
+            return { src: appsheetUrl, href: appsheetUrl };
+        }
+
+        function payInProofPlaceholder(label = 'ยังไม่มีรูป') {
+            return `<div class="flex h-full flex-col items-center justify-center gap-1 text-slate-400">
+                <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M3 7h3l2-3h8l2 3h3v12H3V7zm9 3a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                <span class="text-[11px] font-medium">${escapeHtml(label)}</span>
+            </div>`;
+        }
+
+        function renderPayInProofSlot(slot) {
+            const state = payInProofState[slot];
+            const previewEl = document.getElementById(`pi-proof-preview-${slot}`);
+            const statusEl = document.getElementById(`pi-proof-status-${slot}`);
+            const removeBtn = document.getElementById(`pi-proof-remove-${slot}`);
+            if (!state || !previewEl || !statusEl || !removeBtn) return;
+
+            if (state.upload?.previewUrl) {
+                previewEl.innerHTML = `<img src="${escapeHtml(state.upload.previewUrl)}" alt="ตัวอย่างหลักฐาน ${slot}" class="h-full w-full object-contain">`;
+            } else if (state.existing && !state.removed) {
+                const view = payInProofView(state.existing);
+                if (view?.src) {
+                    previewEl.innerHTML = `<a href="${escapeHtml(view.href)}" target="_blank" rel="noopener" class="block h-full w-full bg-white">
+                        <img src="${escapeHtml(view.src)}" alt="หลักฐานเดิม ${slot}" class="h-full w-full object-contain" referrerpolicy="no-referrer" onerror="this.classList.add('hidden');this.nextElementSibling.style.display='flex'">
+                        <span class="h-full items-center justify-center px-3 text-center text-xs font-semibold text-emerald-700" style="display:none">แตะเพื่อเปิดรูปเดิม</span>
+                    </a>`;
+                } else if (view?.href) {
+                    previewEl.innerHTML = `<a href="${escapeHtml(view.href)}" target="_blank" rel="noopener" class="flex h-full items-center justify-center px-3 text-center text-xs font-semibold text-emerald-700">แตะเพื่อเปิดหลักฐานเดิม</a>`;
+                } else {
+                    previewEl.innerHTML = payInProofPlaceholder('เปิดรูปเดิมไม่ได้');
+                }
+            } else {
+                previewEl.innerHTML = payInProofPlaceholder(state.removed ? 'รอลบรูปเดิม' : 'ยังไม่มีรูป');
+            }
+
+            statusEl.className = 'mt-1.5 min-h-4 text-[10px]';
+            if (state.processing) {
+                statusEl.textContent = 'กำลังย่อและเตรียมรูป...';
+                statusEl.classList.add('text-amber-600', 'font-semibold');
+            } else if (state.upload) {
+                statusEl.textContent = `รูปใหม่พร้อมบันทึก • ${Math.max(1, Math.round(state.upload.bytes / 1024)).toLocaleString()} KB`;
+                statusEl.classList.add('text-emerald-700', 'font-semibold');
+            } else if (state.removed) {
+                statusEl.textContent = 'รูปเดิมจะถูกนำออกจากรายการเมื่อกดบันทึก';
+                statusEl.classList.add('text-rose-600', 'font-semibold');
+            } else if (state.existing) {
+                statusEl.textContent = 'รูปเดิมในระบบ';
+                statusEl.classList.add('text-slate-500');
+            } else {
+                statusEl.textContent = 'ยังไม่ได้เลือกรูป';
+                statusEl.classList.add('text-slate-500');
+            }
+
+            const showRemove = Boolean(state.upload || state.existing);
+            removeBtn.classList.toggle('hidden', !showRemove);
+            if (state.upload) removeBtn.textContent = state.existing ? 'ใช้รูปเดิม' : 'ล้างรูป';
+            else if (state.removed) removeBtn.textContent = 'คืนรูปเดิม';
+            else removeBtn.textContent = 'นำรูปออก';
+        }
+
+        function resetPayInProofState(existingProofs = []) {
+            for (let slot = 1; slot <= PAYIN_PROOF_SLOT_COUNT; slot += 1) {
+                const state = payInProofState[slot];
+                revokePayInProofPreview(state);
+                const existingValue = textValue(existingProofs[slot - 1], '').trim();
+                state.existing = existingValue === '-' ? '' : existingValue;
+                state.upload = null;
+                state.removed = false;
+                state.processing = false;
+                state.requestId += 1;
+                const cameraInput = document.getElementById(`pi-proof-camera-${slot}`);
+                const fileInput = document.getElementById(`pi-proof-file-${slot}`);
+                if (cameraInput) cameraInput.value = '';
+                if (fileInput) fileInput.value = '';
+                renderPayInProofSlot(slot);
+            }
+        }
+
+        function resetPayInMutationId() {
+            if (!payInSubmitInFlight) payInPendingMutationId = '';
+        }
+
+        function createPayInMutationId() {
+            if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+            return `payin-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+        }
+
+        function removePayInProof(slot) {
+            const state = payInProofState[slot];
+            if (!state || state.processing) return;
+            resetPayInMutationId();
+            state.requestId += 1;
+            if (state.upload) {
+                revokePayInProofPreview(state);
+                state.upload = null;
+                state.removed = false;
+            } else if (state.existing) {
+                state.removed = !state.removed;
+            }
+            renderPayInProofSlot(slot);
+        }
+
+        async function readPayInEncodedDimensions(file) {
+            try {
+                const headerSize = Math.min(file.size, 2 * 1024 * 1024);
+                const view = new DataView(await file.slice(0, headerSize).arrayBuffer());
+                if (view.byteLength >= 24 && view.getUint32(0, false) === 0x89504E47) {
+                    return { width: view.getUint32(16, false), height: view.getUint32(20, false) };
+                }
+                const fourCC = offset => String.fromCharCode(
+                    view.getUint8(offset), view.getUint8(offset + 1), view.getUint8(offset + 2), view.getUint8(offset + 3)
+                );
+                if (view.byteLength >= 30 && fourCC(0) === 'RIFF' && fourCC(8) === 'WEBP') {
+                    const chunk = fourCC(12);
+                    if (chunk === 'VP8X' && view.byteLength >= 30) {
+                        const width = 1 + view.getUint8(24) + (view.getUint8(25) << 8) + (view.getUint8(26) << 16);
+                        const height = 1 + view.getUint8(27) + (view.getUint8(28) << 8) + (view.getUint8(29) << 16);
+                        return { width, height };
+                    }
+                    if (chunk === 'VP8 ' && view.byteLength >= 30 && view.getUint8(23) === 0x9D && view.getUint8(24) === 0x01 && view.getUint8(25) === 0x2A) {
+                        return { width: view.getUint16(26, true) & 0x3FFF, height: view.getUint16(28, true) & 0x3FFF };
+                    }
+                    if (chunk === 'VP8L' && view.byteLength >= 25 && view.getUint8(20) === 0x2F) {
+                        const bits = view.getUint32(21, true);
+                        return { width: (bits & 0x3FFF) + 1, height: ((bits >>> 14) & 0x3FFF) + 1 };
+                    }
+                }
+                if (view.byteLength < 4 || view.getUint16(0, false) !== 0xFFD8) return null;
+
+                const startOfFrameMarkers = new Set([0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF]);
+                let offset = 2;
+                while (offset + 9 < view.byteLength) {
+                    if (view.getUint8(offset) !== 0xFF) { offset += 1; continue; }
+                    const marker = view.getUint8(offset + 1);
+                    if (startOfFrameMarkers.has(marker)) {
+                        return { width: view.getUint16(offset + 7, false), height: view.getUint16(offset + 5, false) };
+                    }
+                    if (marker === 0xD8 || marker === 0xD9 || (marker >= 0xD0 && marker <= 0xD7)) {
+                        offset += 2;
+                        continue;
+                    }
+                    if (offset + 4 > view.byteLength) break;
+                    const segmentLength = view.getUint16(offset + 2, false);
+                    if (segmentLength < 2) break;
+                    offset += segmentLength + 2;
+                }
+            } catch (error) {
+                // ใช้การอ่านรูปแบบปกติเป็นทางสำรอง
+            }
+            return null;
+        }
+
+        async function loadPayInImage(file) {
+            const encodedDimensions = await readPayInEncodedDimensions(file);
+            if (encodedDimensions && window.createImageBitmap) {
+                const scale = Math.min(1, 1600 / Math.max(encodedDimensions.width, encodedDimensions.height));
+                const resizeWidth = Math.max(1, Math.round(encodedDimensions.width * scale));
+                const resizeHeight = Math.max(1, Math.round(encodedDimensions.height * scale));
+                try {
+                    const bitmap = await createImageBitmap(file, {
+                        resizeWidth,
+                        resizeHeight,
+                        resizeQuality: 'high',
+                        imageOrientation: 'from-image'
+                    });
+                    return { source: bitmap, width: bitmap.width, height: bitmap.height, close: () => bitmap.close() };
+                } catch (error) {
+                    if (encodedDimensions.width * encodedDimensions.height > 40_000_000) {
+                        throw new Error('รูปมีความละเอียดสูงเกินไปสำหรับอุปกรณ์นี้ กรุณาใช้โหมดภาพปกติหรือเลือกรูปที่เล็กลง');
+                    }
+                }
+            }
+
+            return new Promise((resolve, reject) => {
+                const objectUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ source: image, width: image.naturalWidth, height: image.naturalHeight, close: () => {} });
+                };
+                image.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(new Error('เบราว์เซอร์อ่านรูปนี้ไม่ได้ กรุณาใช้ไฟล์ JPG, PNG หรือถ่ายรูปใหม่'));
+                };
+                image.src = objectUrl;
+            });
+        }
+
+        function canvasToPayInBlob(canvas, quality) {
+            return new Promise((resolve, reject) => {
+                canvas.toBlob(blob => {
+                    if (blob) resolve(blob);
+                    else reject(new Error('ไม่สามารถย่อรูปได้ กรุณาลองเลือกรูปใหม่'));
+                }, 'image/jpeg', quality);
+            });
+        }
+
+        function payInBlobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || '').split(',')[1] || '');
+                reader.onerror = () => reject(new Error('ไม่สามารถอ่านข้อมูลรูปได้'));
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function preparePayInProof(file) {
+            const supportedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+            if (!file || !supportedTypes.has(String(file.type || '').toLowerCase())) {
+                throw new Error('รองรับเฉพาะรูป JPG, PNG หรือ WebP กรุณาถ่ายรูปใหม่หรือแปลงไฟล์ก่อน');
+            }
+            if (file.size > PAYIN_PROOF_MAX_SOURCE_BYTES) {
+                throw new Error('รูปต้นฉบับใหญ่เกิน 20 MB กรุณาเลือกรูปที่เล็กลง');
+            }
+
+            const image = await loadPayInImage(file);
+            const maxEdge = 1600;
+            const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+            const width = Math.max(1, Math.round(image.width * scale));
+            const height = Math.max(1, Math.round(image.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('อุปกรณ์นี้ไม่รองรับการเตรียมรูป');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            try {
+                ctx.drawImage(image.source, 0, 0, width, height);
+            } finally {
+                image.close();
+            }
+
+            let blob = await canvasToPayInBlob(canvas, 0.82);
+            if (blob.size > PAYIN_PROOF_MAX_UPLOAD_BYTES) {
+                blob = await canvasToPayInBlob(canvas, 0.68);
+            }
+            if (blob.size > PAYIN_PROOF_MAX_UPLOAD_BYTES) {
+                throw new Error('หลังย่อแล้วรูปยังใหญ่เกิน 3 MB กรุณาเลือกรูปอื่น');
+            }
+
+            const baseName = String(file.name || 'payment-proof')
+                .replace(/\.[^.]+$/, '')
+                .replace(/[^a-zA-Z0-9ก-๙_-]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 60) || 'payment-proof';
+            return {
+                name: `${baseName}.jpg`,
+                mimeType: 'image/jpeg',
+                bytes: blob.size,
+                base64: await payInBlobToBase64(blob),
+                previewUrl: URL.createObjectURL(blob)
+            };
+        }
+
+        function setPayInSubmitProcessingState() {
+            const submitBtn = document.getElementById('pi-submitBtn');
+            if (!submitBtn) return;
+            const isPreparing = Object.values(payInProofState).some(state => state.processing);
+            submitBtn.disabled = payInSubmitInFlight || isPreparing;
+            submitBtn.textContent = payInSubmitInFlight
+                ? 'กำลังบันทึก...'
+                : (isPreparing ? 'กำลังเตรียมรูป...' : (submitBtn.dataset.defaultLabel || 'บันทึกข้อมูล'));
+
+            document.querySelectorAll('#payInForm input, #payInForm select, #payInForm textarea').forEach(control => {
+                control.disabled = payInSubmitInFlight;
+                control.classList.toggle('cursor-not-allowed', payInSubmitInFlight);
+            });
+            document.querySelectorAll('#payInModal label[for^="pi-proof-"]').forEach(label => {
+                label.classList.toggle('opacity-50', payInSubmitInFlight);
+                label.classList.toggle('cursor-not-allowed', payInSubmitInFlight);
+            });
+            for (let slot = 1; slot <= PAYIN_PROOF_SLOT_COUNT; slot += 1) {
+                const removeBtn = document.getElementById(`pi-proof-remove-${slot}`);
+                if (removeBtn) removeBtn.disabled = payInSubmitInFlight;
+            }
+            document.querySelectorAll('#payInModal button[onclick="closePayInModal()"]')
+                .forEach(closeBtn => {
+                    closeBtn.disabled = payInSubmitInFlight;
+                    closeBtn.classList.toggle('opacity-50', payInSubmitInFlight);
+                    closeBtn.classList.toggle('cursor-not-allowed', payInSubmitInFlight);
+                });
+        }
+
+        async function selectPayInProof(event, slot) {
+            const input = event.currentTarget;
+            const file = input?.files?.[0];
+            if (input) input.value = '';
+            if (!file || !payInProofState[slot]) return;
+            resetPayInMutationId();
+
+            const state = payInProofState[slot];
+            const requestId = state.requestId + 1;
+            state.requestId = requestId;
+            state.processing = true;
+            renderPayInProofSlot(slot);
+            setPayInSubmitProcessingState();
+            const errEl = document.getElementById('pi-error');
+            if (errEl) errEl.classList.add('hidden');
+
+            try {
+                const prepared = await preparePayInProof(file);
+                if (state.requestId !== requestId) {
+                    URL.revokeObjectURL(prepared.previewUrl);
+                    return;
+                }
+                revokePayInProofPreview(state);
+                state.upload = prepared;
+                state.removed = false;
+            } catch (error) {
+                if (state.requestId === requestId && errEl) {
+                    errEl.textContent = error.message || 'เตรียมรูปไม่สำเร็จ';
+                    errEl.classList.remove('hidden');
+                }
+            } finally {
+                if (state.requestId === requestId) state.processing = false;
+                renderPayInProofSlot(slot);
+                setPayInSubmitProcessingState();
+            }
+        }
+
         function openPayInModal() {
             if (!currentViewJobId) return;
             const job = allData.find(j => j.id === currentViewJobId);
             if (!job) return;
+            payInSubmitInFlight = false;
+            payInPendingMutationId = '';
             document.getElementById('pi-jobId').textContent   = job.id;
             document.getElementById('pi-carModel').textContent = job.carModel;
             document.getElementById('pi-plate').textContent   = job.plate || '-';
@@ -4790,6 +5307,10 @@
             // Reset ฟอร์มทั้งหมดก่อน
             const form = document.getElementById('payInForm');
             if (form) form.reset();
+            const exactProofSlots = Array.isArray(pi?.proofSlots) && pi.proofSlots.some(Boolean)
+                ? pi.proofSlots
+                : (Array.isArray(pi?.proofs) ? pi.proofs : []);
+            resetPayInProofState(exactProofSlots);
 
             // Pre-fill ค่าพื้นฐาน
             document.getElementById('pi-billNo').value = job.receiptNo && job.receiptNo !== '-' ? job.receiptNo : '';
@@ -4816,18 +5337,25 @@
             }
 
             // อัปเดต title + submit button label
-            const titleEl = document.querySelector('#payInModal h3, #payInModal h2');
-            if (titleEl) titleEl.innerHTML = titleEl.innerHTML.replace('กรอกการชำระเงิน', hasExisting ? 'แก้ไขการชำระเงิน' : 'กรอกการชำระเงิน');
+            const titleEl = document.getElementById('pi-modalTitle');
+            if (titleEl) titleEl.textContent = `${hasExisting ? 'แก้ไข' : 'กรอก'}การชำระเงิน (PayIn)`;
             const submitBtn = document.getElementById('pi-submitBtn');
             submitBtn.disabled = false;
-            submitBtn.textContent = hasExisting ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
+            submitBtn.dataset.defaultLabel = hasExisting ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูล';
+            submitBtn.textContent = submitBtn.dataset.defaultLabel;
+            setPayInSubmitProcessingState();
 
             document.getElementById('pi-error').classList.add('hidden');
             document.getElementById('pi-success').classList.add('hidden');
             document.getElementById('payInModal').classList.remove('hidden');
         }
 
-        function closePayInModal() { document.getElementById('payInModal').classList.add('hidden'); }
+        function closePayInModal() {
+            if (payInSubmitInFlight) return;
+            document.getElementById('payInModal').classList.add('hidden');
+            payInPendingMutationId = '';
+            resetPayInProofState([]);
+        }
 
         function resizePriceTableIframe(height) {
             const iframe = document.getElementById('priceTableIframe');
@@ -4853,12 +5381,12 @@
             const iframe = document.getElementById('priceTableIframe');
             iframe.classList.add('opacity-0');
             resizePriceTableIframe(420);
-            
+
             let srcUrl = `price-audit.html?embed=1&carModel=${encodeURIComponent(carModel)}`;
             if (proId && proId !== '-' && proId.toLowerCase() !== 'mistake') {
                 srcUrl += `&proId=${encodeURIComponent(proId)}`;
             }
-            
+
             iframe.src = srcUrl;
             document.getElementById('priceTableModal').classList.remove('hidden');
         }
@@ -4869,34 +5397,71 @@
 
         async function submitPayIn(e) {
             e.preventDefault();
+            if (payInSubmitInFlight) return;
             const errEl = document.getElementById('pi-error');
             const okEl  = document.getElementById('pi-success');
             const btn   = document.getElementById('pi-submitBtn');
             errEl.classList.add('hidden'); okEl.classList.add('hidden');
             if (!SCRIPT_URL) { errEl.textContent = 'ยังไม่ได้ตั้งค่า SCRIPT_URL'; errEl.classList.remove('hidden'); return; }
-            btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-            const job = allData.find(j => j.id === currentViewJobId);
+            if (Object.values(payInProofState).some(state => state.processing)) {
+                errEl.textContent = 'กรุณารอให้ระบบเตรียมรูปเสร็จก่อนบันทึก';
+                errEl.classList.remove('hidden');
+                return;
+            }
             const form = new FormData(e.target);
-            const payload = { sheetName: 'PayIn', JobID: job?.id || '' };
+            payInSubmitInFlight = true;
+            setPayInSubmitProcessingState();
+            const job = allData.find(j => j.id === currentViewJobId);
+            if (!payInPendingMutationId) payInPendingMutationId = createPayInMutationId();
+            const payload = {
+                sheetName: 'PayIn',
+                JobID: job?.id || '',
+                mutationId: payInPendingMutationId
+            };
             const pi = job ? (payInDetailsMap[job.id] || payInDetailsMap[normalizeLookupId(job.id)]) : null;
             if (pi && pi.id) {
                 payload.action = 'update';
                 payload.recordId = pi.id;
             }
-            form.forEach((val, key) => { payload[key] = val; });
+            form.forEach((val, key) => {
+                if (!(val instanceof File)) payload[key] = val;
+            });
+            const proofUploads = [];
+            for (let slot = 1; slot <= PAYIN_PROOF_SLOT_COUNT; slot += 1) {
+                const state = payInProofState[slot];
+                const columnName = `หลักฐาน_${slot}`;
+                if (state.upload) {
+                    proofUploads.push({
+                        slot,
+                        name: state.upload.name,
+                        mimeType: state.upload.mimeType,
+                        base64: state.upload.base64
+                    });
+                } else if (state.removed) {
+                    payload[columnName] = '';
+                }
+            }
+            if (proofUploads.length) payload.payInProofUploads = proofUploads;
             try {
                 const data = await postWithWriteToken(payload);
                 if (data.success) {
+                    payInPendingMutationId = '';
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');
                     btn.textContent = '✓ บันทึกแล้ว';
                     setTimeout(async () => {
+                        payInSubmitInFlight = false;
                         closePayInModal();
                         await fetchGoogleSheetData();
                         if (currentViewJobId) openJobModal(currentViewJobId);
                     }, 1200);
                 } else throw new Error(data.error || 'เกิดข้อผิดพลาด');
-            } catch(err) { errEl.textContent=`บันทึกไม่สำเร็จ: ${err.message}`; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='บันทึกข้อมูล'; }
+            } catch(err) {
+                errEl.textContent=`บันทึกไม่สำเร็จ: ${err.message}`;
+                errEl.classList.remove('hidden');
+                payInSubmitInFlight = false;
+                setPayInSubmitProcessingState();
+            }
         }
         // ============ Detail Film Form ============
         function fillAllFilmSelects(val) {
@@ -4933,7 +5498,7 @@
                     o.value = o.textContent = f.full;
                     sel.appendChild(o);
                 });
-                
+
                 if (dfData) {
                     const existingVal = findRowValue(dfData, [sel.name], '');
                     sel.value = (existingVal && existingVal !== '-') ? existingVal : '';
@@ -4951,7 +5516,7 @@
                 o.textContent = r.text || r.id;
                 reasonSel.appendChild(o);
             });
-            
+
             if (dfData) {
                 const existingReason = findRowValue(dfData, ['เหตุผลขอตัดฟิล์ม', 'เหตุผล', 'สาเหตุ'], '');
                 if (existingReason && existingReason !== '-') {
@@ -5068,13 +5633,13 @@
             if (!job) return;
             document.getElementById('wa-jobId').textContent = job.id;
             document.getElementById('wa-plate').textContent  = job.plate || '-';
-            
+
             const waData = warrantyMap[job.id] || warrantyMap[normalizeLookupId(job.id)];
             if (waData) {
                 document.getElementById('wa-receiptNo').value = findRowValue(waData, ['เลขที่ใบรับประกัน', 'ใบรับประกัน', 'เลขที่ใบ'], '');
                 const years = findRowValue(waData, ['ปีรับประกัน', 'ระยะเวลา', 'ปี'], '7').toString().replace(/[^0-9]/g, '');
                 document.getElementById('wa-years').value = years || '7';
-                
+
                 const rawDate = findRowValue(waData, ['วันที่เริ่ม', 'วันที่ติดตั้ง'], '');
                 const formattedDate = normalizeWarrantyDateForSheet(rawDate) || thaiDateToday();
                 document.getElementById('wa-startDate').value = formattedDate;
@@ -5331,7 +5896,7 @@
             const modal = document.getElementById('alertModal');
             document.getElementById('alertTitle').innerText = title;
             document.getElementById('alertMessage').innerText = message;
-            
+
             const iconWrap = document.getElementById('alertIcon');
             if (type === 'success') {
                 iconWrap.className = 'mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-inner';
@@ -5340,7 +5905,7 @@
                 iconWrap.className = 'mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 text-rose-600 shadow-inner';
                 iconWrap.innerHTML = '<i class="fas fa-times text-3xl"></i>';
             }
-            
+
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.firstElementChild.classList.remove('scale-95', 'opacity-0');
@@ -5361,17 +5926,17 @@
                 showAlert('คำเตือน', 'ไม่มีข้อมูลสำหรับส่งออก', 'error');
                 return;
             }
-            
+
             try {
                 const table = tableBody.parentNode;
                 const wb = XLSX.utils.table_to_book(table, {sheet: "Data", raw: true});
-                
+
                 const now = new Date();
                 const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
                 const filename = `car_crm_export_${dateStr}.xlsx`;
-                
+
                 XLSX.writeFile(wb, filename);
-                
+
                 showAlert('สำเร็จ', 'ส่งออกข้อมูล Excel เรียบร้อยแล้ว', 'success');
             } catch (err) {
                 console.error('Export Error:', err);
