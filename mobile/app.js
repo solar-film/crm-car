@@ -153,7 +153,7 @@
           <div class="car-line">${Core.escapeHtml(job.carModel)} · ${Core.escapeHtml(job.plate)}</div>
           <div class="install-line">${Core.escapeHtml(job.film)} · ${Core.escapeHtml(job.installPosition)}</div>
           <div class="meta-line">
-            <span class="badge status-${statusKind}">${Core.escapeHtml(job.status)}</span>
+            <span class="badge status-${statusKind}">สถานะงาน: ${Core.escapeHtml(job.status)}</span>
             <span class="price-text">${Core.escapeHtml(amountText)}</span>
           </div>
         </div>
