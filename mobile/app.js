@@ -581,32 +581,62 @@
       if (!payInResult.verified) {
         throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
       }
-      metadataSaved = true;
       const payId = Core.textValue(payInResult.id);
       const uploadSlots = [1, 2].filter(slot => state.proofs[slot].blob);
       if (uploadSlots.length && !payId) throw new Error('บันทึก PayIn แล้ว แต่ไม่พบ Pay_ID สำหรับผูกรูป');
+      metadataSaved = true;
 
-      for (let index = 0; index < uploadSlots.length; index += 1) {
-        const slot = uploadSlots[index];
-        const proof = state.proofs[slot];
-        setSaving(true, `กำลังอัปโหลดรูป ${index + 1}/${uploadSlots.length}…`);
-        const base64 = await blobToBase64(proof.blob);
-        const uploadResult = await postWithWriteToken({
-          action: 'attachPayInProof',
-          sheetName: 'PayIn',
-          recordId: payId,
-          JobID: job.id,
-          slot,
-          mimeType: proof.blob.type || 'image/jpeg',
-          base64,
-          clientRequestId: proof.requestId
-        });
-        proof.existing = uploadResult.relativePath || proof.existing;
-        revokePreview(proof);
-        proof.blob = null;
-        proof.previewUrl = '';
-        proof.uploaded = true;
-        renderProof(slot);
+      const applySavedPayIn = () => {
+        job.payIn = {
+          id: payId,
+          jobId: job.id,
+          status: payload['สถานะ'],
+          quotation: payload['ใบเสนอราคา'],
+          billNumber: payload['เลขที่บิล/ใบเสร็จ'],
+          paymentType: payload['ประเภทการชำระ'],
+          amount: Number(payload['ยอดเงิน(บาท)']) || 0,
+          note: payload['หมายเหตุ'],
+          proofs: [state.proofs[1].existing, state.proofs[2].existing],
+          hasProof: Boolean(state.proofs[1].existing || state.proofs[2].existing)
+        };
+      };
+
+      applySavedPayIn();
+
+      try {
+        for (let index = 0; index < uploadSlots.length; index += 1) {
+          const slot = uploadSlots[index];
+          const proof = state.proofs[slot];
+          setSaving(true, `กำลังอัปโหลดรูป ${index + 1}/${uploadSlots.length}…`);
+          const base64 = await blobToBase64(proof.blob);
+          const uploadResult = await postWithWriteToken({
+            action: 'attachPayInProof',
+            sheetName: 'PayIn',
+            recordId: payId,
+            JobID: job.id,
+            slot,
+            mimeType: proof.blob.type || 'image/jpeg',
+            base64,
+            clientRequestId: proof.requestId
+          });
+          proof.existing = uploadResult.relativePath || proof.existing;
+          revokePreview(proof);
+          proof.blob = null;
+          proof.previewUrl = '';
+          proof.uploaded = true;
+          renderProof(slot);
+        }
+      } catch (uploadError) {
+        applySavedPayIn();
+        showFormMessage(`บันทึกข้อมูล PayIn สำเร็จแล้ว แต่รูปยังอัปโหลดไม่ได้: ${uploadError.message}`, 'success');
+        showToast('บันทึกข้อมูล PayIn แล้ว');
+        renderSchedule();
+        window.setTimeout(async () => {
+          setSaving(false);
+          closePayIn();
+          await loadData({ silent: true });
+        }, 900);
+        return;
       }
 
       job.payIn = {
@@ -663,7 +693,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register('./sw.js?v=7', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
+    navigator.serviceWorker.register('./sw.js?v=8', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
   }
 
   initialise();

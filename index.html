@@ -5456,24 +5456,38 @@
                     for (let index = 0; index < proofUploads.length; index += 1) {
                         const upload = proofUploads[index];
                         btn.textContent = `กำลังอัปโหลดรูป ${index + 1}/${proofUploads.length}...`;
-                        const uploadResult = await postWithWriteToken({
-                            action: 'attachPayInProof',
-                            sheetName: 'PayIn',
-                            recordId: payId,
-                            JobID: job?.id || '',
-                            slot: upload.slot,
-                            mimeType: upload.mimeType,
-                            base64: upload.base64,
-                            clientRequestId: createPayInProofRequestId()
-                        });
-                        if (!uploadResult.success) throw new Error(uploadResult.error || `อัปโหลดรูป ${upload.slot} ไม่สำเร็จ`);
-                        const state = payInProofState[upload.slot];
-                        if (state) {
-                            revokePayInProofPreview(state);
-                            state.existing = uploadResult.relativePath || state.existing;
-                            state.upload = null;
-                            state.removed = false;
-                            renderPayInProofSlot(upload.slot);
+                        try {
+                            const uploadResult = await postWithWriteToken({
+                                action: 'attachPayInProof',
+                                sheetName: 'PayIn',
+                                recordId: payId,
+                                JobID: job?.id || '',
+                                slot: upload.slot,
+                                mimeType: upload.mimeType,
+                                base64: upload.base64,
+                                clientRequestId: createPayInProofRequestId()
+                            });
+                            if (!uploadResult.success) throw new Error(uploadResult.error || `อัปโหลดรูป ${upload.slot} ไม่สำเร็จ`);
+                            const state = payInProofState[upload.slot];
+                            if (state) {
+                                revokePayInProofPreview(state);
+                                state.existing = uploadResult.relativePath || state.existing;
+                                state.upload = null;
+                                state.removed = false;
+                                renderPayInProofSlot(upload.slot);
+                            }
+                        } catch (uploadError) {
+                            payInPendingMutationId = '';
+                            okEl.textContent = `บันทึกข้อมูล PayIn สำเร็จแล้ว แต่รูปยังอัปโหลดไม่ได้: ${uploadError.message}`;
+                            okEl.classList.remove('hidden');
+                            btn.textContent = '✓ บันทึกข้อมูลแล้ว';
+                            setTimeout(async () => {
+                                payInSubmitInFlight = false;
+                                closePayInModal();
+                                await fetchGoogleSheetData();
+                                if (currentViewJobId) openJobModal(currentViewJobId);
+                            }, 1500);
+                            return;
                         }
                     }
                     payInPendingMutationId = '';
