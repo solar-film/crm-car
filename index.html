@@ -5450,6 +5450,7 @@
             try {
                 const data = await postWithWriteToken(payload);
                 if (data.success) {
+                    if (!data.verified) throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
                     const payId = textValue(data.id || payload.recordId, '').trim();
                     if (proofUploads.length && !payId) throw new Error('บันทึก PayIn แล้ว แต่ไม่พบ Pay_ID สำหรับผูกรูป');
                     for (let index = 0; index < proofUploads.length; index += 1) {

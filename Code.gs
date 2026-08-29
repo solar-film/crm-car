@@ -334,6 +334,42 @@ function findRowNumberById_(sheet, schema, expectedId) {
   return -1;
 }
 
+function findRowNumbersByColumnValue_(sheetValues, header, columnName, expectedValue) {
+  const columnIndex = header.indexOf(columnName);
+  const expected = String(expectedValue || '').trim();
+  if (columnIndex === -1 || !expected) return [];
+  const rowNumbers = [];
+  for (let index = 1; index < sheetValues.length; index++) {
+    if (String(sheetValues[index][columnIndex] || '').trim() === expected) {
+      rowNumbers.push(index + 1);
+    }
+  }
+  return rowNumbers;
+}
+
+function updateSubmittedCells_(sheet, schema, rowNumber, body, idValue) {
+  const timestamp = thaiTimestamp();
+  schema.columns.forEach(function(column, columnIndex) {
+    let shouldWrite = false;
+    let value = '';
+
+    if (column === schema.idField) {
+      shouldWrite = true;
+      value = idValue;
+    } else if (column === 'วันที่ลงรายการ' || column === 'วันที่บันทึกรายการ' || column === 'วันที่บันทึก') {
+      shouldWrite = true;
+      value = timestamp;
+    } else if (body[column] !== undefined) {
+      shouldWrite = true;
+      value = body[column];
+    }
+
+    if (shouldWrite) {
+      sheet.getRange(rowNumber, columnIndex + 1).setValue(sanitizeCellValue_(value));
+    }
+  });
+}
+
 function assertWrittenRow_(sheet, schema, rowNumber, expectedId, expectedJobId) {
   SpreadsheetApp.flush();
   let verifiedRowNumber = rowNumber;
@@ -713,14 +749,7 @@ function upsertPayIn_(sheet, schema, body) {
         attempts++;
       }
     }
-    const timestamp = thaiTimestamp();
-    const rowData = schema.columns.map(function(column, columnIndex) {
-      if (column === schema.idField) return payId;
-      if (column === 'วันที่บันทึกรายการ') return timestamp;
-      if (body[column] !== undefined) return body[column];
-      return existingRow[columnIndex] !== undefined ? existingRow[columnIndex] : '';
-    });
-    sheet.getRange(targetRowIndex, 1, 1, schema.columns.length).setValues([sanitizeRowValues_(rowData)]);
+    updateSubmittedCells_(sheet, schema, targetRowIndex, body, payId);
     const verified = assertWrittenRow_(sheet, schema, targetRowIndex, payId, jobId);
     action = 'update';
     targetRowIndex = verified.rowNumber;
@@ -877,6 +906,13 @@ function doPost(e) {
         }
       }
 
+      if (targetRowIndex !== -1 && (sheetName === 'PayIn' || sheetName === 'Waranty') && body.JobID) {
+        const jobIdx = header.indexOf('JobID');
+        if (jobIdx !== -1 && String(sheetValues[targetRowIndex - 1][jobIdx] || '').trim() !== String(body.JobID || '').trim()) {
+          throw new Error(`${schema.idField} ไม่ตรงกับ JobID - ยกเลิกการบันทึกเพื่อป้องกันข้อมูลผิดงาน`);
+        }
+      }
+
       // 2) ถ้ายังไม่เจอ ลองหาด้วยเบอร์โทรที่กำลังแก้ไข
       if (targetRowIndex === -1 && phoneIdx !== -1 && matchPhoneClean.length >= 9) {
         for (let i = 1; i < sheetValues.length; i++) {
@@ -891,16 +927,13 @@ function doPost(e) {
 
       // PayIn / Waranty แก้ไขจากหน้า index.html: ถ้าไม่มี ID ให้หาแถวเดิมด้วย JobID
       if (targetRowIndex === -1 && (sheetName === 'PayIn' || sheetName === 'Waranty') && body.JobID) {
-        const jobIdx = header.indexOf('JobID');
-        if (jobIdx !== -1) {
-          const lookupJobId = String(body.JobID || '').trim();
-          for (let i = 1; i < sheetValues.length; i++) {
-            if (String(sheetValues[i][jobIdx] || '').trim() === lookupJobId) {
-              targetRowIndex = i + 1;
-              if (idIdx !== -1) matchedId = sheetValues[i][idIdx];
-              break;
-            }
-          }
+        const matchingRows = findRowNumbersByColumnValue_(sheetValues, header, 'JobID', body.JobID);
+        if (matchingRows.length > 1) {
+          throw new Error(`พบ ${sheetName} ซ้ำสำหรับ JobID นี้ กรุณารีเฟรชข้อมูลหรือแก้จากรายการที่มี ID เพื่อป้องกันข้อมูลหาย`);
+        }
+        if (matchingRows.length === 1) {
+          targetRowIndex = matchingRows[0];
+          if (idIdx !== -1) matchedId = sheetValues[targetRowIndex - 1][idIdx];
         }
       }
 
@@ -914,19 +947,7 @@ function doPost(e) {
           }
         }
         if (sheetName === 'PayIn') uploadedProofFiles = savePayInProofUploads_(body, matchedId);
-        const timestamp = thaiTimestamp();
-        const existingRow = sheetValues[targetRowIndex - 1]; // แถวเดิม สำหรับเก็บค่าฟิลด์ที่ไม่ได้ส่งมา
-        const rowData = schema.columns.map((col, colIdx) => {
-          if (col === schema.idField) return matchedId;
-          if (col === 'วันที่ลงรายการ') return timestamp;
-          if (col === 'วันที่บันทึกรายการ') return timestamp;
-          if (col === 'วันที่บันทึก') return timestamp;
-          // ถ้า body มีค่า (รวมถึง '') ใช้ค่านั้น; ถ้าไม่ส่งมาเลย ใช้ค่าเดิมจากแถว
-          if (body[col] !== undefined) return body[col];
-          return (existingRow && existingRow[colIdx] !== undefined) ? existingRow[colIdx] : '';
-        });
-
-        sheet.getRange(targetRowIndex, 1, 1, schema.columns.length).setValues([sanitizeRowValues_(rowData)]);
+        updateSubmittedCells_(sheet, schema, targetRowIndex, body, matchedId);
         const verified = assertWrittenRow_(sheet, schema, targetRowIndex, matchedId, body.JobID);
         proofFilesCommitted = true;
         const updateResult = { success: true, id: matchedId, action: 'update', sheetName, rowNumber: verified.rowNumber, verified: true };

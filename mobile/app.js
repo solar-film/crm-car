@@ -578,6 +578,9 @@
     let metadataSaved = false;
     try {
       const payInResult = await postWithWriteToken(payload);
+      if (!payInResult.verified) {
+        throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
+      }
       metadataSaved = true;
       const payId = Core.textValue(payInResult.id);
       const uploadSlots = [1, 2].filter(slot => state.proofs[slot].blob);
