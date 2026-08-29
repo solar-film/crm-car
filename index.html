@@ -5468,6 +5468,7 @@
                                 clientRequestId: createPayInProofRequestId()
                             });
                             if (!uploadResult.success) throw new Error(uploadResult.error || `อัปโหลดรูป ${upload.slot} ไม่สำเร็จ`);
+                            if (!uploadResult.verified) throw new Error(`ระบบยังยืนยันการบันทึกรูป ${upload.slot} ลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง`);
                             const state = payInProofState[upload.slot];
                             if (state) {
                                 revokePayInProofPreview(state);

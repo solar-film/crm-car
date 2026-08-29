@@ -620,6 +620,26 @@ function findPayInTarget_(sheet, recordId, jobId) {
   return null;
 }
 
+function assertPayInProofSaved_(sheet, proof, relativePath, file) {
+  SpreadsheetApp.flush();
+  const target = findPayInTarget_(sheet, proof.recordId, proof.jobId);
+  if (!target) throw new Error('บันทึกรูปไม่สำเร็จ: ตรวจไม่พบ PayIn หลังอัปโหลด');
+
+  const proofIndex = target.header.indexOf(proof.column);
+  if (proofIndex === -1) throw new Error(`บันทึกรูปไม่สำเร็จ: ตรวจไม่พบคอลัมน์ ${proof.column}`);
+
+  const actualPath = String(target.values[proofIndex] || '').trim();
+  if (actualPath !== relativePath) {
+    throw new Error(`บันทึกรูปไม่สำเร็จ: ตรวจสอบช่อง ${proof.column} แล้วไม่พบ path รูป`);
+  }
+
+  if (!file || file.isTrashed()) {
+    throw new Error('บันทึกรูปไม่สำเร็จ: ตรวจไม่พบไฟล์รูปใน Google Drive');
+  }
+
+  return { rowNumber: target.rowNumber };
+}
+
 function attachPayInProof_(body) {
   const proof = decodePayInProof_(body);
   const ss = SpreadsheetApp.openById(SHEET_ID);
@@ -635,16 +655,6 @@ function attachPayInProof_(body) {
   const safeRequestId = proof.requestId.replace(/-/g, '');
   const fileName = `${safePayId}_${proof.slot}_${safeRequestId}.${proof.extension}`;
   const relativePath = `${APPSHEET_APP_FOLDER_NAME}/${PAYIN_IMAGE_RELATIVE_FOLDER}/${fileName}`;
-  if (String(initialTarget.values[proofIndex] || '').trim() === relativePath) {
-    return jsonOutput_({
-      success: true,
-      id: proof.recordId,
-      action: 'attachPayInProof',
-      slot: proof.slot,
-      relativePath: relativePath,
-      reused: true
-    });
-  }
 
   const folder = getPayInImageFolder_();
   const matchingFiles = folder.getFilesByName(fileName);
@@ -654,6 +664,20 @@ function attachPayInProof_(body) {
     file = folder.createFile(Utilities.newBlob(proof.bytes, proof.mimeType, fileName));
     file.setDescription(`CAR CRM PayIn ${proof.recordId} หลักฐาน ${proof.slot}`);
     createdNow = true;
+  }
+
+  if (String(initialTarget.values[proofIndex] || '').trim() === relativePath) {
+    const verified = assertPayInProofSaved_(sheet, proof, relativePath, file);
+    return jsonOutput_({
+      success: true,
+      id: proof.recordId,
+      action: 'attachPayInProof',
+      slot: proof.slot,
+      relativePath: relativePath,
+      rowNumber: verified.rowNumber,
+      reused: true,
+      verified: true
+    });
   }
 
   let lock = null;
@@ -671,8 +695,8 @@ function attachPayInProof_(body) {
       sheet.getRange(latestTarget.rowNumber, latestProofIndex + 1).setValue(sanitizeCellValue_(relativePath));
       const timestampIndex = latestTarget.header.indexOf('วันที่บันทึกรายการ');
       if (timestampIndex !== -1) sheet.getRange(latestTarget.rowNumber, timestampIndex + 1).setValue(thaiTimestamp());
-      SpreadsheetApp.flush();
     }
+    const verified = assertPayInProofSaved_(sheet, proof, relativePath, file);
     committed = true;
     return jsonOutput_({
       success: true,
@@ -680,7 +704,9 @@ function attachPayInProof_(body) {
       action: 'attachPayInProof',
       slot: proof.slot,
       relativePath: relativePath,
-      reused: !createdNow
+      rowNumber: verified.rowNumber,
+      reused: !createdNow,
+      verified: true
     });
   } catch (error) {
     if (createdNow && !committed && file) {

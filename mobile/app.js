@@ -619,6 +619,9 @@
             base64,
             clientRequestId: proof.requestId
           });
+          if (!uploadResult.verified) {
+            throw new Error(`ระบบยังยืนยันการบันทึกรูป ${slot} ลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง`);
+          }
           proof.existing = uploadResult.relativePath || proof.existing;
           revokePreview(proof);
           proof.blob = null;
