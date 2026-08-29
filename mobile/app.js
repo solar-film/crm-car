@@ -19,7 +19,7 @@
     [
       'connectionText', 'refreshButton', 'previousDateButton', 'nextDateButton', 'todayButton', 'dateFilter',
       'searchInput', 'selectedDateLabel', 'appointmentCount', 'messageBox', 'lastUpdated', 'loadingState',
-      'emptyState', 'tableWrap', 'scheduleBody'
+      'emptyState', 'tableWrap', 'scheduleBody', 'salesTotal'
     ].forEach(id => { dom[id] = document.getElementById(id); });
   }
 
@@ -128,6 +128,8 @@
     const appointments = Core.filterAppointments(state.appointments, state.selectedDate, dom.searchInput.value);
     dom.selectedDateLabel.textContent = selectedDateLabel();
     dom.appointmentCount.textContent = `${appointments.length.toLocaleString('th-TH')} คิว`;
+    const salesTotal = appointments.reduce((total, appointment) => total + (Number(appointment.price) || 0), 0);
+    dom.salesTotal.textContent = `${formatMoney(salesTotal)} บาท`;
     dom.loadingState.classList.toggle('hidden', !state.loading || state.appointments.length > 0);
     dom.emptyState.classList.toggle('hidden', appointments.length > 0 || state.loading);
     dom.tableWrap.classList.toggle('hidden', appointments.length === 0);
