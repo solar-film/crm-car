@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://docs.google.com;">
+  <title>ตารางนัดติดตั้งฟิล์ม</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./core.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="CAR CRM Mobile">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="./icon-192.png" alt="">
+        </span>
+        <span>
+          <strong>ตารางนัดติดตั้งฟิล์ม</strong>
+          <small id="connectionText">กำลังเชื่อมต่อข้อมูล…</small>
+        </span>
+      </div>
+      <button id="refreshButton" class="icon-button" type="button" aria-label="รีเฟรชข้อมูล" title="รีเฟรชข้อมูล">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7l-1.4-1.4A6 6 0 1 1 18 11h-3l4 4 4-4h-3Z"/></svg>
+      </button>
+    </header>
+
+    <main>
+      <section class="filters" aria-label="ตัวกรองตารางนัดหมาย">
+        <div class="date-row">
+          <button id="previousDateButton" class="date-nav" type="button" aria-label="วันก่อนหน้า">‹</button>
+          <label class="date-field">
+            <span>วันที่ติดตั้ง</span>
+            <input id="dateFilter" type="date" autocomplete="off">
+          </label>
+          <button id="nextDateButton" class="date-nav" type="button" aria-label="วันถัดไป">›</button>
+          <button id="todayButton" class="today-button" type="button">วันนี้</button>
+        </div>
+        <label class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20.7 19.3-4.1-4.1a7 7 0 1 0-1.4 1.4l4.1 4.1 1.4-1.4ZM5 11a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg>
+          <span class="sr-only">ค้นหานัดหมาย</span>
+          <input id="searchInput" type="search" placeholder="ค้นหาชื่อ ทะเบียน หรือ JobID" autocomplete="off">
+        </label>
+      </section>
+
+      <section class="summary-bar" aria-live="polite">
+        <div>
+          <strong id="selectedDateLabel">—</strong>
+          <span id="appointmentCount">0 คิว</span>
+        </div>
+        <small>ไม่รวมรายการที่ยกเลิก</small>
+      </section>
+
+      <div id="messageBox" class="message hidden" role="status"></div>
+
+      <section class="schedule-panel" aria-labelledby="scheduleHeading">
+        <div class="panel-heading">
+          <h1 id="scheduleHeading">นัดหมายติดตั้ง</h1>
+          <span id="lastUpdated"></span>
+        </div>
+
+        <div id="loadingState" class="state-box">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>กำลังโหลดตารางนัดหมาย…</p>
+        </div>
+
+        <div id="emptyState" class="state-box hidden">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v2h6V2h2v2h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V2Zm12 8H5v9h14v-9ZM5 8h14V6H5v2Z"/></svg>
+          <strong>ไม่พบนัดหมายในวันที่เลือก</strong>
+          <span>ลองเลือกวันอื่นหรือค้นหาด้วยข้อมูลอื่น</span>
+        </div>
+
+        <div id="tableWrap" class="table-wrap hidden">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">เวลา</th>
+                <th scope="col">รายละเอียดนัดหมาย</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <noscript>หน้านี้ต้องเปิดใช้งาน JavaScript เพื่ออ่านตารางนัดหมาย</noscript>
+</body>
+</html>
