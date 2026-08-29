@@ -315,6 +315,65 @@
         const TEAM_CSV_URL = sheetCsvUrl(TEAM_SHEET_NAME);
         const REASON_CSV_URL = sheetCsvUrl(REASON_SHEET_NAME);
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';
+        const WRITE_TOKEN_KEY = 'carCrmWriteToken';
+
+        function readWriteToken() {
+            try {
+                return String(localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function saveWriteToken(token) {
+            try {
+                localStorage.setItem(WRITE_TOKEN_KEY, token);
+            } catch (error) {
+                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาต localStorage
+            }
+        }
+
+        function clearWriteToken() {
+            try {
+                localStorage.removeItem(WRITE_TOKEN_KEY);
+            } catch (error) {
+                // ไม่มีค่าที่ต้องล้างเมื่อ browser ปิดกั้น localStorage
+            }
+        }
+
+        function getWriteToken(forceNewToken = false) {
+            if (forceNewToken) clearWriteToken();
+
+            let token = forceNewToken ? '' : readWriteToken();
+            if (!token) {
+                token = String(window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
+                if (!token) throw new Error('ไม่พบ Write Token');
+                saveWriteToken(token);
+            }
+            return token;
+        }
+
+        function isWriteTokenError(message) {
+            return /write token/i.test(String(message || ''));
+        }
+
+        async function postWithWriteToken(payload) {
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const token = getWriteToken(attempt > 0);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, token })
+                });
+                const result = await response.json();
+
+                if (!result.success && isWriteTokenError(result.error)) {
+                    clearWriteToken();
+                    if (attempt === 0) continue;
+                }
+                return result;
+            }
+            throw new Error('Write token ไม่ถูกต้อง');
+        }
 
         const DAMAGE_POSITIONS = [
             'บานหน้า', 'บานหลัง',
@@ -1327,11 +1386,7 @@
             dom['dm-submitBtn'].textContent = 'กำลังบันทึก...';
 
             try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
+                const result = await postWithWriteToken(payload);
                 if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
 
                 dom['dm-success'].textContent = `บันทึกสำเร็จ ${rows.length} รายการ`;

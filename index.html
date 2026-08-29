@@ -4123,8 +4123,7 @@
             btn.disabled = true;
             btn.textContent = 'กำลังบันทึก...';
             try {
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
-                const result = await res.json();
+                const result = await postWithWriteToken(payload);
                 if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
                 okEl.textContent = `บันทึกสำเร็จ ${rows.length} รายการ`;
                 okEl.classList.remove('hidden');
@@ -4563,8 +4562,7 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> กำลังบันทึก...';
 
             try {
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     closeBookingModal();
                     // โหลดข้อมูลใหม่ทั้งหมด
@@ -4653,8 +4651,7 @@
                     recordId: jobId,
                     'Status': newStatus
                 };
-                const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     // อัปเดตข้อมูลใน memory
                     if (job) job.status = newStatus;
@@ -4888,8 +4885,7 @@
             }
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');
@@ -5005,8 +5001,7 @@
             }
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');
@@ -5130,8 +5125,7 @@
             if (startEl && startEl.name) payload[startEl.name] = normalizeWarrantyDateForSheet(startEl.value);
             if (endEl && endEl.name) payload[endEl.name] = normalizeWarrantyDateForSheet(endEl.value);
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     okEl.textContent = `บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');
@@ -5155,18 +5149,68 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';  // ← วาง URL ที่นี่หลัง Deploy
         const WRITE_TOKEN_KEY = 'carCrmWriteToken';
 
-        function getWriteToken() {
-            let token = localStorage.getItem(WRITE_TOKEN_KEY) || '';
+        function readWriteToken() {
+            try {
+                return String(localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function saveWriteToken(token) {
+            try {
+                localStorage.setItem(WRITE_TOKEN_KEY, token);
+            } catch (error) {
+                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาตให้บันทึก localStorage
+            }
+        }
+
+        function clearWriteToken() {
+            try {
+                localStorage.removeItem(WRITE_TOKEN_KEY);
+            } catch (error) {
+                // ไม่มีค่าที่ต้องล้างเมื่อ browser ปิดกั้น localStorage
+            }
+        }
+
+        function getWriteToken(forceNewToken = false) {
+            if (forceNewToken) clearWriteToken();
+
+            let token = forceNewToken ? '' : readWriteToken();
             if (!token) {
                 token = (window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
-                if (token) localStorage.setItem(WRITE_TOKEN_KEY, token);
+                if (token) saveWriteToken(token);
             }
             if (!token) throw new Error('ไม่พบ Write Token');
             return token;
         }
 
-        function withWriteToken(payload) {
-            return { ...payload, token: getWriteToken() };
+        function isWriteTokenError(message) {
+            return /write token/i.test(String(message || ''));
+        }
+
+        async function postWithWriteToken(payload) {
+            let token = getWriteToken();
+
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, token })
+                });
+                const result = await response.json();
+
+                if (!result.success && isWriteTokenError(result.error)) {
+                    clearWriteToken();
+                    if (attempt === 0) {
+                        token = getWriteToken(true);
+                        continue;
+                    }
+                }
+
+                return result;
+            }
+
+            return { success: false, error: 'Write token ไม่ถูกต้อง' };
         }
 
         function generateSizeId() {
@@ -5210,8 +5254,7 @@
             const payload = { sheetName: 'ขนาดกระจก', JobID: job?.id||'', 'รุ่นรถยนต์': job?.carModel||'' };
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     okEl.textContent=`บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');
@@ -5269,8 +5312,7 @@
             const payload = { sheetName: 'Detail_Installer', JobID: job?.id||'' };
             form.forEach((val, key) => { payload[key] = val; });
             try {
-                const res = await fetch(SCRIPT_URL, { method:'POST', body:JSON.stringify(withWriteToken(payload)) });
-                const data = await res.json();
+                const data = await postWithWriteToken(payload);
                 if (data.success) {
                     okEl.textContent=`บันทึกสำเร็จ! ID: ${data.id}`;
                     okEl.classList.remove('hidden');

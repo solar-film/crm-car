@@ -325,6 +325,30 @@
         let rejectWriteTokenRequest = null;
         const WRITE_TOKEN_KEY = 'carCrmWriteToken';
 
+        function readStoredWriteToken() {
+            try {
+                return String(localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function storeWriteToken(token) {
+            try {
+                localStorage.setItem(WRITE_TOKEN_KEY, token);
+            } catch (error) {
+                // ยังใช้ token ครั้งนี้ได้ แม้ browser จะไม่อนุญาต localStorage
+            }
+        }
+
+        function clearStoredWriteToken() {
+            try {
+                localStorage.removeItem(WRITE_TOKEN_KEY);
+            } catch (error) {
+                // ไม่มีค่าที่ต้องล้างเมื่อ browser ปิดกั้น localStorage
+            }
+        }
+
         function cacheDom() {
             DOM_IDS.forEach(id => {
                 dom[id] = document.getElementById(id);
@@ -332,7 +356,8 @@
         }
 
         function requestWriteToken(forceNewToken = false, showError = false) {
-            const storedToken = localStorage.getItem(WRITE_TOKEN_KEY);
+            if (forceNewToken) clearStoredWriteToken();
+            const storedToken = readStoredWriteToken();
             if (storedToken && !forceNewToken) return Promise.resolve(storedToken);
             if (writeTokenRequest) return writeTokenRequest;
 
@@ -368,7 +393,7 @@
                 const token = dom.writeTokenInput.value.trim();
                 if (!token) return;
 
-                localStorage.setItem(WRITE_TOKEN_KEY, token);
+                storeWriteToken(token);
                 closeWriteTokenModal();
                 resolveWriteTokenRequest?.(token);
                 writeTokenRequest = null;
@@ -1045,11 +1070,12 @@
                 return await sendApiPayload(payload);
             } catch (err) {
                 if (isWriteTokenError(err)) {
-                    localStorage.removeItem(WRITE_TOKEN_KEY);
+                    clearStoredWriteToken();
                     try {
                         payload.token = await requestWriteToken(true, true);
                         return await sendApiPayload(payload);
                     } catch (retryError) {
+                        if (isWriteTokenError(retryError)) clearStoredWriteToken();
                         alert(retryError.message);
                         throw retryError;
                     }

@@ -313,9 +313,68 @@
     <script>
         const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfJ7MK-Yhd5xSQMkizcFqMATypV6BA4mfn17YvqMo2nN5O2duvAXEOA9ttJfRy1sIKTg/exec';
+        const WRITE_TOKEN_KEY = 'carCrmWriteToken';
         const CONTACT_SHEET_NAMES = ['สถิตการติดต่อ', 'สถิติดการติดต่อ', 'สถิติการติดต่อ', 'สถิติ ติดต่อ', 'ContactStats'];
         const SALES_RECORDER_SHEET_NAME = 'พนักงานขาย';
         const DEFAULT_RECORDERS = ['พี่เมย์', 'พลอย'];
+
+        function readWriteToken() {
+            try {
+                return String(localStorage.getItem(WRITE_TOKEN_KEY) || '').trim();
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function saveWriteToken(token) {
+            try {
+                localStorage.setItem(WRITE_TOKEN_KEY, token);
+            } catch (error) {
+                // ยังส่ง token ครั้งนี้ได้ แม้ browser จะไม่อนุญาต localStorage
+            }
+        }
+
+        function clearWriteToken() {
+            try {
+                localStorage.removeItem(WRITE_TOKEN_KEY);
+            } catch (error) {
+                // ไม่มีค่าที่ต้องล้างเมื่อ browser ปิดกั้น localStorage
+            }
+        }
+
+        function getWriteToken(forceNewToken = false) {
+            if (forceNewToken) clearWriteToken();
+
+            let token = forceNewToken ? '' : readWriteToken();
+            if (!token) {
+                token = String(window.prompt('กรุณาใส่ Write Token สำหรับบันทึกข้อมูล') || '').trim();
+                if (!token) throw new Error('ไม่พบ Write Token');
+                saveWriteToken(token);
+            }
+            return token;
+        }
+
+        function isWriteTokenError(message) {
+            return /write token/i.test(String(message || ''));
+        }
+
+        async function postWithWriteToken(payload) {
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const token = getWriteToken(attempt > 0);
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ ...payload, token })
+                });
+                const result = await response.json();
+
+                if (!result.success && isWriteTokenError(result.error)) {
+                    clearWriteToken();
+                    if (attempt === 0) continue;
+                }
+                return result;
+            }
+            throw new Error('Write token ไม่ถูกต้อง');
+        }
         
         // Settings for parsing channels (Added HEX color for Chart.js)
         const CONTACT_CHANNELS = [
@@ -951,8 +1010,7 @@
             lucide.createIcons();
 
             try {
-                const response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-                const result = await response.json();
+                const result = await postWithWriteToken(payload);
                 if (!result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
 
                 setAddStatsStatus('success', `บันทึกสำเร็จ (${result.id || 'เพิ่มรายการแล้ว'})`);
