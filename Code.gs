@@ -10,6 +10,11 @@
 
 const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
 const WRITE_TOKEN_PROPERTY = 'CAR_CRM_WRITE_TOKEN';
+const PAYIN_IMAGE_FOLDER_ID_PROPERTY = 'CAR_CRM_PAYIN_FOLDER_ID';
+const APPSHEET_APP_FOLDER_NAME = 'CAR_CRM-691939189';
+const PAYIN_IMAGE_RELATIVE_FOLDER = 'Images/Pay_In';
+const PAYIN_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+const PAYIN_MAX_POST_BYTES = 5 * 1024 * 1024;
 
 // ─── Column definitions ───────────────────────────────────────
 const SCHEMA = {
@@ -290,6 +295,269 @@ function sanitizeRowValues_(row) {
   return row.map(sanitizeCellValue_);
 }
 
+function jsonOutput_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getPayInImageFolder_() {
+  const folderId = String(PropertiesService.getScriptProperties().getProperty(PAYIN_IMAGE_FOLDER_ID_PROPERTY) || '').trim();
+  if (!folderId) {
+    throw new Error(`ยังไม่ได้ตั้งค่า Script Property: ${PAYIN_IMAGE_FOLDER_ID_PROPERTY}`);
+  }
+  return DriveApp.getFolderById(folderId);
+}
+
+function hasExpectedImageSignature_(bytes, mimeType) {
+  const byteAt = function(index) { return Number(bytes[index]) & 255; };
+  if (mimeType === 'image/jpeg') {
+    return bytes.length >= 3 && byteAt(0) === 0xFF && byteAt(1) === 0xD8 && byteAt(2) === 0xFF;
+  }
+  if (mimeType === 'image/png') {
+    const png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    return bytes.length >= png.length && png.every(function(value, index) { return byteAt(index) === value; });
+  }
+  if (mimeType === 'image/webp') {
+    return bytes.length >= 12 &&
+      String.fromCharCode(byteAt(0), byteAt(1), byteAt(2), byteAt(3)) === 'RIFF' &&
+      String.fromCharCode(byteAt(8), byteAt(9), byteAt(10), byteAt(11)) === 'WEBP';
+  }
+  return false;
+}
+
+function decodePayInProof_(body) {
+  if (body.sheetName !== 'PayIn') throw new Error('การแนบรูปนี้รองรับเฉพาะ PayIn');
+
+  const recordId = String(body.recordId || '').trim();
+  const jobId = String(body.JobID || '').trim();
+  const slot = Number(body.slot);
+  const requestId = String(body.clientRequestId || '').toLowerCase().trim();
+  if (!recordId || recordId.length > 100) throw new Error('ไม่พบ Pay_ID สำหรับผูกรูป');
+  if (!jobId || jobId.length > 100) throw new Error('ไม่พบ JobID สำหรับผูกรูป');
+  if (slot !== 1 && slot !== 2) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(requestId)) {
+    throw new Error('รหัสคำขออัปโหลดไม่ถูกต้อง');
+  }
+
+  const allowedMimeTypes = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp'
+  };
+  let mimeType = String(body.mimeType || '').toLowerCase().trim();
+  let base64 = String(body.base64 || '').trim();
+  const dataUrlMatch = base64.match(/^data:([^;]+);base64,(.+)$/);
+  if (dataUrlMatch) {
+    mimeType = String(dataUrlMatch[1] || mimeType).toLowerCase().trim();
+    base64 = dataUrlMatch[2];
+  }
+  if (!allowedMimeTypes[mimeType]) throw new Error('รองรับรูปหลักฐานเฉพาะ JPG, PNG และ WebP');
+
+  base64 = base64.replace(/\s/g, '');
+  const maxBase64Chars = Math.ceil(PAYIN_IMAGE_MAX_BYTES / 3) * 4 + 4;
+  if (!base64 || base64.length > maxBase64Chars) throw new Error('รูปหลักฐานมีขนาดเกิน 3 MB');
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) throw new Error('ข้อมูลรูปหลักฐานไม่ถูกต้อง');
+
+  let bytes;
+  try {
+    bytes = Utilities.base64Decode(base64);
+  } catch (error) {
+    throw new Error('อ่านข้อมูลรูปหลักฐานไม่สำเร็จ');
+  }
+  if (!bytes.length || bytes.length > PAYIN_IMAGE_MAX_BYTES) throw new Error('รูปหลักฐานมีขนาดเกิน 3 MB');
+  if (!hasExpectedImageSignature_(bytes, mimeType)) {
+    throw new Error(`ไฟล์หลักฐานไม่ใช่รูป ${allowedMimeTypes[mimeType].toUpperCase()} ที่ถูกต้อง`);
+  }
+
+  return {
+    recordId: recordId,
+    jobId: jobId,
+    slot: slot,
+    column: `หลักฐาน_${slot}`,
+    requestId: requestId,
+    mimeType: mimeType,
+    extension: allowedMimeTypes[mimeType],
+    bytes: bytes
+  };
+}
+
+function findPayInTarget_(sheet, recordId, jobId) {
+  const values = sheet.getDataRange().getValues();
+  if (!values.length) return null;
+  const header = values[0].map(String);
+  const idIndex = header.indexOf('Pay_ID');
+  const jobIndex = header.indexOf('JobID');
+  if (idIndex === -1 || jobIndex === -1) throw new Error('หัวตาราง PayIn ไม่ถูกต้อง');
+
+  for (let index = 1; index < values.length; index++) {
+    const rowId = String(values[index][idIndex] || '').trim();
+    const rowJobId = String(values[index][jobIndex] || '').trim();
+    if (rowId === recordId && rowJobId === jobId) {
+      return { rowNumber: index + 1, values: values[index], header: header };
+    }
+  }
+  return null;
+}
+
+function attachPayInProof_(body) {
+  const proof = decodePayInProof_(body);
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('PayIn');
+  if (!sheet) throw new Error('ไม่พบชีต: "PayIn"');
+
+  const initialTarget = findPayInTarget_(sheet, proof.recordId, proof.jobId);
+  if (!initialTarget) throw new Error('ไม่พบ PayIn ที่ตรงกับ Pay_ID และ JobID');
+  const proofIndex = initialTarget.header.indexOf(proof.column);
+  if (proofIndex === -1) throw new Error(`ไม่พบคอลัมน์ ${proof.column}`);
+
+  const safePayId = proof.recordId.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const safeRequestId = proof.requestId.replace(/-/g, '');
+  const fileName = `${safePayId}_${proof.slot}_${safeRequestId}.${proof.extension}`;
+  const relativePath = `${APPSHEET_APP_FOLDER_NAME}/${PAYIN_IMAGE_RELATIVE_FOLDER}/${fileName}`;
+  if (String(initialTarget.values[proofIndex] || '').trim() === relativePath) {
+    return jsonOutput_({
+      success: true,
+      id: proof.recordId,
+      action: 'attachPayInProof',
+      slot: proof.slot,
+      relativePath: relativePath,
+      duplicate: true
+    });
+  }
+
+  const folder = getPayInImageFolder_();
+  const matchingFiles = folder.getFilesByName(fileName);
+  let file = matchingFiles.hasNext() ? matchingFiles.next() : null;
+  let createdNow = false;
+  if (!file) {
+    file = folder.createFile(Utilities.newBlob(proof.bytes, proof.mimeType, fileName));
+    file.setDescription(`CAR CRM PayIn ${proof.recordId} หลักฐาน ${proof.slot}`);
+    createdNow = true;
+  }
+
+  let lock = null;
+  let committed = false;
+  try {
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(10000)) throw new Error('ระบบกำลังบันทึกข้อมูลอยู่ กรุณาลองอัปโหลดรูปอีกครั้ง');
+
+    const latestTarget = findPayInTarget_(sheet, proof.recordId, proof.jobId);
+    if (!latestTarget) throw new Error('PayIn ถูกเปลี่ยนแปลงระหว่างอัปโหลด กรุณารีเฟรชแล้วลองใหม่');
+    const latestProofIndex = latestTarget.header.indexOf(proof.column);
+    if (latestProofIndex === -1) throw new Error(`ไม่พบคอลัมน์ ${proof.column}`);
+
+    if (String(latestTarget.values[latestProofIndex] || '').trim() !== relativePath) {
+      sheet.getRange(latestTarget.rowNumber, latestProofIndex + 1).setValue(sanitizeCellValue_(relativePath));
+      const timestampIndex = latestTarget.header.indexOf('วันที่บันทึกรายการ');
+      if (timestampIndex !== -1) sheet.getRange(latestTarget.rowNumber, timestampIndex + 1).setValue(thaiTimestamp());
+    }
+    committed = true;
+    return jsonOutput_({
+      success: true,
+      id: proof.recordId,
+      action: 'attachPayInProof',
+      slot: proof.slot,
+      relativePath: relativePath,
+      bytes: proof.bytes.length,
+      mimeType: proof.mimeType
+    });
+  } catch (error) {
+    if (createdNow && !committed && file) {
+      try { file.setTrashed(true); } catch (trashError) { /* best effort cleanup */ }
+    }
+    throw error;
+  } finally {
+    if (lock) lock.releaseLock();
+  }
+}
+
+function upsertPayIn_(sheet, schema, body) {
+  const jobId = String(body.JobID || '').trim();
+  if (!jobId) throw new Error('ไม่พบ JobID สำหรับบันทึก PayIn');
+
+  const values = sheet.getDataRange().getValues();
+  const header = values[0].map(String);
+  const headerMismatch = schema.columns.some(function(column, index) {
+    return String(header[index] || '').trim() !== column;
+  });
+  if (headerMismatch) {
+    throw new Error('หัวตาราง PayIn ไม่ตรงกับโครงสร้างที่ระบบกำหนด — ยกเลิกการบันทึกเพื่อป้องกันคอลัมน์สลับ');
+  }
+  const idIndex = header.indexOf(schema.idField);
+  const jobIndex = header.indexOf('JobID');
+  if (idIndex === -1 || jobIndex === -1) throw new Error('หัวตาราง PayIn ไม่ถูกต้อง');
+
+  const requestedId = String(body.recordId || '').trim();
+  let targetRowIndex = -1;
+  if (requestedId) {
+    for (let index = 1; index < values.length; index++) {
+      if (String(values[index][idIndex] || '').trim() !== requestedId) continue;
+      if (String(values[index][jobIndex] || '').trim() !== jobId) {
+        throw new Error('Pay_ID ไม่ตรงกับ JobID — ยกเลิกการบันทึกเพื่อป้องกันข้อมูลผิดงาน');
+      }
+      targetRowIndex = index + 1;
+      break;
+    }
+    if (targetRowIndex === -1) {
+      throw new Error('ไม่พบ Pay_ID ที่ต้องการแก้ไข กรุณารีเฟรชข้อมูลก่อนบันทึกอีกครั้ง');
+    }
+  }
+  if (!requestedId && targetRowIndex === -1) {
+    const matchingRows = [];
+    for (let index = 1; index < values.length; index++) {
+      if (String(values[index][jobIndex] || '').trim() === jobId) {
+        matchingRows.push(index + 1);
+      }
+    }
+    if (matchingRows.length > 1) {
+      throw new Error('พบ PayIn ซ้ำสำหรับ JobID นี้ — ยกเลิกการบันทึกเพื่อป้องกันแก้ไขผิดรายการ');
+    }
+    if (matchingRows.length === 1) targetRowIndex = matchingRows[0];
+  }
+
+  let payId;
+  let action;
+  if (targetRowIndex !== -1) {
+    const existingRow = values[targetRowIndex - 1];
+    payId = String(existingRow[idIndex] || '').trim();
+    if (!payId) {
+      payId = generateId(schema.idPrefix);
+      let attempts = 0;
+      while (!isUnique(sheet, payId) && attempts < 10) {
+        payId = generateId(schema.idPrefix);
+        attempts++;
+      }
+    }
+    const timestamp = thaiTimestamp();
+    const rowData = schema.columns.map(function(column, columnIndex) {
+      if (column === schema.idField) return payId;
+      if (column === 'วันที่บันทึกรายการ') return timestamp;
+      if (body[column] !== undefined) return body[column];
+      return existingRow[columnIndex] !== undefined ? existingRow[columnIndex] : '';
+    });
+    sheet.getRange(targetRowIndex, 1, 1, schema.columns.length).setValues([sanitizeRowValues_(rowData)]);
+    action = 'update';
+  } else {
+    payId = generateId(schema.idPrefix);
+    let attempts = 0;
+    while (!isUnique(sheet, payId) && attempts < 10) {
+      payId = generateId(schema.idPrefix);
+      attempts++;
+    }
+    const timestamp = thaiTimestamp();
+    const rowData = schema.columns.map(function(column) {
+      if (column === schema.idField) return payId;
+      if (column === 'วันที่บันทึกรายการ') return timestamp;
+      return body[column] !== undefined ? body[column] : '';
+    });
+    sheet.appendRow(sanitizeRowValues_(rowData));
+    action = 'insert';
+  }
+
+  return jsonOutput_({ success: true, id: payId, action: action, sheetName: 'PayIn' });
+}
+
 function ensurePlainTextColumns_(sheet, schema) {
   const lastColumn = Math.max(sheet.getLastColumn(), schema.columns.length, 1);
   const headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String);
@@ -305,6 +573,13 @@ function ensurePlainTextColumns_(sheet, schema) {
 function formatErrorMessage_(err) {
   const message = String(err && err.message ? err.message : err || '').trim();
   const lowerMessage = message.toLowerCase();
+  const isDriveScopeError =
+    lowerMessage.indexOf('driveapp.') !== -1 ||
+    lowerMessage.indexOf('googleapis.com/auth/drive') !== -1 ||
+    lowerMessage.indexOf('drive.google.com') !== -1;
+  if (isDriveScopeError) {
+    return `Apps Script ยังไม่ได้รับสิทธิ์หรือหาโฟลเดอร์รูปไม่พบ: ตรวจ ${PAYIN_IMAGE_FOLDER_ID_PROPERTY} แล้วรัน authorizeOnce()`;
+  }
   const isSpreadsheetScopeError =
     lowerMessage.indexOf('spreadsheetapp.openbyid') !== -1 ||
     lowerMessage.indexOf('googleapis.com/auth/spreadsheets') !== -1 ||
@@ -320,8 +595,20 @@ function formatErrorMessage_(err) {
 function doPost(e) {
   let lock = null;
   try {
-    const body      = JSON.parse(e.postData.contents);
+    const rawPost = String(e && e.postData && e.postData.contents ? e.postData.contents : '');
+    const contentLength = Number(e && e.contentLength ? e.contentLength : rawPost.length);
+    if (!rawPost) throw new Error('ไม่พบข้อมูลที่ส่งมา');
+    if (contentLength > PAYIN_MAX_POST_BYTES || rawPost.length > PAYIN_MAX_POST_BYTES) {
+      throw new Error('ข้อมูลที่ส่งมามีขนาดใหญ่เกิน 5 MB');
+    }
+    const body = JSON.parse(rawPost);
     verifyWriteToken_(body);
+
+    const action = String(body.action || '').trim();
+    const allowedActions = ['', 'insert', 'update', 'delete', 'upsertPayIn', 'attachPayInProof'];
+    if (allowedActions.indexOf(action) === -1) throw new Error(`ไม่รู้จัก action: "${action}"`);
+    if (action === 'attachPayInProof') return attachPayInProof_(body);
+
     lock = LockService.getScriptLock();
     if (!lock.tryLock(30000)) {
       throw new Error('ระบบกำลังบันทึกข้อมูลอยู่ กรุณาลองใหม่อีกครั้ง');
@@ -343,6 +630,17 @@ function doPost(e) {
 
     if (!sheet) throw new Error(`ไม่พบชีต: "${sheetName}"`);
     ensurePlainTextColumns_(sheet, schema);
+
+    // เส้นทางรูปเป็นค่าที่ server สร้างเท่านั้น ป้องกัน client เขียน path เอง
+    if (sheetName === 'PayIn') {
+      delete body['หลักฐาน_1'];
+      delete body['หลักฐาน_2'];
+    }
+
+    if (action === 'upsertPayIn') {
+      if (sheetName !== 'PayIn') throw new Error('action upsertPayIn รองรับเฉพาะชีต PayIn');
+      return upsertPayIn_(sheet, schema, body);
+    }
 
     if (sheetName === 'data' && Array.isArray(body.rows)) {
       return saveDataRows(sheet, schema, body);
@@ -494,7 +792,9 @@ function authorizeOnce() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const names = ss.getSheets().map(function (s) { return s.getName(); });
   Logger.log('เข้าถึงสเปรดชีตสำเร็จ พบชีต: ' + names.join(', '));
-  return names;
+  const payInFolder = getPayInImageFolder_();
+  Logger.log('เข้าถึงโฟลเดอร์รูป PayIn สำเร็จ: ' + payInFolder.getName() + ' (' + payInFolder.getId() + ')');
+  return { sheets: names, payInFolderId: payInFolder.getId() };
 }
 
 // ─── GET สำหรับทดสอบ ──────────────────────────────────────────
