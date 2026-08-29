@@ -183,7 +183,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
+    navigator.serviceWorker.register('./sw.js?v=5', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
   }
 
   initialise();

@@ -1,7 +1,7 @@
 'use strict';
 
-const CACHE_NAME = 'car-crm-mobile-readonly-v4';
-const SHELL_FILES = ['./', './index.html', './styles.css', './core.js', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE_NAME = 'car-crm-mobile-readonly-v5';
+const SHELL_FILES = ['./', './index.html', './styles.css?v=5', './core.js?v=5', './app.js?v=5', './manifest.webmanifest?v=5', './icon-192.png', './icon-512.png'];
 const SHELL_PATHS = new Set(SHELL_FILES.map(path => new URL(path, self.registration.scope).pathname));
 
 self.addEventListener('install', event => {
