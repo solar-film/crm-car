@@ -95,8 +95,8 @@ label[for]:focus-visible {
 
 .brand-mark img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .brand > span:last-child { min-width: 0; display: grid; }
-.brand strong { overflow: hidden; font-size: 16px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.brand small { margin-top: 2px; color: rgba(255,255,255,.78); font-size: 11px; }
+.brand strong { overflow: hidden; font-size: 18px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.brand small { margin-top: 2px; color: rgba(255,255,255,.82); font-size: 13px; }
 
 .icon-button {
   flex: 0 0 auto;
@@ -149,7 +149,7 @@ main {
 .date-nav:active, .today-button:active { transform: translateY(1px); }
 
 .date-field { min-width: 0; display: grid; gap: 4px; }
-.date-field span { color: var(--muted); font-size: 11px; font-weight: 700; }
+.date-field span { color: var(--muted); font-size: 13px; font-weight: 700; }
 .date-field input,
 .search-field input {
   width: 100%;
@@ -175,9 +175,9 @@ main {
   padding: 13px 2px 9px;
 }
 .summary-bar > div { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.summary-bar strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-.summary-bar span { flex: 0 0 auto; color: var(--primary); font-size: 13px; font-weight: 800; }
-.summary-bar small { flex: 0 0 auto; color: var(--muted); font-size: 10px; }
+.summary-bar strong { overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.summary-bar span { flex: 0 0 auto; color: var(--primary); font-size: 16px; font-weight: 800; }
+.summary-bar small { flex: 0 0 auto; color: var(--muted); font-size: 12px; }
 
 .message {
   margin-bottom: 10px;
@@ -209,8 +209,8 @@ main {
   padding: 11px 13px;
   border-bottom: 1px solid #e8eef2;
 }
-.panel-heading h1 { margin: 0; font-size: 15px; }
-.panel-heading span { color: var(--muted); font-size: 10px; white-space: nowrap; }
+.panel-heading h1 { margin: 0; font-size: 18px; }
+.panel-heading span { color: var(--muted); font-size: 12px; white-space: nowrap; }
 
 .state-box {
   display: grid;
@@ -243,40 +243,40 @@ thead { background: #f8fafc; }
 th {
   padding: 8px 7px;
   color: #64748b;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .02em;
   text-align: left;
 }
-th:first-child { width: 54px; padding-left: 11px; text-align: center; }
+th:first-child { width: 68px; padding-left: 11px; text-align: center; }
 th.pay-column { width: 94px; padding-right: 9px; text-align: center; }
 
 tbody tr { border-top: 1px solid #e8eef2; }
 tbody tr:first-child { border-top: 0; }
-td { padding: 11px 7px; vertical-align: top; }
+td { padding: 14px 7px; vertical-align: top; }
 td:first-child { padding-left: 11px; text-align: center; }
 td.pay-column { padding-right: 9px; text-align: center; }
 
-.time-cell strong { display: block; color: #0f172a; font-size: 14px; }
-.time-cell span { display: block; margin-top: 4px; color: var(--muted); font-size: 8px; overflow-wrap: anywhere; }
+.time-cell strong { display: block; color: #0f172a; font-size: 18px; line-height: 1.25; }
+.time-cell span { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; line-height: 1.35; overflow-wrap: anywhere; }
 
 .appointment-main { min-width: 0; }
 .customer-line { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
-.customer-line strong { min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.phone-link { color: var(--primary); font-size: 10px; font-weight: 700; text-decoration: none; }
-.car-line { margin-top: 4px; color: #334155; font-size: 12px; font-weight: 650; line-height: 1.4; }
-.install-line { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+.customer-line strong { min-width: 0; font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.phone-link { color: var(--primary); font-size: 13px; font-weight: 750; line-height: 1.35; text-decoration: none; }
+.car-line { margin-top: 5px; color: #334155; font-size: 15px; font-weight: 700; line-height: 1.45; }
+.install-line { margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .meta-line { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  min-height: 20px;
-  padding: 2px 7px;
+  min-height: 24px;
+  padding: 3px 8px;
   border-radius: 999px;
   color: #475569;
   background: #eef2f6;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1.2;
 }
@@ -286,7 +286,7 @@ td.pay-column { padding-right: 9px; text-align: center; }
 .badge.paid { color: #047857; background: #d1fae5; }
 .badge.partial { color: #a16207; background: #fef3c7; }
 .badge.unpaid { color: #be123c; background: #ffe4e6; }
-.price-text { color: #475569; font-size: 10px; font-weight: 750; }
+.price-text { color: #475569; font-size: 13px; font-weight: 800; }
 
 .pay-cell { display: grid; justify-items: stretch; gap: 5px; }
 .pay-button {
@@ -474,15 +474,27 @@ noscript { display: block; margin: 20px; color: var(--danger); text-align: cente
 }
 
 @media (max-width: 350px) {
-  .brand strong { font-size: 14px; }
+  .brand strong { font-size: 16px; }
+  .brand small { font-size: 12px; }
   .brand-mark { width: 36px; height: 36px; }
   .date-row { grid-template-columns: 40px minmax(0, 1fr) 40px; }
   .today-button { grid-column: 1 / -1; min-height: 38px; }
+  .summary-bar strong { font-size: 17px; }
+  .summary-bar span { font-size: 15px; }
   .summary-bar small { display: none; }
   .form-grid, .proof-grid { grid-template-columns: 1fr; }
   .field.full { grid-column: auto; }
-  th:first-child { width: 48px; }
+  th { font-size: 11px; }
+  th:first-child { width: 62px; }
   th.pay-column { width: 82px; }
+  .time-cell strong { font-size: 17px; }
+  .time-cell span { font-size: 9px; }
+  .customer-line strong { font-size: 15px; }
+  .phone-link { font-size: 12px; }
+  .car-line { font-size: 14px; }
+  .install-line { font-size: 12px; }
+  .badge { font-size: 10px; }
+  .price-text { font-size: 12px; }
   td, th { padding-left: 5px; padding-right: 5px; }
 }
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_NAME = 'car-crm-mobile-readonly-v1';
+const CACHE_NAME = 'car-crm-mobile-readonly-v2';
 const SHELL_FILES = ['./', './index.html', './styles.css', './core.js', './app.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 const SHELL_PATHS = new Set(SHELL_FILES.map(path => new URL(path, self.registration.scope).pathname));
 
