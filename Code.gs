@@ -712,7 +712,7 @@ function formatErrorMessage_(err) {
     lowerMessage.indexOf('driveapp.') !== -1 ||
     lowerMessage.indexOf('googleapis.com/auth/drive') !== -1;
   if (isDriveScopeError) {
-    return 'Apps Script ยังไม่ได้รับสิทธิ์เข้าถึง Google Drive: ให้เพิ่ม appsscript.json เวอร์ชันล่าสุด รัน authorizeOnce() แล้ว Deploy เป็นเวอร์ชันใหม่';
+    return 'Apps Script Web App ยังเข้าถึง Google Drive ไม่ได้: ถ้า authorizeOnce() ผ่านแล้ว ให้ตรวจ Deploy ว่า Execute as = Me, Who has access = Anyone แล้วเลือก Version > New version เพื่อ Deploy ใหม่';
   }
 
   const isSpreadsheetScopeError =
@@ -721,7 +721,7 @@ function formatErrorMessage_(err) {
     lowerMessage.indexOf('do not have permission') !== -1;
 
   if (isSpreadsheetScopeError) {
-    return 'Apps Script ยังไม่ได้รับสิทธิ์เข้าถึง Google Sheets: ให้รัน authorizeOnce() แล้วกด Allow จากนั้น Deploy เป็นเวอร์ชันใหม่';
+    return 'Apps Script Web App ยังเข้าถึง Google Sheets ไม่ได้: ถ้า authorizeOnce() ผ่านแล้ว ให้ตรวจ Deploy ว่า Execute as = Me, Who has access = Anyone แล้วเลือก Version > New version เพื่อ Deploy ใหม่';
   }
 
   return message || 'เกิดข้อผิดพลาด';
