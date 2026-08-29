@@ -5420,13 +5420,13 @@
             const job = allData.find(j => j.id === currentViewJobId);
             if (!payInPendingMutationId) payInPendingMutationId = createPayInMutationId();
             const payload = {
+                action: 'upsertPayIn',
                 sheetName: 'PayIn',
                 JobID: job?.id || '',
                 mutationId: payInPendingMutationId
             };
             const pi = job ? (payInDetailsMap[job.id] || payInDetailsMap[normalizeLookupId(job.id)]) : null;
             if (pi && pi.id) {
-                payload.action = 'update';
                 payload.recordId = pi.id;
             }
             form.forEach((val, key) => {

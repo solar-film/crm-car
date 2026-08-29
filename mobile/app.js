@@ -5,7 +5,7 @@
   if (!Core) throw new Error('ไม่พบ mobile core');
 
   const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
-  const MOBILE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw85_PgBaAB7uXymCXMyfZhOzd278s1WOEj1S_Jlep60Ju1QR-93XDXUTNPK7oejt713Q/exec';
+  const MOBILE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwH0Vw5qzVO3YDsibqi_EF8KScpL5e0-wp8mYXxgqSj_3wjqH8QG5CyFOse4-Q18o3Rgg/exec';
   const WRITE_TOKEN_KEY = 'carCrmWriteToken';
   const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
   const MAX_UPLOAD_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -660,7 +660,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register('./sw.js?v=6', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
+    navigator.serviceWorker.register('./sw.js?v=7', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
   }
 
   initialise();
