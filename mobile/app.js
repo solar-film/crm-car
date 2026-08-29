@@ -5,7 +5,7 @@
   if (!Core) throw new Error('ไม่พบ mobile core');
 
   const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
-  const MOBILE_SCRIPT_URL = '__MOBILE_SCRIPT_URL__';
+  const MOBILE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw85_PgBaAB7uXymCXMyfZhOzd278s1WOEj1S_Jlep60Ju1QR-93XDXUTNPK7oejt713Q/exec';
   const WRITE_TOKEN_KEY = 'carCrmWriteToken';
   const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
   const MAX_UPLOAD_IMAGE_BYTES = 3 * 1024 * 1024;
