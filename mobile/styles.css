@@ -418,6 +418,9 @@ td.pay-column { padding-right: 9px; text-align: center; }
 .proof-preview .existing-proof { display: grid; justify-items: center; gap: 5px; padding: 8px; }
 .proof-preview .existing-proof svg { width: 28px; height: 28px; fill: #10b981; }
 .proof-preview a { color: var(--primary); font-weight: 800; }
+.proof-preview .existing-proof-link { display: block; width: 100%; height: 100%; background: #fff; }
+.proof-preview .existing-proof-fallback { display: grid; width: 100%; height: 100%; place-items: center; padding: 12px; }
+.proof-preview .existing-proof-fallback[hidden] { display: none; }
 .proof-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 7px; }
 .camera-button, .gallery-button {
   display: grid;

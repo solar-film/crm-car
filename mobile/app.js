@@ -334,11 +334,16 @@
       status.classList.add('success');
     } else if (proof.existing) {
       const link = existingProofUrl(proof.existing);
-      preview.innerHTML = `<div class="existing-proof">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.2 4.8 12 3.4 13.4 9 19 21 7l-1.4-1.4L9 16.2Z"/></svg>
-        <strong>มีรูปเดิมแล้ว</strong>
-        <a href="${Core.escapeHtml(link)}" target="_blank" rel="noopener noreferrer">เปิดดูรูป</a>
-      </div>`;
+      preview.innerHTML = `<a class="existing-proof-link" href="${Core.escapeHtml(link)}" target="_blank" rel="noopener noreferrer" aria-label="เปิดรูปหลักฐานเดิม ${slot}">
+        <img src="${Core.escapeHtml(link)}" alt="รูปหลักฐานเดิม ${slot}" referrerpolicy="no-referrer">
+        <span class="existing-proof-fallback" hidden>แตะเพื่อเปิดรูปเดิม</span>
+      </a>`;
+      const existingImage = preview.querySelector('img');
+      const fallback = preview.querySelector('.existing-proof-fallback');
+      existingImage.addEventListener('error', () => {
+        existingImage.hidden = true;
+        fallback.hidden = false;
+      }, { once: true });
       status.textContent = 'เลือกรูปใหม่เพื่อแทนที่ช่องนี้';
     } else {
       preview.innerHTML = '<span>ยังไม่มีรูป</span>';
