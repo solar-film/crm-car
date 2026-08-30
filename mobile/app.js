@@ -631,14 +631,11 @@
         }
       } catch (uploadError) {
         applySavedPayIn();
-        showFormMessage(`บันทึกข้อมูล PayIn สำเร็จแล้ว แต่รูปยังอัปโหลดไม่ได้: ${uploadError.message}`, 'success');
-        showToast('บันทึกข้อมูล PayIn แล้ว');
+        showFormMessage(`บันทึกข้อมูล PayIn แล้ว แต่รูปยังไม่ได้บันทึกจริง: ${uploadError.message}`);
+        showToast('รูปยังไม่ได้บันทึก');
         renderSchedule();
-        window.setTimeout(async () => {
-          setSaving(false);
-          closePayIn();
-          await loadData({ silent: true });
-        }, 900);
+        setSaving(false);
+        await loadData({ silent: true });
         return;
       }
 

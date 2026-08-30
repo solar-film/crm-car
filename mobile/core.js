@@ -183,6 +183,19 @@
 
   function buildPayInMap(rows) {
     const map = Object.create(null);
+    const mergePayIn = (existing, incoming) => {
+      if (!existing) return incoming;
+      const merged = { ...existing };
+      ['status', 'quotation', 'billNumber', 'paymentType', 'amount', 'note', 'raw'].forEach(key => {
+        const value = incoming[key];
+        if (value !== undefined && value !== null && value !== '' && value !== '-') merged[key] = value;
+      });
+      merged.proofs = [0, 1].map(index => incoming.proofs[index] || existing.proofs[index] || '');
+      merged.hasProof = merged.proofs.some(Boolean);
+      if (incoming.hasProof || (!merged.id && incoming.id)) merged.id = incoming.id;
+      return merged;
+    };
+
     (rows || []).forEach(row => {
       const jobId = getField(row, ['JobID', 'Job ID']);
       if (!jobId) return;
@@ -199,7 +212,8 @@
         raw: row
       };
       payIn.hasProof = payIn.proofs.some(Boolean);
-      map[normalizeId(jobId)] = payIn;
+      const key = normalizeId(jobId);
+      map[key] = mergePayIn(map[key], payIn);
     });
     return map;
   }

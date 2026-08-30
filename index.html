@@ -2197,8 +2197,22 @@
                     rawRow: row // เก็บ raw row ไว้สำหรับ pre-fill ฟอร์มแก้ไข (เช่น ใบเสนอราคา, หมายเหตุ)
                 };
 
-                map[jobId] = data;
-                map[normalizeLookupId(jobId)] = data;
+                const mergePayIn = (existing, incoming) => {
+                    if (!existing) return incoming;
+                    const merged = { ...existing };
+                    ['status', 'billNo', 'payType', 'amount', 'productValue', 'rawRow'].forEach(key => {
+                        const value = incoming[key];
+                        if (value !== undefined && value !== null && value !== '' && value !== '-') merged[key] = value;
+                    });
+                    merged.proofSlots = [0, 1].map(index => incoming.proofSlots[index] || existing.proofSlots[index] || '');
+                    merged.proofs = merged.proofSlots.filter(value => value && value !== '-');
+                    merged.hasSlip = merged.proofs.some(value => value.length > 5);
+                    if (incoming.hasSlip || (!merged.id && incoming.id)) merged.id = incoming.id;
+                    return merged;
+                };
+
+                map[jobId] = mergePayIn(map[jobId], data);
+                map[normalizeLookupId(jobId)] = mergePayIn(map[normalizeLookupId(jobId)], data);
             });
             return map;
         }
@@ -5478,16 +5492,12 @@
                                 renderPayInProofSlot(upload.slot);
                             }
                         } catch (uploadError) {
-                            payInPendingMutationId = '';
-                            okEl.textContent = `บันทึกข้อมูล PayIn สำเร็จแล้ว แต่รูปยังอัปโหลดไม่ได้: ${uploadError.message}`;
-                            okEl.classList.remove('hidden');
-                            btn.textContent = '✓ บันทึกข้อมูลแล้ว';
-                            setTimeout(async () => {
-                                payInSubmitInFlight = false;
-                                closePayInModal();
-                                await fetchGoogleSheetData();
-                                if (currentViewJobId) openJobModal(currentViewJobId);
-                            }, 1500);
+                            errEl.textContent = `บันทึกข้อมูล PayIn แล้ว แต่รูปยังไม่ได้บันทึกจริง: ${uploadError.message}`;
+                            errEl.classList.remove('hidden');
+                            btn.textContent = btn.dataset.defaultLabel || 'บันทึกข้อมูล';
+                            payInSubmitInFlight = false;
+                            setPayInSubmitProcessingState();
+                            await fetchGoogleSheetData();
                             return;
                         }
                     }

@@ -24,11 +24,14 @@ class RangeMock {
       )
     );
   }
+  getValue() { return this.getValues()[0]?.[0] ?? ''; }
   setValues(values) {
     values.forEach((rowValues, rowOffset) => rowValues.forEach((value, columnOffset) => {
       const rowIndex = this.row - 1 + rowOffset;
+      const columnIndex = this.column - 1 + columnOffset;
+      if (this.sheet.ignoreProofWrites && (columnIndex === 8 || columnIndex === 9)) return;
       while (!this.sheet.rows[rowIndex]) this.sheet.rows[rowIndex] = [];
-      this.sheet.rows[rowIndex][this.column - 1 + columnOffset] = value;
+      this.sheet.rows[rowIndex][columnIndex] = value;
     }));
     return this;
   }
@@ -46,7 +49,10 @@ class RangeMock {
 }
 
 class SheetMock {
-  constructor(rows) { this.rows = rows.map(row => row.slice()); }
+  constructor(rows) {
+    this.rows = rows.map(row => row.slice());
+    this.ignoreProofWrites = false;
+  }
   getDataRange() { return new RangeMock(this, 1, 1, this.getLastRow(), this.getLastColumn()); }
   getRange(row, column, rowCount = 1, columnCount = 1) { return new RangeMock(this, row, column, rowCount, columnCount); }
   getLastRow() { return this.rows.length; }
@@ -60,6 +66,12 @@ class FileMock {
   constructor(blob) { this.blob = blob; this.name = blob.name; this.trashed = false; this.description = ''; }
   setDescription(value) { this.description = value; return this; }
   setTrashed(value) { this.trashed = value; return this; }
+  isTrashed() { return this.trashed; }
+}
+
+function iterator(items) {
+  let index = 0;
+  return { hasNext: () => index < items.length, next: () => items[index++] };
 }
 
 class FolderMock {
@@ -77,6 +89,12 @@ class FolderMock {
   }
   getName() { return 'Pay_In'; }
   getId() { return 'folder-123'; }
+  getParents() {
+    return iterator([{
+      getName: () => 'Images',
+      getParents: () => iterator([{ getName: () => 'CAR_CRM-691939189' }])
+    }]);
+  }
 }
 
 function createRuntime() {
@@ -85,7 +103,8 @@ function createRuntime() {
   const folder = new FolderMock(trace);
   const lock = {
     tryLock() { trace.push('lock:try'); return true; },
-    releaseLock() { trace.push('lock:release'); }
+    releaseLock() { trace.push('lock:release'); },
+    hasLock() { return true; }
   };
   const context = {
     console,
@@ -113,6 +132,7 @@ function createRuntime() {
       }
     },
     SpreadsheetApp: {
+      flush() {},
       openById() {
         return {
           getSheetByName(name) { return name === 'PayIn' ? sheet : null; },
@@ -215,8 +235,23 @@ const duplicate = call(runtime, {
   slot: 1, mimeType: 'image/jpeg', base64: jpeg, clientRequestId: requestId, token: 'secret'
 });
 assert.equal(duplicate.success, true);
-assert.equal(duplicate.duplicate, true);
+assert.equal(duplicate.reused, true);
+assert.equal(duplicate.verified, true);
 assert.equal(runtime.folder.files.filter(file => !file.trashed).length, 1, 'same request id never creates another file');
+
+const proofWriteFailureRuntime = createRuntime();
+const proofWriteFailureInsert = call(proofWriteFailureRuntime, {
+  action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-PROOF-FAIL', token: 'secret',
+  'สถานะ': 'ชำระครบ', 'ยอดเงิน(บาท)': '1200'
+});
+proofWriteFailureRuntime.sheet.ignoreProofWrites = true;
+const proofWriteFailure = call(proofWriteFailureRuntime, {
+  action: 'attachPayInProof', sheetName: 'PayIn', recordId: proofWriteFailureInsert.id, JobID: 'JOB-PROOF-FAIL',
+  slot: 1, mimeType: 'image/jpeg', base64: jpeg, clientRequestId: requestId, token: 'secret'
+});
+assert.equal(proofWriteFailure.success, false);
+assert.match(proofWriteFailure.error, /ตรวจสอบช่อง หลักฐาน_1 แล้วไม่พบ path รูป/);
+assert.equal(proofWriteFailureRuntime.folder.files.filter(file => !file.trashed).length, 0, 'unverified proof upload is rolled back');
 
 const mismatch = call(runtime, {
   action: 'attachPayInProof', sheetName: 'PayIn', recordId: 'PAY-WRONG', JobID: 'JOB-1',
@@ -230,15 +265,15 @@ const badSignature = call(runtime, {
   slot: 2, mimeType: 'image/jpeg', base64: Buffer.from('not-jpeg').toString('base64'), clientRequestId: requestId, token: 'secret'
 });
 assert.equal(badSignature.success, false);
-assert.match(badSignature.error, /ไม่ใช่รูป JPG/);
+assert.match(badSignature.error, /ไม่ใช่ไฟล์รูป JPG/);
 
 const unknown = call(runtime, { action: 'mystery', sheetName: 'PayIn', token: 'secret' });
 assert.equal(unknown.success, false);
 assert.match(unknown.error, /ไม่รู้จัก action/);
 
-const tooLarge = call(runtime, { action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-2', token: 'secret' }, 6 * 1024 * 1024);
+const tooLarge = call(runtime, { action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-2', token: 'secret' }, 11 * 1024 * 1024);
 assert.equal(tooLarge.success, false);
-assert.match(tooLarge.error, /ใหญ่เกิน 5 MB/);
+assert.match(tooLarge.error, /ใหญ่เกิน 10 MB/);
 assert.equal(runtime.sheet.rows.length, 2, 'oversized request changes nothing');
 
 console.log('apps-script PayIn tests passed');
