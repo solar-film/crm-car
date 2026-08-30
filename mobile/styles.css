@@ -133,7 +133,20 @@ main {
   box-shadow: 0 8px 28px rgba(15, 23, 42, .05);
 }
 
-.date-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px auto; gap: 7px; align-items: end; }
+.date-row {
+  display: grid;
+  grid-template-areas:
+    "label label label label"
+    "previous date next today";
+  grid-template-columns: 44px minmax(0, 1fr) 44px auto;
+  gap: 4px 7px;
+  align-items: center;
+}
+.date-label { grid-area: label; color: var(--muted); font-size: 13px; font-weight: 700; }
+#previousDateButton { grid-area: previous; }
+#dateFilter { grid-area: date; }
+#nextDateButton { grid-area: next; }
+#todayButton { grid-area: today; }
 
 .date-nav,
 .today-button {
@@ -144,23 +157,23 @@ main {
   cursor: pointer;
 }
 
-.date-nav { font-size: 27px; line-height: 1; color: var(--primary); }
+.date-nav { position: relative; z-index: 1; width: 44px; min-width: 44px; padding: 0; font-size: 27px; line-height: 1; color: var(--primary); }
 .today-button { padding: 0 13px; color: var(--primary-dark); font-weight: 750; }
 .date-nav:active, .today-button:active { transform: translateY(1px); }
 
-.date-field { min-width: 0; display: grid; gap: 4px; }
-.date-field span { color: var(--muted); font-size: 13px; font-weight: 700; }
-.date-field input,
+.date-input,
 .search-field input {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   height: 44px;
+  box-sizing: border-box;
   border: 1px solid var(--line);
   border-radius: 12px;
   color: var(--ink);
   background: #fff;
 }
-.date-field input { padding: 0 10px; font-weight: 700; }
+.date-input { display: block; padding: 0 10px; font-weight: 700; }
 
 .search-field { position: relative; display: block; }
 .search-field svg { position: absolute; left: 13px; top: 12px; width: 20px; height: 20px; fill: #94a3b8; pointer-events: none; }
@@ -498,8 +511,15 @@ noscript { display: block; margin: 20px; color: var(--danger); text-align: cente
   .brand strong { font-size: 16px; }
   .brand small { font-size: 12px; }
   .brand-mark { width: 36px; height: 36px; }
-  .date-row { grid-template-columns: 40px minmax(0, 1fr) 40px; }
-  .today-button { grid-column: 1 / -1; min-height: 38px; }
+  .date-row {
+    grid-template-areas:
+      "label label label"
+      "previous date next"
+      "today today today";
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+  }
+  .date-nav { width: 40px; min-width: 40px; }
+  .today-button { min-height: 38px; }
   .summary-bar strong { font-size: 17px; }
   .summary-bar span { font-size: 15px; }
   .summary-bar small { display: none; }
