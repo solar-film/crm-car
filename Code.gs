@@ -16,6 +16,7 @@ const PAYIN_IMAGE_RELATIVE_FOLDER = 'Images/Pay_In';
 const PAYIN_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
 const PAYIN_MAX_POST_BYTES = 10 * 1024 * 1024;
 const PAYIN_MUTATION_CACHE_SECONDS = 6 * 60 * 60;
+const BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
 
 // ─── Column definitions ───────────────────────────────────────
 const SCHEMA = {
@@ -1076,6 +1077,6 @@ function authorizeOnce() {
 function doGet() {
   const available = Object.keys(SCHEMA).join(', ');
   return ContentService
-    .createTextOutput(JSON.stringify({ status: 'API ready', sheets: available }))
+    .createTextOutput(JSON.stringify({ status: 'API ready', backendVersion: BACKEND_VERSION, sheets: available }))
     .setMimeType(ContentService.MimeType.JSON);
 }

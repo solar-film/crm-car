@@ -154,7 +154,7 @@ function createRuntime() {
   };
   context.globalThis = context;
   vm.createContext(context);
-  const source = fs.readFileSync(require.resolve('../Code.gs'), 'utf8') + '\n;globalThis.__api = { doPost, upsertPayIn_, attachPayInProof_, decodePayInProof_ };';
+  const source = fs.readFileSync(require.resolve('../Code.gs'), 'utf8') + '\n;globalThis.__api = { doGet, doPost, upsertPayIn_, attachPayInProof_, decodePayInProof_ };';
   vm.runInContext(source, context, { filename: 'Code.gs' });
   return { ...context.__api, sheet, folder, trace };
 }
@@ -166,6 +166,10 @@ function call(runtime, payload, contentLength) {
 }
 
 const runtime = createRuntime();
+const health = JSON.parse(runtime.doGet().text);
+assert.equal(health.status, 'API ready');
+assert.match(health.backendVersion, /^2026-08-30-payin-proof-confirmed$/);
+
 const insert = call(runtime, {
   action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-1', token: 'secret',
   'สถานะ': 'มัดจำ', 'ยอดเงิน(บาท)': '1000', 'หลักฐาน_1': 'client/evil.jpg'
