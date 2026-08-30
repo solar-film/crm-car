@@ -819,7 +819,8 @@ function formatErrorMessage_(err) {
   const message = String(err && err.message ? err.message : err || '').trim();
   const lowerMessage = message.toLowerCase();
   const isDriveScopeError =
-    lowerMessage.indexOf('driveapp.') !== -1 ||
+    lowerMessage.indexOf('you do not have permission to call driveapp') !== -1 ||
+    lowerMessage.indexOf('authorization is required to perform that action') !== -1 ||
     lowerMessage.indexOf('googleapis.com/auth/drive') !== -1;
   if (isDriveScopeError) {
     return 'Apps Script Web App ยังเข้าถึง Google Drive ไม่ได้: ถ้า authorizeOnce() ผ่านแล้ว ให้ตรวจ Deploy ว่า Execute as = Me, Who has access = Anyone แล้วเลือก Version > New version เพื่อ Deploy ใหม่';
@@ -835,6 +836,12 @@ function formatErrorMessage_(err) {
   }
 
   return message || 'เกิดข้อผิดพลาด';
+}
+
+function diagnosticErrorMessage_(err) {
+  return String(err && err.message ? err.message : err || 'ไม่ทราบสาเหตุ')
+    .replace(/[A-Za-z0-9_-]{20,}/g, '[redacted-id]')
+    .slice(0, 500);
 }
 
 function doPost(e) {
@@ -1050,6 +1057,7 @@ function doPost(e) {
 
   } catch (err) {
     if (!proofFilesCommitted && uploadedProofFiles.length) trashFilesQuietly_(uploadedProofFiles);
+    console.error('CAR_CRM doPost failed: ' + diagnosticErrorMessage_(err));
     return ContentService
       .createTextOutput(JSON.stringify({ success: false, error: formatErrorMessage_(err) }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -1073,10 +1081,43 @@ function authorizeOnce() {
   return { sheets: names, payInFolderId: payInFolder.getId() };
 }
 
+function verifyPayInDriveWriteOnce() {
+  const folder = getPayInImageFolder_();
+  const fileName = `__CAR_CRM_PAYIN_WRITE_CHECK_${Utilities.getUuid()}.png`;
+  const bytes = Utilities.base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+  let file = null;
+  try {
+    file = folder.createFile(Utilities.newBlob(bytes, 'image/png', fileName));
+    file.setDescription('CAR CRM PayIn Drive write check');
+    const result = { created: file.getSize() > 0, size: file.getSize(), trashed: false };
+    file.setTrashed(true);
+    result.trashed = file.isTrashed();
+    Logger.log(JSON.stringify(result));
+    return result;
+  } catch (err) {
+    if (file) {
+      try { file.setTrashed(true); } catch (trashError) { /* best effort cleanup */ }
+    }
+    console.error('CAR_CRM PayIn Drive write check failed: ' + diagnosticErrorMessage_(err));
+    throw err;
+  }
+}
+
 // ─── GET สำหรับทดสอบ ──────────────────────────────────────────
-function doGet() {
+function doGet(e) {
   const available = Object.keys(SCHEMA).join(', ');
+  const response = { status: 'API ready', backendVersion: BACKEND_VERSION, sheets: available };
+  if (String(e && e.parameter && e.parameter.driveCheck || '') === '1') {
+    try {
+      const folder = getPayInImageFolder_();
+      folder.getFilesByName('__CAR_CRM_PAYIN_READ_CHECK__').hasNext();
+      response.drive = { ready: true };
+    } catch (err) {
+      console.error('CAR_CRM PayIn Drive check failed: ' + diagnosticErrorMessage_(err));
+      response.drive = { ready: false, error: diagnosticErrorMessage_(err) };
+    }
+  }
   return ContentService
-    .createTextOutput(JSON.stringify({ status: 'API ready', backendVersion: BACKEND_VERSION, sheets: available }))
+    .createTextOutput(JSON.stringify(response))
     .setMimeType(ContentService.MimeType.JSON);
 }
