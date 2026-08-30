@@ -9,7 +9,9 @@
   const WRITE_TOKEN_KEY = 'carCrmWriteToken';
   const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
   const MAX_UPLOAD_IMAGE_BYTES = 3 * 1024 * 1024;
+  const PAYIN_REQUIRED_BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
   const SHEETS = Object.freeze({ bookings: 'Bookings', customers: 'Customer', payIns: 'PayIn' });
+  let payInBackendVersionPromise = null;
 
   const state = {
     appointments: [],
@@ -545,6 +547,31 @@
     throw new Error('Write Token ไม่ถูกต้อง');
   }
 
+  async function verifyPayInBackendVersion() {
+    if (!payInBackendVersionPromise) {
+      payInBackendVersionPromise = fetch(`${MOBILE_SCRIPT_URL}?backendCheck=${Date.now()}`, {
+        cache: 'no-store',
+        credentials: 'omit',
+        redirect: 'follow'
+      })
+        .then(async response => {
+          const responseText = await response.text();
+          let result;
+          try { result = JSON.parse(responseText); }
+          catch (error) { throw new Error('ตรวจ backend PayIn ไม่สำเร็จ: เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง'); }
+          if (result.backendVersion !== PAYIN_REQUIRED_BACKEND_VERSION) {
+            throw new Error('Apps Script Web App ยังเป็นเวอร์ชันเก่า กรุณา Deploy เป็น New version ก่อนบันทึกรูป PayIn');
+          }
+          return result;
+        })
+        .catch(error => {
+          payInBackendVersionPromise = null;
+          throw error;
+        });
+    }
+    return payInBackendVersionPromise;
+  }
+
   async function submitPayIn(event) {
     event.preventDefault();
     if (state.saving || !state.currentJob) return;
@@ -572,17 +599,22 @@
       'หมายเหตุ': dom.paymentNote.value.trim()
     };
     if (existingPayIn && existingPayIn.id) payload.recordId = existingPayIn.id;
+    const uploadSlots = [1, 2].filter(slot => state.proofs[slot].blob);
 
     setSaving(true, 'กำลังบันทึกข้อมูล…');
     hideFormMessage();
     let metadataSaved = false;
     try {
+      if (uploadSlots.length) {
+        setSaving(true, 'กำลังตรวจระบบรูป PayIn…');
+        await verifyPayInBackendVersion();
+        setSaving(true, 'กำลังบันทึกข้อมูล…');
+      }
       const payInResult = await postWithWriteToken(payload);
       if (!payInResult.verified) {
         throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
       }
       const payId = Core.textValue(payInResult.id);
-      const uploadSlots = [1, 2].filter(slot => state.proofs[slot].blob);
       if (uploadSlots.length && !payId) throw new Error('บันทึก PayIn แล้ว แต่ไม่พบ Pay_ID สำหรับผูกรูป');
       metadataSaved = true;
 

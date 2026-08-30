@@ -1926,12 +1926,14 @@
         const PAYIN_PROOF_SLOT_COUNT = 2;
         const PAYIN_PROOF_MAX_SOURCE_BYTES = 20 * 1024 * 1024;
         const PAYIN_PROOF_MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+        const PAYIN_REQUIRED_BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
         const payInProofState = {
             1: { existing: '', upload: null, removed: false, processing: false, requestId: 0 },
             2: { existing: '', upload: null, removed: false, processing: false, requestId: 0 }
         };
         let payInSubmitInFlight = false;
         let payInPendingMutationId = '';
+        let payInBackendVersionPromise = null;
         const dom = {};
 
         const DOM_IDS = [
@@ -5462,6 +5464,11 @@
                 }
             }
             try {
+                if (proofUploads.length) {
+                    btn.textContent = 'กำลังตรวจระบบรูป PayIn...';
+                    await verifyPayInBackendVersion();
+                    btn.textContent = 'กำลังบันทึกข้อมูล...';
+                }
                 const data = await postWithWriteToken(payload);
                 if (data.success) {
                     if (!data.verified) throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
@@ -5832,6 +5839,28 @@
             }
 
             return { success: false, error: 'Write token ไม่ถูกต้อง' };
+        }
+
+        async function verifyPayInBackendVersion() {
+            if (!SCRIPT_URL) throw new Error('ยังไม่ได้ตั้งค่า SCRIPT_URL');
+            if (!payInBackendVersionPromise) {
+                payInBackendVersionPromise = fetch(`${SCRIPT_URL}?backendCheck=${Date.now()}`, { cache: 'no-store' })
+                    .then(async response => {
+                        const text = await response.text();
+                        let data = null;
+                        try { data = JSON.parse(text); }
+                        catch (error) { throw new Error('ตรวจ backend PayIn ไม่สำเร็จ: เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง'); }
+                        if (data.backendVersion !== PAYIN_REQUIRED_BACKEND_VERSION) {
+                            throw new Error('Apps Script Web App ยังเป็นเวอร์ชันเก่า กรุณา Deploy เป็น New version ก่อนบันทึกรูป PayIn');
+                        }
+                        return data;
+                    })
+                    .catch(error => {
+                        payInBackendVersionPromise = null;
+                        throw error;
+                    });
+            }
+            return payInBackendVersionPromise;
         }
 
         function generateSizeId() {
