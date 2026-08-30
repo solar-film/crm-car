@@ -5424,7 +5424,7 @@
             const okEl  = document.getElementById('pi-success');
             const btn   = document.getElementById('pi-submitBtn');
             errEl.classList.add('hidden'); okEl.classList.add('hidden');
-            if (!SCRIPT_URL) { errEl.textContent = 'ยังไม่ได้ตั้งค่า SCRIPT_URL'; errEl.classList.remove('hidden'); return; }
+            if (!PAYIN_SCRIPT_URL) { errEl.textContent = 'ยังไม่ได้ตั้งค่า PayIn API'; errEl.classList.remove('hidden'); return; }
             if (Object.values(payInProofState).some(state => state.processing)) {
                 errEl.textContent = 'กรุณารอให้ระบบเตรียมรูปเสร็จก่อนบันทึก';
                 errEl.classList.remove('hidden');
@@ -5469,7 +5469,7 @@
                     await verifyPayInBackendVersion();
                     btn.textContent = 'กำลังบันทึกข้อมูล...';
                 }
-                const data = await postWithWriteToken(payload);
+                const data = await postPayInWithWriteToken(payload);
                 if (data.success) {
                     if (!data.verified) throw new Error('ระบบยังยืนยันการบันทึกลงชีตไม่ได้ กรุณารีเฟรชข้อมูลแล้วลองอีกครั้ง');
                     const payId = textValue(data.id || payload.recordId, '').trim();
@@ -5478,7 +5478,7 @@
                         const upload = proofUploads[index];
                         btn.textContent = `กำลังอัปโหลดรูป ${index + 1}/${proofUploads.length}...`;
                         try {
-                            const uploadResult = await postWithWriteToken({
+                            const uploadResult = await postPayInWithWriteToken({
                                 action: 'attachPayInProof',
                                 sheetName: 'PayIn',
                                 recordId: payId,
@@ -5775,6 +5775,7 @@
 
         // ============ Apps Script URL (ใช้ร่วมกันทุก form) ============
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwH0Vw5qzVO3YDsibqi_EF8KScpL5e0-wp8mYXxgqSj_3wjqH8QG5CyFOse4-Q18o3Rgg/exec';  // ← วาง URL ที่นี่หลัง Deploy
+        const PAYIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo78uTuceUQJSsOdGmzbxvrbO9as1683dqcHCPzIzAOc33t-MyuAJH_gJ0ShSbAUFuxw/exec';
         const WRITE_TOKEN_KEY = 'carCrmWriteToken';
 
         function readWriteToken() {
@@ -5817,11 +5818,11 @@
             return /write token/i.test(String(message || ''));
         }
 
-        async function postWithWriteToken(payload) {
+        async function postWithWriteTokenTo(payload, endpointUrl) {
             let token = getWriteToken();
 
             for (let attempt = 0; attempt < 2; attempt += 1) {
-                const response = await fetch(SCRIPT_URL, {
+                const response = await fetch(endpointUrl, {
                     method: 'POST',
                     body: JSON.stringify({ ...payload, token })
                 });
@@ -5841,10 +5842,18 @@
             return { success: false, error: 'Write token ไม่ถูกต้อง' };
         }
 
+        function postWithWriteToken(payload) {
+            return postWithWriteTokenTo(payload, SCRIPT_URL);
+        }
+
+        function postPayInWithWriteToken(payload) {
+            return postWithWriteTokenTo(payload, PAYIN_SCRIPT_URL);
+        }
+
         async function verifyPayInBackendVersion() {
-            if (!SCRIPT_URL) throw new Error('ยังไม่ได้ตั้งค่า SCRIPT_URL');
+            if (!PAYIN_SCRIPT_URL) throw new Error('ยังไม่ได้ตั้งค่า PayIn API');
             if (!payInBackendVersionPromise) {
-                payInBackendVersionPromise = fetch(`${SCRIPT_URL}?backendCheck=${Date.now()}`, { cache: 'no-store' })
+                payInBackendVersionPromise = fetch(`${PAYIN_SCRIPT_URL}?backendCheck=${Date.now()}`, { cache: 'no-store' })
                     .then(async response => {
                         const text = await response.text();
                         let data = null;

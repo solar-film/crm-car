@@ -5,7 +5,7 @@
   if (!Core) throw new Error('ไม่พบ mobile core');
 
   const SHEET_ID = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
-  const MOBILE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwH0Vw5qzVO3YDsibqi_EF8KScpL5e0-wp8mYXxgqSj_3wjqH8QG5CyFOse4-Q18o3Rgg/exec';
+  const MOBILE_PAYIN_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo78uTuceUQJSsOdGmzbxvrbO9as1683dqcHCPzIzAOc33t-MyuAJH_gJ0ShSbAUFuxw/exec';
   const WRITE_TOKEN_KEY = 'carCrmWriteToken';
   const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
   const MAX_UPLOAD_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -517,12 +517,12 @@
   }
 
   async function postWithWriteToken(payload) {
-    if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(MOBILE_SCRIPT_URL)) {
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(MOBILE_PAYIN_SCRIPT_URL)) {
       throw new Error('ระบบอัปโหลดบนมือถือยังไม่ได้เชื่อมต่อ กรุณาแจ้งผู้ดูแล');
     }
     let token = getWriteToken(false);
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const response = await fetch(MOBILE_SCRIPT_URL, {
+      const response = await fetch(MOBILE_PAYIN_SCRIPT_URL, {
         method: 'POST',
         body: JSON.stringify({ ...payload, token }),
         cache: 'no-store',
@@ -549,7 +549,7 @@
 
   async function verifyPayInBackendVersion() {
     if (!payInBackendVersionPromise) {
-      payInBackendVersionPromise = fetch(`${MOBILE_SCRIPT_URL}?backendCheck=${Date.now()}`, {
+      payInBackendVersionPromise = fetch(`${MOBILE_PAYIN_SCRIPT_URL}?backendCheck=${Date.now()}`, {
         cache: 'no-store',
         credentials: 'omit',
         redirect: 'follow'
@@ -725,7 +725,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register('./sw.js?v=8', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
+    navigator.serviceWorker.register('./sw.js?v=9', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
   }
 
   initialise();
