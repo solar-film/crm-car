@@ -169,6 +169,8 @@ const runtime = createRuntime();
 const health = JSON.parse(runtime.doGet().text);
 assert.equal(health.status, 'API ready');
 assert.match(health.backendVersion, /^2026-08-30-payin-proof-confirmed$/);
+const driveHealth = JSON.parse(runtime.doGet({ parameter: { driveCheck: '1' } }).text);
+assert.deepEqual(driveHealth.drive, { ready: true });
 
 const insert = call(runtime, {
   action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-1', token: 'secret',
