@@ -42,11 +42,22 @@
         }
 
         .quote-box {
+            display: block;
+            width: 100%;
             min-height: 34rem;
+            border: 0;
+            outline: 0;
+            resize: vertical;
+            background: transparent;
             white-space: pre-wrap;
             word-break: break-word;
             line-height: 1.45;
             font-family: 'Prompt', sans-serif;
+        }
+
+        .quote-box:focus {
+            background: #eff6ff;
+            box-shadow: inset 0 0 0 2px #93c5fd;
         }
 
         .quote-card {
@@ -68,7 +79,9 @@
 
         .quote-toolbar {
             display: flex;
+            align-items: center;
             justify-content: flex-end;
+            gap: 0.75rem;
             border-bottom: 1px solid rgba(15, 23, 42, 0.08);
             padding: 0.7rem;
             background: rgba(255, 255, 255, 0.52);
@@ -312,33 +325,37 @@
                 <article class="quote-card full">
                     <div class="quote-card-title">เต็มคัน (ไม่รวมซันรูฟ)</div>
                     <div class="quote-toolbar">
+                        <span class="mr-auto text-xs text-slate-500">แก้ไขข้อความได้โดยตรง</span>
                         <button data-copy="standardQuote" class="copy-btn px-3 py-1.5 rounded-md bg-blue-700 text-white text-xs font-bold hover:bg-blue-800">คัดลอก</button>
                     </div>
-                    <pre id="standardQuote" class="quote-box p-3 text-[15px] overflow-auto"></pre>
+                    <textarea id="standardQuote" class="quote-box p-3 text-[15px] overflow-auto" aria-label="ข้อความเสนอราคาเต็มคัน" spellcheck="false"></textarea>
                 </article>
 
                 <article id="sunroofCard" class="quote-card sunroof">
                     <div class="quote-card-title">รถไฟฟ้า + ซันรูฟ</div>
                     <div class="quote-toolbar">
+                        <span class="mr-auto text-xs text-slate-500">แก้ไขข้อความได้โดยตรง</span>
                         <button data-copy="sunroofQuote" class="copy-btn px-3 py-1.5 rounded-md bg-blue-700 text-white text-xs font-bold hover:bg-blue-800">คัดลอก</button>
                     </div>
-                    <pre id="sunroofQuote" class="quote-box p-3 text-[15px] overflow-auto"></pre>
+                    <textarea id="sunroofQuote" class="quote-box p-3 text-[15px] overflow-auto" aria-label="ข้อความเสนอราคารถไฟฟ้าและซันรูฟ" spellcheck="false"></textarea>
                 </article>
 
                 <article class="quote-card front">
                     <div class="quote-card-title">เฉพาะบานหน้า</div>
                     <div class="quote-toolbar">
+                        <span class="mr-auto text-xs text-slate-500">แก้ไขข้อความได้โดยตรง</span>
                         <button data-copy="frontQuote" class="copy-btn px-3 py-1.5 rounded-md bg-blue-700 text-white text-xs font-bold hover:bg-blue-800">คัดลอก</button>
                     </div>
-                    <pre id="frontQuote" class="quote-box p-3 text-[15px] overflow-auto"></pre>
+                    <textarea id="frontQuote" class="quote-box p-3 text-[15px] overflow-auto" aria-label="ข้อความเสนอราคาเฉพาะบานหน้า" spellcheck="false"></textarea>
                 </article>
 
                 <article class="quote-card rear">
                     <div class="quote-card-title">เฉพาะบานหลัง</div>
                     <div class="quote-toolbar">
+                        <span class="mr-auto text-xs text-slate-500">แก้ไขข้อความได้โดยตรง</span>
                         <button data-copy="rearQuote" class="copy-btn px-3 py-1.5 rounded-md bg-blue-700 text-white text-xs font-bold hover:bg-blue-800">คัดลอก</button>
                     </div>
-                    <pre id="rearQuote" class="quote-box p-3 text-[15px] overflow-auto"></pre>
+                    <textarea id="rearQuote" class="quote-box p-3 text-[15px] overflow-auto" aria-label="ข้อความเสนอราคาเฉพาะบานหลัง" spellcheck="false"></textarea>
                 </article>
             </div>
         </section>
@@ -385,6 +402,20 @@
             { key: 'Hi-Kool Beyond (BY)', label: 'Hi-Kool Beyond', detail: '"กันร้อนขั้นสุด รุ่นท็อปที่สุดของ Hi-Kool"' }
         ];
         const QUALITY_BRAND = { key: '3M Crystalline', label: '3M Crystalline' };
+        const STANDARD_QUOTE_FEATURED_BRANDS = {
+            recommended: { key: '3M Ultra Clear', label: '3M CERAMIC ULTRA CLEAR' },
+            value: { key: '3M Absolute (AS)', label: '3M ABSOLUTE' },
+            premium: { key: '3M Crystalline', label: '3M CRYSTALLINE' }
+        };
+        const STANDARD_QUOTE_OTHER_CERAMIC_BRANDS = [
+            { key: 'Hi-Kool Beyond (BY)', label: 'HI-KOOL BEYOND' },
+            { key: 'Nanotech Promax', label: 'Nanotech Promax' },
+            { key: 'AmericanKing UltraUV400', label: 'AmericanKing UltraUV400' },
+            { key: 'Nanotech NCI', label: 'Nanotech NCI' },
+            { key: 'Hi-Kool Black Night', label: 'Hi-Kool Black Night' },
+            { key: '3M Ceramate (CRM)', label: '3M Ceramate' },
+            { key: 'G-TEC Ceramic', label: 'G-TEC Ceramic' }
+        ];
         const CERAMIC_BRANDS = [
             { key: 'Nanotech Promax', label: 'Nanotech Promax' },
             { key: 'AmericanKing UltraUV400', label: 'AmericanKing UltraUV400' },
@@ -950,6 +981,122 @@
                 .join('\n');
         }
 
+        function makeStandardQuote(car, regularRow, packageRow, campaignRow) {
+            const divider = '━━━━━━━━━━━━━━';
+            const specialPriceFor = brandKey => fullPackagePrice(packageRow, campaignRow, brandKey, false);
+            const priceLinesFor = brand => {
+                if (!isFilmSelected(brand.key)) return '';
+
+                const special = specialPriceFor(brand.key);
+                if (!special) return '';
+
+                const regular = getPrice(regularRow, brand.key);
+                return [
+                    regular ? `❌ ราคาปกติ ${formatBaht(regular)} บาท` : '',
+                    `✅ พิเศษเพียง ${formatBaht(special)} บาท`
+                ].filter(Boolean).join('\n');
+            };
+            const featuredSection = (brand, description, closing) => {
+                const prices = priceLinesFor(brand);
+                if (!prices) return '';
+
+                return [`${brand.label} ${description}`.trim(), '', prices, closing].join('\n');
+            };
+            const compactPriceLinesFor = brands => brands
+                .filter(brand => isFilmSelected(brand.key))
+                .map(brand => {
+                    const special = specialPriceFor(brand.key);
+                    return special ? `• ${brand.label} — ${formatBaht(special)} บาท` : '';
+                })
+                .filter(Boolean)
+                .join('\n');
+            const otherCeramicLines = compactPriceLinesFor(STANDARD_QUOTE_OTHER_CERAMIC_BRANDS);
+            const generalLines = compactPriceLinesFor(GENERAL_BRANDS);
+            const coveredBrandKeys = new Set([
+                ...Object.values(STANDARD_QUOTE_FEATURED_BRANDS).map(brand => brand.key),
+                ...STANDARD_QUOTE_OTHER_CERAMIC_BRANDS.map(brand => brand.key),
+                ...GENERAL_BRANDS.map(brand => brand.key)
+            ]);
+            const additionalLines = compactPriceLinesFor(
+                selectableFilmBrands.filter(brand => !coveredBrandKeys.has(brand.key))
+            );
+            const recommended = featuredSection(
+                STANDARD_QUOTE_FEATURED_BRANDS.recommended,
+                '“ใส เคลียร์ สบายตา ขับขี่มั่นใจทุกวัน”',
+                '• ถ้าต้องการฟิล์มที่ “ติดครั้งเดียวแล้วจบ” ได้ทั้งประสิทธิภาพ ความสบายตา และใช้งานได้ดีในระยะยาว รุ่นนี้เป็นตัวเลือกที่เราแนะนำเป็นพิเศษค่ะ'
+            );
+            const value = featuredSection(
+                STANDARD_QUOTE_FEATURED_BRANDS.value,
+                '“ฟิล์มเซรามิก 3M ในราคาที่เข้าถึงง่าย”',
+                '• ถ้าเน้น “งบคุ้ม + ได้แบรนด์ 3M + ใช้งานดีในชีวิตประจำวัน” 3M Absolute เป็นอีกหนึ่งรุ่นที่คุ้มมากค่ะ'
+            );
+            const premium = featuredSection(
+                STANDARD_QUOTE_FEATURED_BRANDS.premium,
+                '"สัมผัสความเหนือระดับ... ในทุกทัศนวิสัย"',
+                '• สำหรับลูกค้าที่ต้องการฟิล์มระดับพรีเมียม เน้นประสิทธิภาพการลดความร้อน ความสบายในการขับขี่ และคุณภาพในระดับสูง'
+            );
+
+            if (![recommended, value, premium, otherCeramicLines, generalLines, additionalLines].some(Boolean)) {
+                return '';
+            }
+
+            const messageLines = [
+                `ราคาดีลพิเศษเฉพาะ :🚗 ${formatModelLine(car)}`,
+                divider,
+                'ติดฟิล์มทั้งที เลือกให้จบทั้งเรื่อง “กันร้อนดี + ขับสบาย + ราคาเหมาะสม + ดูแลหลังการขายครบ” ในครั้งเดียวค่ะ 😎✨',
+                '',
+                divider
+            ];
+            const appendDivider = (blankAfter = false) => {
+                messageLines.push('', divider);
+                if (blankAfter) messageLines.push('');
+            };
+
+            let priceSectionCount = 0;
+            const appendPriceSection = (heading, content) => {
+                if (!content) return;
+                if (priceSectionCount > 0) appendDivider(true);
+                else messageLines.push('');
+                messageLines.push(heading, content);
+                priceSectionCount += 1;
+            };
+
+            appendPriceSection('🔥🔥 โปรแรงเดือนนี้🔥🔥', recommended);
+            appendPriceSection('💎 ⭐ รุ่นคุ้มค่า ⭐', value);
+            appendPriceSection('👑 PREMIUM CLASS👑', premium);
+            appendPriceSection('💎 ฟิล์มเซรามิกรุ่นอื่นๆ', otherCeramicLines);
+            appendPriceSection('🔹 ฟิล์มเกรดทั่วไป', generalLines);
+            appendPriceSection('📋 ฟิล์มรุ่นอื่นๆ', additionalLines);
+            appendDivider();
+            messageLines.push(
+                '🎁 สิทธิพิเศษสำหรับลูกค้าออนไลน์',
+                '✅ ฟรี! ค่าลอกฟิล์มเก่า',
+                '✅ ฟรี! ค่าธรรมเนียมบัตรเครดิต',
+                '✅ ฟรี! คูปองล้างรถก่อนติดฟิล์ม',
+                '✅ ฟรี! อบโอโซนภายในห้องโดยสาร',
+                '✅ ฟรี! เคลือบน้ำยากันหยดน้ำ 3M บานหน้า',
+                '✅ รับส่วนลดเพิ่ม 200 บาท เมื่อรีวิวความประทับใจหลังใช้บริการ'
+            );
+            appendDivider();
+            messageLines.push(
+                '📌 ราคานี้รวม',
+                '• ติดตั้งรอบคัน + บานหน้าเต็ม',
+                '• ไม่รวมซันรูฟ / Panoramic Roof',
+                '• กรณีมีซันรูฟ มีค่าใช้จ่ายเพิ่มเติมตามขนาด',
+                '',
+                '⏱ ใช้เวลาติดตั้งประมาณ 2–3 ชั่วโมง',
+                '🛋 มีห้องรับรองติดแอร์ + Wi-Fi สามารถนั่งทำงานหรือพักผ่อนรอได้สบายๆ',
+                '🔥 โปรโมชั่นถึง 30 ก.ย. 69 เท่านั้น!'
+            );
+            appendDivider();
+            messageLines.push(
+                '📲 หากยังไม่แน่ใจว่าควรเลือกรุ่นไหน สามารถเข้ามาดูตัวอย่างฟิล์มจริงที่ร้านก่อนได้เลยค่ะ',
+                'มีทีมงานช่วยแนะนำให้ตาม “งบประมาณ + ลักษณะการใช้งาน + ความต้องการของแต่ละคัน” เพื่อให้ได้รุ่นที่เหมาะกับรถและเหมาะกับคุณที่สุดค่ะ 😊'
+            );
+
+            return messageLines.join('\n');
+        }
+
         function makeFullQuote(car, rows, isSunroof) {
             const regularRow = findPosition(rows, 'ราคาปกติ');
             const promoRow = findPosition(rows, 'โปรโมชั่นเต็มคัน');
@@ -959,6 +1106,10 @@
             const packageRow = isSunroof ? sunroofPackageRow : promoRow;
 
             if (!packageRow || (isSunroof && !sunroofRow)) return '';
+
+            if (!isSunroof) {
+                return makeStandardQuote(car, regularRow, packageRow, campaignRow);
+            }
 
             const highlightLines = makeHighlightLines(packageRow, regularRow, campaignRow, sunroofRow, isSunroof);
             const qualityPrice = isFilmSelected(QUALITY_BRAND.key)
@@ -1100,10 +1251,10 @@
             const frontQuote = makeGlassQuote(car, rows, 'บานหน้า');
             const rearQuote = makeGlassQuote(car, rows, 'บานหลัง');
 
-            dom.standardQuote.innerText = standardQuote || 'ไม่มีข้อมูลราคาเต็มคัน';
-            dom.sunroofQuote.innerText = sunroofQuote || 'ไม่มีข้อมูลราคาแบบรวมซันรูฟ';
-            dom.frontQuote.innerText = frontQuote || 'ไม่มีข้อมูลราคาบานหน้า';
-            dom.rearQuote.innerText = rearQuote || 'ไม่มีข้อมูลราคาบานหลัง';
+            dom.standardQuote.value = standardQuote || 'ไม่มีข้อมูลราคาเต็มคัน';
+            dom.sunroofQuote.value = sunroofQuote || 'ไม่มีข้อมูลราคาแบบรวมซันรูฟ';
+            dom.frontQuote.value = frontQuote || 'ไม่มีข้อมูลราคาบานหน้า';
+            dom.rearQuote.value = rearQuote || 'ไม่มีข้อมูลราคาบานหลัง';
             dom.sunroofCard.classList.toggle('hidden', !sunroofQuote);
 
             dom.emptyMessage.classList.add('hidden');
@@ -1111,7 +1262,8 @@
         }
 
         async function copyQuote(id, button) {
-            const text = document.getElementById(id)?.innerText || '';
+            const quoteElement = document.getElementById(id);
+            const text = quoteElement?.value ?? quoteElement?.innerText ?? '';
             if (!text.trim()) return;
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);

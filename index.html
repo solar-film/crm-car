@@ -745,7 +745,11 @@
                     <!-- Header -->
                     <div class="px-4 py-5 sm:px-6 border-b border-slate-200 bg-white sticky top-0 z-10 flex items-center justify-between gap-3">
                         <h3 class="text-xl font-semibold text-slate-900" id="slide-over-title">รายละเอียดงานติดตั้ง</h3>
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <button type="button" onclick="goCopyCurrentJob()" class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 text-sm font-semibold shadow-sm hover:from-blue-700 hover:to-indigo-700 transition-all" title="คัดลอกเป็นคิวใหม่โดยใช้วันและเวลาปัจจุบัน">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                คัดลอกคิว
+                            </button>
                             <button type="button" onclick="goEditCurrentJob()" class="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 text-sm font-semibold shadow-sm hover:from-amber-600 hover:to-orange-600 transition-all" title="แก้ไขคิวจองนี้">
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 แก้ไขคิวจอง
@@ -1171,7 +1175,7 @@
                 <div>
                     <label class="block mb-1.5 text-xs font-semibold text-slate-700">สถานะ <span class="text-rose-500">*</span></label>
                     <input type="hidden" id="bk-status" required value="คิวใหม่">
-                    <div class="grid grid-cols-4 gap-2">
+                    <div id="bk-statusButtons" class="grid grid-cols-4 gap-2">
                         <button type="button" data-val="คิวใหม่" onclick="setBtnGroup('bk-status', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"><i class="fas fa-user-plus mr-1 text-amber-500"></i>คิวใหม่</button>
                         <button type="button" data-val="กำลังติดตั้ง" onclick="setBtnGroup('bk-status', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"><i class="fas fa-wrench mr-1 text-purple-500"></i>กำลังติดตั้ง</button>
                         <button type="button" data-val="เสร็จสิ้น" onclick="setBtnGroup('bk-status', this)" class="bk-pill rounded-lg border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"><i class="fas fa-check-circle mr-1 text-emerald-500"></i>เสร็จสิ้น</button>
@@ -4409,8 +4413,19 @@
             setTimeout(() => openBookingModalForEdit(job), 350);
         }
 
+        // คัดลอกเฉพาะข้อมูลหลักของ Bookings และสร้าง JobID ใหม่ตอนบันทึก
+        function goCopyCurrentJob() {
+            if (!currentViewJobId) return;
+            const job = allData.find(j => j.id === currentViewJobId);
+            if (!job) return;
+            closeJobModal();
+            setTimeout(() => openBookingModalForCopy(job), 350);
+        }
+
         // ============= Booking Edit Modal (พอร์ตจาก customer-data.html) =============
         let bkCurrentEditingId = null;
+        let bkBookingMode = 'edit';
+        let bkCopySourceId = null;
         let installPosOptions = [];
         let installPosSelected = new Set();
         const DISCOUNT_CODE_OPTIONS = [
@@ -4788,9 +4803,56 @@
             return `${String(parseInt(m[1], 10)).padStart(2, '0')}:${m[2]}`;
         }
 
+        function bkBangkokNowParts(now = new Date()) {
+            try {
+                const parts = new Intl.DateTimeFormat('en-GB', {
+                    timeZone: 'Asia/Bangkok',
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+                }).formatToParts(now).reduce((result, part) => {
+                    if (part.type !== 'literal') result[part.type] = part.value;
+                    return result;
+                }, {});
+                return {
+                    date: `${parts.year}-${parts.month}-${parts.day}`,
+                    time: `${parts.hour}:${parts.minute}`
+                };
+            } catch (error) {
+                return {
+                    date: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+                    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+                };
+            }
+        }
+
+        function setBookingStatusCopyMode(isCopy) {
+            const wrapper = document.getElementById('bk-statusButtons');
+            if (!wrapper) return;
+            wrapper.querySelectorAll('button.bk-pill').forEach(button => {
+                button.disabled = isCopy;
+                button.classList.toggle('cursor-not-allowed', isCopy);
+                button.classList.toggle('opacity-50', isCopy && button.getAttribute('data-val') !== 'คิวใหม่');
+                button.setAttribute('aria-disabled', isCopy ? 'true' : 'false');
+            });
+        }
+
+        function hasActiveBookingAt(dateText, timeText) {
+            const normalizedTime = bkNormalizeTime(timeText);
+            return allData.some(job => {
+                if (isCancelledJob(job)) return false;
+                if (bkBookingMode === 'edit' && job.id === bkCurrentEditingId) return false;
+                return String(job.date || '').trim() === String(dateText || '').trim() &&
+                    bkNormalizeTime(job.time) === normalizedTime;
+            });
+        }
+
         function openBookingModalForEdit(job) {
             bkLoadDropdowns();
+            bkBookingMode = 'edit';
+            bkCopySourceId = null;
             bkCurrentEditingId = job.id;
+            setBookingStatusCopyMode(false);
+            document.getElementById('bk-submitBtn').innerHTML = '<i class="fas fa-save mr-1"></i> บันทึกการแก้ไข';
             document.getElementById('bk-custId').value = job.custId || '';
             document.getElementById('bk-modalTitle').innerText = 'แก้ไขคิวจอง';
             document.getElementById('bk-customerInfo').innerText = `${job.custName || ''} (${job.custId || ''}) • ${job.id}`;
@@ -4851,14 +4913,37 @@
             document.getElementById('bookingModal').classList.remove('hidden');
         }
 
+        function openBookingModalForCopy(job) {
+            openBookingModalForEdit(job);
+            bkBookingMode = 'copy';
+            bkCopySourceId = job.id;
+            bkCurrentEditingId = null;
+
+            const now = bkBangkokNowParts();
+            document.getElementById('bk-installDate').value = now.date;
+            document.getElementById('bk-appointTime').value = now.time;
+            resetBtnGroup('bk-status', 'คิวใหม่');
+            setBookingStatusCopyMode(true);
+
+            document.getElementById('bk-modalTitle').innerText = 'สร้างคิวใหม่จากคิวเดิม';
+            document.getElementById('bk-customerInfo').innerText = `${job.custName || ''} (${job.custId || ''}) • คัดลอกจาก ${job.id}`;
+            document.getElementById('bk-submitBtn').innerHTML = '<i class="fas fa-copy mr-1"></i> บันทึกเป็นคิวใหม่';
+        }
+
         function closeBookingModal() {
             document.getElementById('bookingModal').classList.add('hidden');
             bkCurrentEditingId = null;
+            bkBookingMode = 'edit';
+            bkCopySourceId = null;
+            setBookingStatusCopyMode(false);
+            document.getElementById('bk-submitBtn').innerHTML = '<i class="fas fa-save mr-1"></i> บันทึกการแก้ไข';
         }
 
         async function submitBooking(e) {
             e.preventDefault();
-            if (!bkCurrentEditingId) return;
+            const isCopy = bkBookingMode === 'copy';
+            const copySourceId = bkCopySourceId;
+            if (!isCopy && !bkCurrentEditingId) return;
             const price = parseFloat(document.getElementById('bk-price').value) || 0;
             const discount = parseFloat(document.getElementById('bk-discount').value) || 0;
             const sales = Math.max(0, price - discount);
@@ -4871,8 +4956,7 @@
 
             const payload = {
                 sheetName: 'Bookings',
-                action: 'update',
-                recordId: bkCurrentEditingId,
+                action: isCopy ? 'insert' : 'update',
                 'CustID': document.getElementById('bk-custId').value,
                 'พน.ขาย': document.getElementById('bk-sales').value,
                 'วันที่ติดตั้ง': bkToThaiDate(document.getElementById('bk-installDate').value),
@@ -4890,8 +4974,14 @@
                 'การรับประกัน': document.getElementById('bk-warranty').value,
                 'Pro_ID': document.getElementById('bk-proId').value,
                 'หมายเหตุ': document.getElementById('bk-note').value.trim(),
-                'Status': document.getElementById('bk-status').value || 'คิวใหม่'
+                'Status': isCopy ? 'คิวใหม่' : (document.getElementById('bk-status').value || 'คิวใหม่')
             };
+            if (!isCopy) payload.recordId = bkCurrentEditingId;
+
+            if (isCopy && hasActiveBookingAt(payload['วันที่ติดตั้ง'], payload['เวลานัด'])) {
+                const shouldContinue = window.confirm('มีคิวที่ยังไม่ยกเลิกในวันและเวลาเดียวกัน ต้องการสร้างคิวใหม่นี้ต่อหรือไม่?');
+                if (!shouldContinue) return;
+            }
 
             const btn = document.getElementById('bk-submitBtn');
             btn.disabled = true;
@@ -4905,7 +4995,11 @@
                     if (typeof fetchGoogleSheetData === 'function') {
                         await fetchGoogleSheetData();
                     }
-                    showAlert('สำเร็จ', `อัปเดตคิวจองเรียบร้อย (${data.id})`, 'success');
+                    showAlert(
+                        'สำเร็จ',
+                        isCopy ? `สร้างคิวใหม่เรียบร้อย (${data.id}) จาก ${copySourceId || 'คิวเดิม'}` : `อัปเดตคิวจองเรียบร้อย (${data.id})`,
+                        'success'
+                    );
                 } else {
                     showAlert('เกิดข้อผิดพลาด', 'บันทึกไม่สำเร็จ: ' + (data.error || 'unknown error'), 'error');
                 }
@@ -4913,7 +5007,9 @@
                 showAlert('เกิดข้อผิดพลาด', 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ', 'error');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save mr-1"></i> บันทึกการแก้ไข';
+                btn.innerHTML = bkBookingMode === 'copy'
+                    ? '<i class="fas fa-copy mr-1"></i> บันทึกเป็นคิวใหม่'
+                    : '<i class="fas fa-save mr-1"></i> บันทึกการแก้ไข';
             }
         }
 
