@@ -485,25 +485,29 @@
     </div>
 
     <div id="memoAlertModal" class="fixed inset-0 z-[120] hidden items-center justify-center bg-slate-950/60 p-2 backdrop-blur-md sm:p-6" role="dialog" aria-modal="true" aria-labelledby="memoAlertModalTitle" aria-describedby="memoAlertModalDescription">
-        <div class="memo-alert-dialog relative flex w-full max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border border-white/80 bg-slate-50 shadow-[0_28px_90px_rgba(15,23,42,0.38)]">
-            <header class="relative shrink-0 border-b border-slate-200 bg-white px-5 py-5 pr-16 sm:px-7 sm:py-6 sm:pr-20">
+        <div class="memo-alert-dialog relative flex w-full max-w-5xl flex-col overflow-hidden rounded-[1.75rem] border border-white/80 bg-slate-50 shadow-[0_28px_90px_rgba(15,23,42,0.38)]">
+            <header class="relative shrink-0 border-b border-slate-200 bg-white px-5 py-3 pr-14 sm:px-6 sm:py-3.5 sm:pr-16">
                 <div class="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-500 via-orange-400 to-amber-300"></div>
-                <div class="flex items-start gap-3.5">
-                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100 sm:h-12 sm:w-12">
-                        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"></path>
                         </svg>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            <h2 id="memoAlertModalTitle" class="text-lg font-extrabold tracking-tight text-slate-900 sm:text-xl">รายการแจ้งเตือน</h2>
-                            <span id="memoAlertModalCount" class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 ring-1 ring-inset ring-rose-100">0 รายการ</span>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 id="memoAlertModalTitle" class="text-base font-extrabold tracking-tight text-slate-900 sm:text-lg">รายการแจ้งเตือน</h2>
+                            <span id="memoAlertModalCount" class="inline-flex items-center rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 ring-1 ring-inset ring-rose-100">0 รายการ</span>
+                            <button type="button" onclick="openMemoEditor()" class="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M12 4v16m8-8H4"></path></svg>
+                                เพิ่มรายการ
+                            </button>
                         </div>
-                        <p id="memoAlertModalDescription" class="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">รายละเอียดสำคัญและรายการที่ทีมงานต้องติดตาม</p>
+                        <p id="memoAlertModalDescription" class="mt-0.5 text-[11px] leading-relaxed text-slate-500 sm:text-xs">รายละเอียดสำคัญและรายการที่ทีมงานต้องติดตาม</p>
                     </div>
                 </div>
-                <button id="memoAlertCloseButton" type="button" onclick="closeMemoAlertModal()" class="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:right-6 sm:top-5" aria-label="ปิดหน้าต่างแจ้งเตือน">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <button id="memoAlertCloseButton" type="button" onclick="closeMemoAlertModal()" class="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-slate-200 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 sm:right-5 sm:top-3.5" aria-label="ปิดหน้าต่างแจ้งเตือน">
+                    <svg class="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
@@ -511,12 +515,80 @@
 
             <div id="memoAlertModalList" class="min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/80 px-4 py-4 text-sm text-slate-700 sm:px-7 sm:py-6" role="list"></div>
 
-            <footer class="flex shrink-0 items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3.5 sm:px-7">
-                <p class="flex min-w-0 items-center gap-2 text-[11px] font-medium text-slate-500 sm:text-xs">
-                    <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500 ring-4 ring-emerald-50"></span>
-                    <span>แสดงเฉพาะรายการที่เปิดใช้งาน</span>
-                </p>
-                <button type="button" onclick="closeMemoAlertModal()" class="min-h-11 shrink-0 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 sm:px-5 sm:text-sm">ปิดหน้าต่าง</button>
+            <footer class="flex shrink-0 flex-col items-start justify-between gap-2.5 border-t border-slate-200 bg-white px-5 py-2.5 sm:flex-row sm:items-center sm:px-6">
+                <label class="flex cursor-pointer items-center gap-2 text-[11px] font-medium text-slate-600 sm:text-xs">
+                    <input id="memoShowAllToggle" type="checkbox" class="h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500">
+                    <span>แสดงรายการทั้งหมด</span>
+                    <span class="text-slate-400">(รวมรายการที่ปิดใช้งาน)</span>
+                </label>
+                <button type="button" onclick="closeMemoAlertModal()" class="min-h-9 shrink-0 rounded-xl bg-slate-900 px-4 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 sm:px-5 sm:text-xs">ปิดหน้าต่าง</button>
+            </footer>
+        </div>
+    </div>
+
+    <div id="memoEditorModal" class="fixed inset-0 z-[130] hidden items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="memoEditorTitle">
+        <form id="memoEditorForm" onsubmit="submitMemoEditor(event)" class="w-full max-w-2xl overflow-hidden rounded-3xl border border-white/80 bg-white shadow-[0_24px_72px_rgba(15,23,42,0.35)]">
+            <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+                <div>
+                    <h2 id="memoEditorTitle" class="text-base font-extrabold text-slate-900">เพิ่มรายการแจ้งเตือน</h2>
+                    <p class="mt-0.5 text-[11px] text-slate-500">ข้อมูลจะบันทึกลงชีต memo</p>
+                </div>
+                <button type="button" onclick="closeMemoEditor()" class="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="ปิดฟอร์มแจ้งเตือน">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </header>
+            <div class="space-y-4 px-5 py-5 sm:px-6">
+                <div>
+                    <label for="memoEditorDate" class="mb-1.5 block text-[13px] font-bold text-slate-700">วันที่แจ้งเตือน</label>
+                    <input id="memoEditorDate" type="date" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-[13px] text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                </div>
+                <div>
+                    <label for="memoEditorTitleInput" class="mb-1.5 block text-[13px] font-bold text-slate-700">รายละเอียด</label>
+                    <textarea id="memoEditorTitleInput" required rows="5" maxlength="5000" placeholder="ระบุเรื่องที่ต้องติดตาม" class="w-full resize-y rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-[13px] leading-6 text-slate-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></textarea>
+                </div>
+                <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/70 px-3.5 py-3 text-[13px]">
+                    <span><span class="block font-bold text-emerald-800">เปิดใช้งานรายการนี้</span><span class="mt-0.5 block text-[11px] text-emerald-700">แสดงในหน้ารายการแจ้งเตือน</span></span>
+                    <input id="memoEditorActive" type="checkbox" checked class="h-5 w-5 shrink-0 rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500">
+                </label>
+                <p id="memoEditorError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[13px] font-medium text-rose-700" role="alert"></p>
+            </div>
+            <footer class="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+                <button type="button" onclick="closeMemoEditor()" class="min-h-11 rounded-xl border border-slate-300 bg-white px-4 py-2 text-[13px] font-bold text-slate-700 transition hover:bg-slate-100">ยกเลิก</button>
+                <button id="memoEditorSubmitButton" type="submit" class="min-h-11 rounded-xl bg-blue-600 px-5 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">บันทึกรายการ</button>
+            </footer>
+        </form>
+    </div>
+
+    <div id="memoDeleteConfirmModal" class="fixed inset-0 z-[140] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="memoDeleteConfirmHeading" aria-describedby="memoDeleteConfirmDescription">
+        <div class="w-full max-w-md overflow-hidden rounded-3xl border border-white/80 bg-white shadow-[0_24px_72px_rgba(15,23,42,0.38)]">
+            <header class="relative overflow-hidden border-b border-rose-100 bg-gradient-to-br from-rose-50 via-white to-orange-50 px-5 py-5 sm:px-6">
+                <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-500 via-rose-400 to-orange-400"></div>
+                <div class="flex items-start gap-3.5 pr-10">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 ring-1 ring-rose-200">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 id="memoDeleteConfirmHeading" class="text-base font-extrabold text-slate-900">ยืนยันการลบรายการ</h2>
+                        <p id="memoDeleteConfirmDescription" class="mt-1 text-[12px] leading-relaxed text-slate-600">รายการนี้จะถูกลบออกจากชีต และไม่สามารถกู้คืนได้</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeMemoDeleteConfirm()" class="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="ปิดหน้าต่างยืนยันการลบ">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </header>
+            <div class="space-y-3 px-5 py-5 sm:px-6">
+                <p class="text-[13px] font-semibold text-slate-700">ต้องการลบรายการนี้ใช่หรือไม่?</p>
+                <div class="max-h-28 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-[13px] font-medium leading-6 text-slate-700">
+                    <p id="memoDeleteConfirmTitle" class="whitespace-pre-wrap break-words"></p>
+                </div>
+                <p id="memoDeleteConfirmError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-medium text-rose-700" role="alert"></p>
+            </div>
+            <footer class="flex items-center justify-end gap-2.5 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
+                <button type="button" onclick="closeMemoDeleteConfirm()" class="min-h-10 rounded-xl border border-slate-300 bg-white px-4 py-2 text-[13px] font-bold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400">เก็บไว้ก่อน</button>
+                <button id="memoDeleteConfirmButton" type="button" onclick="confirmMemoDelete()" class="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"></path></svg>
+                    ลบรายการ
+                </button>
             </footer>
         </div>
     </div>
@@ -1993,8 +2065,14 @@
         let allData = []; // ตัวแปรเก็บข้อมูลทั้งหมดจาก Sheet
         let contactData = [];
         let memoData = [];
+        let memoShowAll = false;
         let memoAlertModalCloseTimer = null;
         let memoAlertPreviousFocus = null;
+        let memoEditingItem = null;
+        let memoEditorPreviousFocus = null;
+        let memoDeletePendingItem = null;
+        let memoDeletePreviousFocus = null;
+        let memoDeleteInFlight = false;
         let reasonMap = {}; // ตัวแปรเก็บพจนานุกรมแปลรหัสเหตุผล
         let payInDetailsMap = {};
         let cutDataMap = {};
@@ -2024,7 +2102,7 @@
             'summaryFilteredLabel', 'summaryFilteredSales', 'summaryFilteredSalesExVat', 'summaryFilteredJobs',
             'summaryFilteredCard', 'summaryNewCard', 'summaryOldCard', 'summaryClaimCard', 'summaryFixCard',
             'summaryNewJobs', 'summaryNewSales', 'summaryOldJobs', 'summaryOldSales', 'summaryClaimJobs', 'summaryClaimSales',
-            'summaryFixJobs', 'summaryFixSales', 'memoAlertCard', 'memoAlertCount', 'memoAlertList', 'memoAlertModal', 'memoAlertModalCount', 'memoAlertModalList',
+            'summaryFixJobs', 'summaryFixSales', 'memoAlertCard', 'memoAlertCount', 'memoAlertList', 'memoAlertModal', 'memoAlertModalCount', 'memoAlertModalList', 'memoShowAllToggle', 'memoEditorModal', 'memoDeleteConfirmModal', 'memoDeleteConfirmTitle', 'memoDeleteConfirmError', 'memoDeleteConfirmButton',
             'm-jobId', 'm-date', 'm-time', 'm-carModel', 'm-plate', 'm-plateType', 'm-film',
             'm-plateWarning', 'm-installType', 'm-promotion', 'm-price', 'm-paymentStatus', 'm-noteWrapper', 'm-note', 'm-salesPerson', 'm-salesPersonText',
             'm-customerDetails', 'm-filmDetails', 'm-status', 'm-receiptNo', 'm-paymentType', 'm-basePrice', 'm-discount',
@@ -2064,6 +2142,19 @@
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
+                    transformHeader: header => header.trim(),
+                    complete: results => resolve(results.data)
+                });
+            });
+        }
+
+        // ต้องเก็บแถวว่างของชีต memo ไว้ เพื่อให้ sourceRowNumber ตรงกับแถวจริง
+        // เวลาแก้ไข/ลบจึงไม่เลื่อนไปกระทบรายการถัดไป
+        function parseMemoCsv(csvText) {
+            return new Promise(resolve => {
+                Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: false,
                     transformHeader: header => header.trim(),
                     complete: results => resolve(results.data)
                 });
@@ -2528,12 +2619,19 @@
             return diffDays <= 3;
         }
 
+        function isMemoActive(status) {
+            const normalized = normalizeHeader(status);
+            // ข้อมูล memo เดิมไม่มีคอลัมน์สถานะ จึงถือว่ารายการเดิมที่เว้นว่างเป็น "เปิดใช้งาน"
+            return !normalized || ['on', 'active', 'enabled', 'true', '1', 'เปิดใช้งาน'].includes(normalized);
+        }
+
         function buildMemoRows(rows) {
             return rows.map((row, index) => {
                 const status = findRowValue(row, ['สถานะงาน', 'สถานะ', 'Status']);
+                const recordId = findRowValue(row, ['Memo_ID', 'MemoID', 'ID', 'id']);
                 const dateText = findRowValue(row, ['วันที่แจ้งเตือน', 'วันแจ้งเตือน', 'วันที่', 'กำหนด', 'กำหนดแจ้งเตือน', 'Due Date', 'Date']);
                 const date = parseMemoDate(dateText);
-                const title = valueByColumnIndex(row, 3) ||
+                const rawTitle = valueByColumnIndex(row, 3) ||
                     findRowValue(row, ['รายละเอียด', 'ข้อความ', 'หมายเหตุ', 'หัวข้อ', 'เรื่อง', 'รายการ', 'แจ้งเตือน', 'memo', 'Memo']) ||
                     Object.entries(row).find(([key, value]) => {
                         const normalizedKey = normalizeHeader(key);
@@ -2543,17 +2641,19 @@
                             !normalizedKey.includes('status') &&
                             !normalizedKey.includes(normalizeHeader('วันที่')) &&
                             !normalizedKey.includes('date');
-                    })?.[1] ||
-                    `แจ้งเตือน ${index + 1}`;
+                    })?.[1] || '';
                 return {
                     id: index,
-                    title: textValue(title, ""),
+                    recordId: textValue(recordId, ''),
+                    sourceRowNumber: index + 2,
+                    title: textValue(rawTitle || `แจ้งเตือน ${index + 1}`, ""),
                     status,
                     date,
-                    dateText
+                    dateText,
+                    hasContent: Boolean(textValue(recordId, '') || textValue(rawTitle, '') || textValue(dateText, ''))
                 };
             })
-                .filter(item => normalizeHeader(item.status) === 'on')
+                .filter(item => item.hasContent)
                 .sort((a, b) => {
                     if (a.date && b.date) return a.date - b.date;
                     if (a.date) return -1;
@@ -2562,16 +2662,25 @@
                 });
         }
 
+        function getActiveMemoAlerts() {
+            return memoData.filter(item => isMemoActive(item.status));
+        }
+
+        function getVisibleMemoAlerts() {
+            return memoShowAll ? memoData : getActiveMemoAlerts();
+        }
+
         function renderMemoAlerts() {
             if (!dom.memoAlertCount || !dom.memoAlertList) return;
+            const activeMemoAlerts = getActiveMemoAlerts();
 
-            dom.memoAlertCount.innerText = `${memoData.length.toLocaleString('th-TH')} รายการ`;
-            if (!memoData.length) {
+            dom.memoAlertCount.innerText = `${activeMemoAlerts.length.toLocaleString('th-TH')} รายการ`;
+            if (!activeMemoAlerts.length) {
                 dom.memoAlertList.innerHTML = '<div class="text-slate-400">ไม่มีแจ้งเตือน</div>';
                 return;
             }
 
-            const items = memoData.slice(0, 3).map(item => {
+            const items = activeMemoAlerts.slice(0, 3).map(item => {
                 const dueSoon = isMemoDueSoon(item.date);
                 return `
                 <div class="flex items-center gap-1.5 rounded-lg ${dueSoon ? 'bg-rose-50 text-rose-700' : 'bg-blue-50'} px-2 py-1" title="${escapeHtml(item.title)}">
@@ -2581,17 +2690,18 @@
                 </div>
             `;
             }).join('');
-            const more = memoData.length > 3
-                ? `<div class="text-[11px] font-bold text-blue-600 underline-offset-2 hover:underline">+ อีก ${(memoData.length - 3).toLocaleString('th-TH')} รายการ คลิกดูเพิ่ม</div>`
+            const more = activeMemoAlerts.length > 3
+                ? `<div class="text-[11px] font-bold text-blue-600 underline-offset-2 hover:underline">+ อีก ${(activeMemoAlerts.length - 3).toLocaleString('th-TH')} รายการ คลิกดูเพิ่ม</div>`
                 : '';
             dom.memoAlertList.innerHTML = items + more;
         }
 
         function renderMemoAlertModal() {
             if (!dom.memoAlertModalList) return;
+            const visibleMemoAlerts = getVisibleMemoAlerts();
 
-            if (dom.memoAlertModalCount) dom.memoAlertModalCount.innerText = `${memoData.length.toLocaleString('th-TH')} รายการ`;
-            if (!memoData.length) {
+            if (dom.memoAlertModalCount) dom.memoAlertModalCount.innerText = `${visibleMemoAlerts.length.toLocaleString('th-TH')} รายการ`;
+            if (!visibleMemoAlerts.length) {
                 dom.memoAlertModalList.innerHTML = `
                     <div class="flex min-h-52 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center" role="listitem">
                         <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
@@ -2599,20 +2709,25 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                         </div>
-                        <p class="text-base font-bold text-slate-800">ไม่มีรายการแจ้งเตือน</p>
-                        <p class="mt-1 text-sm text-slate-500">ตอนนี้ยังไม่มีเรื่องที่ต้องติดตาม</p>
+                        <p class="text-base font-bold text-slate-800">${memoData.length ? 'ไม่มีรายการที่เปิดใช้งาน' : 'ไม่มีรายการแจ้งเตือน'}</p>
+                        <p class="mt-1 text-sm text-slate-500">${memoData.length ? 'เลือก “แสดงรายการทั้งหมด” เพื่อดูรายการที่ปิดใช้งาน' : 'ตอนนี้ยังไม่มีเรื่องที่ต้องติดตาม'}</p>
+                        <button type="button" onclick="openMemoEditor()" class="mt-5 inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.25" d="M12 4v16m8-8H4"></path></svg>
+                            เพิ่มรายการแรก
+                        </button>
                     </div>`;
                 return;
             }
 
-            dom.memoAlertModalList.innerHTML = memoData.map((item, index) => {
+            dom.memoAlertModalList.innerHTML = visibleMemoAlerts.map((item, index) => {
                 const dueSoon = isMemoDueSoon(item.date);
+                const active = isMemoActive(item.status);
                 return `
                     <article class="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 pl-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] sm:p-5 sm:pl-6" role="listitem" aria-label="แจ้งเตือนรายการที่ ${index + 1}">
-                        <span class="absolute inset-y-0 left-0 w-1 ${dueSoon ? 'bg-rose-500' : 'bg-blue-500'}" aria-hidden="true"></span>
+                        <span class="absolute inset-y-0 left-0 w-1 ${!active ? 'bg-slate-400' : (dueSoon ? 'bg-rose-500' : 'bg-blue-500')}" aria-hidden="true"></span>
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center gap-1.5 rounded-full ${dueSoon ? 'bg-rose-50 text-rose-700 ring-rose-100' : 'bg-blue-50 text-blue-700 ring-blue-100'} px-2.5 py-1 text-xs font-extrabold ring-1 ring-inset">
+                                <span class="inline-flex items-center gap-1.5 rounded-full ${dueSoon ? 'bg-rose-50 text-rose-700 ring-rose-100' : 'bg-blue-50 text-blue-700 ring-blue-100'} px-2.5 py-1 text-[11px] font-extrabold ring-1 ring-inset">
                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M5 11h14M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z"></path>
                                     </svg>
@@ -2626,19 +2741,27 @@
                                         ต้องติดตาม
                                     </span>` : ''}
                             </div>
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                เปิดใช้งาน
-                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center gap-1.5 rounded-full ${active ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' : 'bg-slate-100 text-slate-600 ring-slate-200'} px-2.5 py-1 text-[11px] font-bold ring-1 ring-inset">
+                                    <span class="h-1.5 w-1.5 rounded-full ${active ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+                                    ${active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                                </span>
+                                <button type="button" data-memo-action="edit" data-memo-row="${item.sourceRowNumber}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-100 transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" aria-label="แก้ไขแจ้งเตือนรายการที่ ${index + 1}" title="แก้ไข">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.86 3.49a2.1 2.1 0 013 2.97L8.1 18.22 4 20l1.78-4.1L16.86 3.49z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.5 5.85l3.65 3.65"></path></svg>
+                                </button>
+                                <button type="button" data-memo-action="delete" data-memo-row="${item.sourceRowNumber}" class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-100 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500" aria-label="ลบแจ้งเตือนรายการที่ ${index + 1}" title="ลบ">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"></path></svg>
+                                </button>
+                            </div>
                         </div>
-                        <p class="mt-3 whitespace-pre-wrap break-words text-[15px] font-medium leading-7 text-slate-800 sm:text-base sm:leading-7">${escapeHtml(item.title)}</p>
+                        <p class="mt-3 whitespace-pre-wrap break-words text-[13px] font-medium leading-6 text-slate-800 sm:text-sm sm:leading-6">${escapeHtml(item.title)}</p>
                     </article>
                 `;
             }).join('');
         }
 
         function openMemoAlertModal() {
-            if (!dom.memoAlertModal || !memoData.length) return;
+            if (!dom.memoAlertModal) return;
             renderMemoAlertModal();
             if (memoAlertModalCloseTimer) {
                 clearTimeout(memoAlertModalCloseTimer);
@@ -2658,6 +2781,8 @@
         function closeMemoAlertModal() {
             if (!dom.memoAlertModal || dom.memoAlertModal.classList.contains('hidden')) return;
             if (memoAlertModalCloseTimer) return;
+            closeMemoDeleteConfirm(false);
+            closeMemoEditor(false);
             dom.memoAlertModal.classList.remove('memo-alert-modal-open');
             document.body.classList.remove('overflow-hidden');
             if (dom.memoAlertCard) dom.memoAlertCard.setAttribute('aria-expanded', 'false');
@@ -2671,6 +2796,175 @@
                 }
                 memoAlertPreviousFocus = null;
             }, closeDelay);
+        }
+
+        function memoDateToInputValue(date) {
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function setMemoEditorError(message = '') {
+            const errorElement = document.getElementById('memoEditorError');
+            if (!errorElement) return;
+            errorElement.textContent = message;
+            errorElement.classList.toggle('hidden', !message);
+        }
+
+        function setMemoDeleteConfirmError(message = '') {
+            if (!dom.memoDeleteConfirmError) return;
+            dom.memoDeleteConfirmError.textContent = message;
+            dom.memoDeleteConfirmError.classList.toggle('hidden', !message);
+        }
+
+        function openMemoDeleteConfirm(item) {
+            const modal = dom.memoDeleteConfirmModal || document.getElementById('memoDeleteConfirmModal');
+            if (!item || !modal) return;
+
+            memoDeletePendingItem = item;
+            memoDeletePreviousFocus = document.activeElement;
+            memoDeleteInFlight = false;
+            if (dom.memoDeleteConfirmTitle) dom.memoDeleteConfirmTitle.textContent = item.title;
+            if (dom.memoDeleteConfirmButton) {
+                dom.memoDeleteConfirmButton.disabled = false;
+                dom.memoDeleteConfirmButton.innerHTML = `
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"></path></svg>
+                    ลบรายการ`;
+            }
+            setMemoDeleteConfirmError();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => dom.memoDeleteConfirmButton?.focus());
+        }
+
+        function closeMemoDeleteConfirm(restoreFocus = true) {
+            const modal = dom.memoDeleteConfirmModal || document.getElementById('memoDeleteConfirmModal');
+            if (!modal || modal.classList.contains('hidden') || memoDeleteInFlight) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            memoDeletePendingItem = null;
+            setMemoDeleteConfirmError();
+            if (restoreFocus && memoDeletePreviousFocus && typeof memoDeletePreviousFocus.focus === 'function') {
+                memoDeletePreviousFocus.focus();
+            }
+            memoDeletePreviousFocus = null;
+        }
+
+        function openMemoEditor(item = null) {
+            const modal = dom.memoEditorModal || document.getElementById('memoEditorModal');
+            if (!modal) return;
+
+            memoEditingItem = item;
+            memoEditorPreviousFocus = document.activeElement;
+            document.getElementById('memoEditorTitle').textContent = item ? 'แก้ไขรายการแจ้งเตือน' : 'เพิ่มรายการแจ้งเตือน';
+            document.getElementById('memoEditorDate').value = item ? memoDateToInputValue(item.date) : memoDateToInputValue(new Date());
+            document.getElementById('memoEditorTitleInput').value = item ? item.title : '';
+            document.getElementById('memoEditorActive').checked = !item || isMemoActive(item.status);
+            document.getElementById('memoEditorSubmitButton').disabled = false;
+            document.getElementById('memoEditorSubmitButton').textContent = item ? 'บันทึกการแก้ไข' : 'บันทึกรายการ';
+            setMemoEditorError();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => document.getElementById('memoEditorDate')?.focus());
+        }
+
+        function closeMemoEditor(restoreFocus = true) {
+            const modal = dom.memoEditorModal || document.getElementById('memoEditorModal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            memoEditingItem = null;
+            setMemoEditorError();
+            if (restoreFocus && memoEditorPreviousFocus && typeof memoEditorPreviousFocus.focus === 'function') {
+                memoEditorPreviousFocus.focus();
+            }
+            memoEditorPreviousFocus = null;
+        }
+
+        async function submitMemoEditor(event) {
+            event.preventDefault();
+            const date = document.getElementById('memoEditorDate').value;
+            const title = document.getElementById('memoEditorTitleInput').value.trim();
+            const active = document.getElementById('memoEditorActive').checked;
+            const submitButton = document.getElementById('memoEditorSubmitButton');
+            if (!SCRIPT_URL) {
+                setMemoEditorError('ยังไม่ได้ตั้งค่า SCRIPT_URL');
+                return;
+            }
+            if (!date || !title) {
+                setMemoEditorError('กรุณาระบุวันที่และรายละเอียดแจ้งเตือน');
+                return;
+            }
+
+            const editingItem = memoEditingItem;
+            const payload = {
+                action: 'upsertMemo',
+                sheetName: MEMO_SHEET_NAME,
+                date,
+                title,
+                active
+            };
+            if (editingItem) {
+                payload.memoId = editingItem.recordId;
+                payload.memoRowNumber = editingItem.sourceRowNumber;
+            }
+
+            setMemoEditorError();
+            submitButton.disabled = true;
+            submitButton.textContent = 'กำลังบันทึก...';
+            try {
+                const result = await postWithWriteToken(payload);
+                if (!result.success) throw new Error(result.error || 'ไม่สามารถบันทึกรายการแจ้งเตือนได้');
+                closeMemoEditor(false);
+                await fetchGoogleSheetData();
+                renderMemoAlertModal();
+            } catch (error) {
+                setMemoEditorError(`บันทึกไม่สำเร็จ: ${error.message}`);
+                submitButton.disabled = false;
+                submitButton.textContent = editingItem ? 'บันทึกการแก้ไข' : 'บันทึกรายการ';
+            }
+        }
+
+        async function confirmMemoDelete() {
+            const item = memoDeletePendingItem;
+            const confirmButton = dom.memoDeleteConfirmButton;
+            if (!item || memoDeleteInFlight) return;
+
+            memoDeleteInFlight = true;
+            setMemoDeleteConfirmError();
+            if (confirmButton) {
+                confirmButton.disabled = true;
+                confirmButton.textContent = 'กำลังลบ...';
+            }
+            try {
+                const result = await postWithWriteToken({
+                    action: 'deleteMemo',
+                    sheetName: MEMO_SHEET_NAME,
+                    memoId: item.recordId,
+                    memoRowNumber: item.sourceRowNumber,
+                });
+                if (!result.success) throw new Error(result.error || 'ไม่สามารถลบรายการแจ้งเตือนได้');
+                memoDeleteInFlight = false;
+                closeMemoDeleteConfirm(false);
+                await fetchGoogleSheetData();
+                renderMemoAlertModal();
+                document.getElementById('memoAlertCloseButton')?.focus();
+            } catch (error) {
+                memoDeleteInFlight = false;
+                setMemoDeleteConfirmError(`ลบรายการไม่สำเร็จ: ${error.message}`);
+                if (confirmButton) {
+                    confirmButton.disabled = false;
+                    confirmButton.innerHTML = `
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m-8 0 1 13h8l1-13"></path></svg>
+                        ลองลบอีกครั้ง`;
+                }
+            }
+        }
+
+        function deleteMemoItem(item) {
+            openMemoDeleteConfirm(item);
         }
 
         function contactSummaryRows(presetValue, dateInput) {
@@ -2822,7 +3116,7 @@
                     parseCsv(payInCsvText),
                     parseCsv(contactCsvText),
                     dataCsvText ? parseCsv(dataCsvText) : Promise.resolve([]),
-                    memoCsvText ? parseCsv(memoCsvText) : Promise.resolve([]),
+                    memoCsvText ? parseMemoCsv(memoCsvText) : Promise.resolve([]),
                     glassSizeCsvText ? parseCsv(glassSizeCsvText) : Promise.resolve([]),
                     installerCsvText ? parseCsv(installerCsvText) : Promise.resolve([]),
                     warrantyCsvText ? parseCsv(warrantyCsvText) : Promise.resolve([]),
@@ -3658,21 +3952,60 @@
                 });
             }
 
+            if (dom.memoShowAllToggle) {
+                dom.memoShowAllToggle.checked = memoShowAll;
+                dom.memoShowAllToggle.addEventListener('change', () => {
+                    memoShowAll = dom.memoShowAllToggle.checked;
+                    renderMemoAlertModal();
+                });
+            }
+
             if (dom.memoAlertModal) {
                 dom.memoAlertModal.addEventListener('click', event => {
                     if (event.target === dom.memoAlertModal) closeMemoAlertModal();
                 });
 
+                if (dom.memoAlertModalList) {
+                    dom.memoAlertModalList.addEventListener('click', event => {
+                        const actionButton = event.target.closest('[data-memo-action]');
+                        if (!actionButton) return;
+                        const rowNumber = Number(actionButton.dataset.memoRow);
+                        const item = memoData.find(memo => memo.sourceRowNumber === rowNumber);
+                        if (!item) return;
+                        if (actionButton.dataset.memoAction === 'edit') openMemoEditor(item);
+                        if (actionButton.dataset.memoAction === 'delete') deleteMemoItem(item);
+                    });
+                }
+
+                if (dom.memoEditorModal) {
+                    dom.memoEditorModal.addEventListener('click', event => {
+                        if (event.target === dom.memoEditorModal) closeMemoEditor();
+                    });
+                }
+
+                if (dom.memoDeleteConfirmModal) {
+                    dom.memoDeleteConfirmModal.addEventListener('click', event => {
+                        if (event.target === dom.memoDeleteConfirmModal) closeMemoDeleteConfirm();
+                    });
+                }
+
                 document.addEventListener('keydown', event => {
-                    if (dom.memoAlertModal.classList.contains('hidden')) return;
+                    const activeModal = dom.memoDeleteConfirmModal && !dom.memoDeleteConfirmModal.classList.contains('hidden')
+                        ? dom.memoDeleteConfirmModal
+                        : (dom.memoEditorModal && !dom.memoEditorModal.classList.contains('hidden')
+                            ? dom.memoEditorModal
+                            : (dom.memoAlertModal.classList.contains('hidden') ? null : dom.memoAlertModal));
+                    if (!activeModal) return;
                     if (event.key === 'Escape') {
                         event.preventDefault();
-                        closeMemoAlertModal();
+                        if (activeModal === dom.memoDeleteConfirmModal) closeMemoDeleteConfirm();
+                        else if (activeModal === dom.memoEditorModal) closeMemoEditor();
+                        else closeMemoAlertModal();
                         return;
                     }
                     if (event.key !== 'Tab') return;
 
-                    const focusableElements = Array.from(dom.memoAlertModal.querySelectorAll(
+                    const focusableElements = Array.from(activeModal.querySelectorAll(
                         'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
                     )).filter(element => element.offsetParent !== null);
                     if (!focusableElements.length) return;

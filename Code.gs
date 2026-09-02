@@ -127,6 +127,184 @@ const SCHEMA = {
   }
 };
 
+// ─── Memo / แจ้งเตือน ─────────────────────────────────────────
+// ชีต memo เดิมมีการใช้งานอยู่แล้วและอาจมีชื่อคอลัมน์ต่างกันตามไฟล์ที่สร้างไว้
+// จึงค้นหาคอลัมน์จากชื่อก่อน แล้วใช้ตำแหน่งมาตรฐาน (วันที่, สถานะ, รายละเอียด)
+// เป็นทางเลือกสุดท้าย เพื่อแก้ไขข้อมูลเดิมได้โดยไม่ต้องย้ายชีตหรือเปลี่ยนหัวตาราง
+function normalizeMemoHeader_(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function memoColumnIndex_(header, exactNames, includesNames, fallbackIndex) {
+  const normalizedHeader = header.map(normalizeMemoHeader_);
+  const exact = exactNames.reduce((foundIndex, name) => {
+    if (foundIndex !== -1) return foundIndex;
+    return normalizedHeader.indexOf(normalizeMemoHeader_(name));
+  }, -1);
+  if (exact !== -1) return exact;
+
+  const included = includesNames.reduce((foundIndex, part) => {
+    if (foundIndex !== -1) return foundIndex;
+    const normalizedPart = normalizeMemoHeader_(part);
+    return normalizedHeader.findIndex(name => name.indexOf(normalizedPart) !== -1);
+  }, -1);
+  if (included !== -1) return included;
+
+  return fallbackIndex >= 0 && fallbackIndex < header.length ? fallbackIndex : -1;
+}
+
+function getMemoColumns_(header) {
+  return {
+    id: memoColumnIndex_(
+      header,
+      ['memo_id', 'memoid', 'id'],
+      ['memoid'],
+      0
+    ),
+    date: memoColumnIndex_(
+      header,
+      ['วันที่แจ้งเตือน', 'วันแจ้งเตือน', 'กำหนดแจ้งเตือน', 'กำหนด', 'due date', 'date'],
+      ['วันที่', 'วันแจ้ง', 'กำหนด', 'duedate'],
+      1
+    ),
+    status: memoColumnIndex_(
+      header,
+      ['สถานะงาน', 'สถานะ', 'status', 'เปิดใช้งาน', 'active', 'enabled'],
+      ['สถานะ', 'status', 'เปิดใช้งาน', 'active', 'enable'],
+      -1
+    ),
+    topic: memoColumnIndex_(
+      header,
+      ['หัวข้อ', 'topic', 'category'],
+      ['หัวข้อ', 'topic', 'category'],
+      -1
+    ),
+    title: memoColumnIndex_(
+      header,
+      ['รายละเอียด', 'ข้อความ', 'หมายเหตุ', 'หัวข้อ', 'เรื่อง', 'รายการ', 'แจ้งเตือน', 'memo'],
+      ['รายละเอียด', 'ข้อความ', 'หมายเหตุ', 'หัวข้อ', 'เรื่อง', 'รายการ', 'แจ้งเตือน', 'memo'],
+      3
+    )
+  };
+}
+
+function ensureMemoStatusColumn_(sheet, header) {
+  let columns = getMemoColumns_(header);
+  if (columns.status !== -1) return { header: header, columns: columns };
+
+  const newColumn = sheet.getLastColumn() + 1;
+  sheet.getRange(1, newColumn).setValue('สถานะ');
+  const updatedHeader = sheet.getRange(1, 1, 1, newColumn).getDisplayValues()[0].map(String);
+  columns = getMemoColumns_(updatedHeader);
+  return { header: updatedHeader, columns: columns };
+}
+
+function memoDateForSheet_(value) {
+  const match = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) throw new Error('วันที่แจ้งเตือนไม่ถูกต้อง');
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    throw new Error('วันที่แจ้งเตือนไม่ถูกต้อง');
+  }
+  return `${day}/${month}/${year + 543}`;
+}
+
+function getOrCreateMemoSheet_(ss) {
+  let sheet = ss.getSheetByName('memo');
+  if (sheet) return sheet;
+
+  sheet = ss.insertSheet('memo');
+  sheet.appendRow(['Memo_ID', 'วันที่แจ้งเตือน', 'สถานะ', 'รายละเอียด', 'วันที่บันทึก']);
+  return sheet;
+}
+
+function getMemoTargetRow_(sheetValues, columns, body) {
+  const memoId = String(body.memoId || '').trim();
+  if (memoId && columns.id !== -1) {
+    for (let index = 1; index < sheetValues.length; index++) {
+      if (String(sheetValues[index][columns.id] || '').trim() === memoId) return index + 1;
+    }
+    throw new Error('ไม่พบรายการแจ้งเตือนเดิม กรุณารีเฟรชข้อมูลแล้วลองใหม่');
+  }
+
+  const rowNumber = Number(body.memoRowNumber);
+  if (!Number.isInteger(rowNumber) || rowNumber < 2 || rowNumber > sheetValues.length) {
+    throw new Error('ไม่พบรายการแจ้งเตือนเดิม กรุณารีเฟรชข้อมูลแล้วลองใหม่');
+  }
+  return rowNumber;
+}
+
+function upsertMemo_(body) {
+  const title = String(body.title || '').trim();
+  if (!title) throw new Error('กรุณาระบุรายละเอียดแจ้งเตือน');
+  if (title.length > 5000) throw new Error('รายละเอียดแจ้งเตือนยาวเกิน 5,000 ตัวอักษร');
+
+  const dateText = memoDateForSheet_(body.date);
+  const status = body.active === true || String(body.active).toLowerCase() === 'true' ? 'on' : 'off';
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = getOrCreateMemoSheet_(ss);
+  const lastColumn = Math.max(sheet.getLastColumn(), 4);
+  let header = sheet.getRange(1, 1, 1, lastColumn).getDisplayValues()[0].map(String);
+  const statusSetup = ensureMemoStatusColumn_(sheet, header);
+  header = statusSetup.header;
+  const columns = statusSetup.columns;
+  if (columns.date === -1 || columns.title === -1) {
+    throw new Error('หัวตารางชีต memo ไม่ครบ กรุณาตรวจสอบคอลัมน์ วันที่แจ้งเตือน และ รายละเอียด');
+  }
+
+  const dataRange = sheet.getDataRange();
+  const sheetValues = dataRange.getDisplayValues();
+  const isUpdate = Boolean(String(body.memoId || '').trim()) ||
+    (Number.isInteger(Number(body.memoRowNumber)) && Number(body.memoRowNumber) >= 2);
+  let rowNumber;
+
+  if (isUpdate) {
+    rowNumber = getMemoTargetRow_(sheetValues, columns, body);
+  } else {
+    rowNumber = sheet.getLastRow() + 1;
+    if (columns.id !== -1) {
+      let memoId = generateId('MEM');
+      const usedIds = sheetValues.slice(1).map(row => String(row[columns.id] || '').trim());
+      while (usedIds.indexOf(memoId) !== -1) memoId = generateId('MEM');
+      sheet.getRange(rowNumber, columns.id + 1).setValue(memoId);
+    }
+    if (columns.topic !== -1) sheet.getRange(rowNumber, columns.topic + 1).setValue('แจ้งเตือน');
+  }
+
+  sheet.getRange(rowNumber, columns.date + 1).setValue(dateText);
+  if (columns.status !== -1) sheet.getRange(rowNumber, columns.status + 1).setValue(status);
+  sheet.getRange(rowNumber, columns.title + 1).setValue(title);
+  SpreadsheetApp.flush();
+
+  return jsonOutput_({
+    success: true,
+    action: isUpdate ? 'updateMemo' : 'insertMemo',
+    sheetName: 'memo',
+    id: columns.id !== -1 ? String(sheet.getRange(rowNumber, columns.id + 1).getDisplayValue() || rowNumber) : String(rowNumber),
+    rowNumber: rowNumber,
+    verified: true
+  });
+}
+
+function deleteMemo_(body) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName('memo');
+  if (!sheet) throw new Error('ไม่พบชีต: "memo"');
+
+  const sheetValues = sheet.getDataRange().getDisplayValues();
+  const header = (sheetValues[0] || []).map(String);
+  const columns = getMemoColumns_(header);
+  const rowNumber = getMemoTargetRow_(sheetValues, columns, body);
+  sheet.deleteRow(rowNumber);
+  SpreadsheetApp.flush();
+
+  return jsonOutput_({ success: true, action: 'deleteMemo', sheetName: 'memo', id: String(rowNumber) });
+}
+
 // ─── ID Generator ─────────────────────────────────────────────
 function generateId(prefix) {
   const now = new Date();
@@ -861,7 +1039,7 @@ function doPost(e) {
     verifyWriteToken_(body);
 
     const action = String(body.action || '').trim();
-    const allowedActions = ['', 'insert', 'update', 'delete', 'upsertPayIn', 'attachPayInProof'];
+    const allowedActions = ['', 'insert', 'update', 'delete', 'upsertPayIn', 'attachPayInProof', 'upsertMemo', 'deleteMemo'];
     if (allowedActions.indexOf(action) === -1) throw new Error(`ไม่รู้จัก action: "${action}"`);
     if (action === 'attachPayInProof') return attachPayInProof_(body);
 
@@ -869,6 +1047,9 @@ function doPost(e) {
     if (!lock.tryLock(30000)) {
       throw new Error('ระบบกำลังบันทึกข้อมูลอยู่ กรุณาลองใหม่อีกครั้ง');
     }
+
+    if (action === 'upsertMemo') return upsertMemo_(body);
+    if (action === 'deleteMemo') return deleteMemo_(body);
 
     const sheetName = body.sheetName;
 
