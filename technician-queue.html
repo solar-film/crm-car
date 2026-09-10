@@ -812,7 +812,7 @@
             const base = textValue(baseFilm, '');
             const detail = textValue(detailFilm, '');
             if (!detail || detail === '-') return '';
-            if (!base || base === '-' || normalizeHeader(detail).includes(normalizeHeader(base))) return detail;
+            if (!base || base === '-' || base.split(',').filter(v => v.trim()).length > 1 || normalizeHeader(detail).includes(normalizeHeader(base))) return detail;
             return `${base} - ${detail}`;
         }
 

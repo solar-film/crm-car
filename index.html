@@ -441,10 +441,30 @@
         #dt-tableBody td { padding: 4px 6px !important; }
         .dt-team-dropdown summary::-webkit-details-marker { display: none; }
         .dt-team-dropdown[open] .dt-team-menu { display: block; }
+            /* Compact film choices; avoid inheriting text-field sizing. */
+        #bookingModal #bk-installPosList label,
+        #bookingModal #bk-filmBrandOptions label {
+            margin: 0;
+            min-height: 28px;
+            padding: 4px 10px;
+            line-height: 20px;
+        }
+        #bookingModal #bk-installPosList input[type="checkbox"],
+        #bookingModal #bk-filmBrandOptions input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            min-height: 16px;
+            padding: 0;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
     <script src="sidebar.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="film-brands.js"></script>
+    <link rel="stylesheet" href="booking-form-layout.css">
+    <script src="booking-form-layout.js" defer></script>
 </head>
 <body class="text-slate-800 auth-locked">
     <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -1155,9 +1175,12 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">ยี่ห้อฟิล์ม <span class="text-rose-500">*</span></label>
-                        <select id="bk-filmBrand" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white">
-                            <option value="">-- กำลังโหลด --</option>
-                        </select>
+                        <input type="hidden" id="bk-filmBrand">
+                        <details id="bk-filmBrandPicker" class="rounded-xl border border-slate-200 bg-slate-50">
+                            <summary id="bk-filmBrandLabel" class="cursor-pointer px-3 py-2.5 text-sm" aria-label="ยี่ห้อฟิล์ม เลือกได้มากกว่า 1 ยี่ห้อ">-- เลือกยี่ห้อฟิล์ม --</summary>
+                            <div id="bk-filmBrandOptions" class="max-h-48 overflow-y-auto border-t border-slate-200 p-1">กำลังโหลดตัวเลือก...</div>
+                        </details>
+                        <p class="mt-1 text-xs text-slate-400">เลือกได้มากกว่า 1 ยี่ห้อ</p>
                     </div>
                     <div>
                         <label class="block mb-1.5 text-xs font-semibold text-slate-700">การรับประกัน <span class="text-rose-500">*</span></label>
@@ -4198,13 +4221,7 @@
         }
 
         function dtFilmOptions(job) {
-            // กรอง filmSeriesOptions ตาม brand ของฟิล์มในงาน
-            const jobBrand = (job.film || '').trim().toLowerCase();
-            if (!jobBrand) return filmSeriesOptions.map(f => f.full);
-            const filtered = filmSeriesOptions.filter(f =>
-                f.brand.toLowerCase() === jobBrand || f.full.toLowerCase().startsWith(jobBrand)
-            );
-            return (filtered.length ? filtered : filmSeriesOptions).map(f => f.full);
+            return FilmBrands.filterModels(filmSeriesOptions, job.film).map(f => f.full);
         }
 
         // หาฟิล์มที่ "เลือกไว้แล้ว" ในชีต Detail_film สำหรับตำแหน่งหนึ่งๆ
@@ -4225,7 +4242,7 @@
             );
             const brand = brandKey ? String(row[brandKey] || '').trim() : (job.film || '');
             // ถ้า filmModel มี brand อยู่แล้ว ใช้เลย ไม่งั้นต่อกัน
-            if (!brand || filmModel.toLowerCase().includes(brand.toLowerCase())) return filmModel;
+            if (!brand || FilmBrands.parse(brand).length > 1 || filmModel.toLowerCase().includes(brand.toLowerCase())) return filmModel;
             return `${brand} - ${filmModel}`;
         }
 
@@ -4562,6 +4579,7 @@
                         if (!seen.has(val)) { seen.add(val); values.push(val); }
                     }
                 }
+                if (selectId === 'bk-filmBrand') { FilmBrands.populate(values); return; }
                 const select = document.getElementById(selectId);
                 select.innerHTML = `<option value="">${placeholder}</option>`;
                 values.forEach(v => {
@@ -4941,7 +4959,7 @@
                 else if (retries > 0) setTimeout(() => setSelectVal(id, val, retries - 1), 200);
             };
             setSelectVal('bk-carModel', job.carModel);
-            setSelectVal('bk-filmBrand', job.film);
+            FilmBrands.set(job.film);
             setPromotionValue(job.promotion);
 
             const setBtnVal = (hiddenId, val) => {
@@ -5005,6 +5023,10 @@
 
         async function submitBooking(e) {
             e.preventDefault();
+            if (!FilmBrands.validate()) {
+                showAlert('กรุณาเลือกยี่ห้อฟิล์ม', 'เลือกอย่างน้อย 1 ยี่ห้อก่อนบันทึกคิว', 'error');
+                return;
+            }
             const isCopy = bkBookingMode === 'copy';
             const copySourceId = bkCopySourceId;
             if (!isCopy && !bkCurrentEditingId) return;
@@ -5865,12 +5887,8 @@
 
             // Set brand from job (read-only)
             document.getElementById('df-brand').value = job.film && job.film !== '-' ? job.film : '';
-            // Filter films by job brand
-            const jobBrand = (job.film || '').trim().toLowerCase();
-            const filtered = jobBrand
-                ? filmSeriesOptions.filter(f => f.brand.toLowerCase() === jobBrand || f.full.toLowerCase().startsWith(jobBrand))
-                : filmSeriesOptions;
-            const filmOpts = filtered.length ? filtered : filmSeriesOptions;
+            // Include models from every selected brand, without unrelated brands.
+            const filmOpts = FilmBrands.filterModels(filmSeriesOptions, job.film);
 
             const dfData = job.filmDetails;
 
@@ -5884,6 +5902,11 @@
 
                 if (dfData) {
                     const existingVal = findRowValue(dfData, [sel.name], '');
+                    if (existingVal && existingVal !== '-' && !Array.from(sel.options).some(o => o.value === existingVal)) {
+                        const option = document.createElement('option');
+                        option.value = option.textContent = existingVal;
+                        sel.appendChild(option);
+                    }
                     sel.value = (existingVal && existingVal !== '-') ? existingVal : '';
                 } else {
                     sel.value = '';

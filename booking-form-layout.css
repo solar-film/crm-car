@@ -1,0 +1,82 @@
+#bookingModal.booking-reference {padding:14px; background:rgba(32,53,89,.48);backdrop-filter:blur(7px)}
+#bookingModal .br-shell {max-width:780px;max-height:96vh;margin:0;border-radius:25px;border:1px solid #b4c8f5;box-shadow:0 24px 80px #182e6555;background:#f0f5ff}
+#bookingModal .br-header {position:relative;min-height:76px;padding:12px 22px;background:linear-gradient(115deg,#227cff 0%,#2459ff 48%,#7155ff 100%);overflow:hidden}
+#bookingModal .br-header:after {content:'';position:absolute;width:520px;height:140px;border-radius:50%;background:#ffffff0c;right:-40px;bottom:-90px;transform:rotate(-15deg);pointer-events:none}
+#bookingModal .br-header>div {gap:14px}
+#bookingModal .br-header>div>div:first-child {width:50px;height:50px;border-radius:16px;background:#ffffff30}
+#bookingModal .br-header>div>div:first-child i {font-size:25px}
+#bookingModal .br-header h3 {font-size:23px;line-height:1.3;letter-spacing:-.5px}
+#bookingModal .br-header #bk-customerInfo {font-size:13px;margin-top:3px;color:white}
+#bookingModal .br-header>button {align-self:flex-start;border:1px solid #ffffff55;border-radius:50%;width:32px;height:32px;font-size:18px;z-index:1}
+#bookingModal .br-slogan {position:absolute;right:24px;bottom:6px;color:#e4eaff;font-size:12px;font-style:italic;text-align:center;transform:rotate(-6deg)}
+#bookingModal #bookingForm {padding:10px 16px 0;display:flex;flex-direction:column;gap:8px;background:linear-gradient(110deg,#f4f8ff,#edf3ff);color:#17316a;scrollbar-width:thin;scrollbar-color:#c8d6f4 transparent}
+#bookingModal #bookingForm>* {margin-top:0;margin-bottom:0}
+#bookingModal .br-section {border:1px solid #d8e3f8;border-radius:17px;background:linear-gradient(110deg,#f9fbff,#f3f7fe);box-shadow:0 3px 12px #537fce0b;flex-shrink:0}
+#bookingModal .br-section-heading {display:flex;gap:10px;align-items:center;padding:7px 12px 5px}
+#bookingModal .br-number {display:flex;align-items:center;justify-content:center;width:29px;height:29px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#68a5ff,#2759ff);box-shadow:0 3px 8px #497eff30,inset 0 1px 2px #ffffff88;color:white;font-size:18px;font-weight:700}
+#bookingModal .br-section-heading h4 {font-size:16px;font-weight:750;line-height:1.15;color:#0e2868}
+#bookingModal .br-section-heading p {font-size:12px;line-height:1.3;color:#7b8eb9}
+#bookingModal .br-section-body {display:grid;gap:7px;background:#ffffffdb;border-radius:14px;padding:7px 12px 9px}
+#bookingModal .br-section-body .grid {gap:9px}
+#bookingModal .br-section-body label {font-size:12px;color:#213c75;margin-bottom:3px;line-height:17px}
+#bookingModal .br-section-body label span.text-slate-400 {font-size:11px;color:#879ac0}
+#bookingModal .br-section-body input:not([type=hidden]):not([type=checkbox]),
+#bookingModal .br-section-body select,#bookingModal .br-section-body textarea,
+#bookingModal .br-section-body button[type=button],#bookingModal #bk-filmBrandPicker {border-color:#cfdaf1;border-radius:12px;font-size:13px;min-height:35px;color:#304e88}
+#bookingModal .br-section-body input:not([type=checkbox]),#bookingModal .br-section-body textarea,#bookingModal .br-section-body select {background:linear-gradient(110deg,#fafbff,#f5f7fc);font-family:inherit}
+#bookingModal .br-section-body input::placeholder,#bookingModal .br-section-body textarea::placeholder {color:#8a9cbe}
+#bookingModal .br-field {position:relative}
+#bookingModal .br-field>i {position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#6a80aa;pointer-events:none;font-size:17px}
+#bookingModal .br-field>input,#bookingModal .br-field>select,#bookingModal .br-field>textarea {padding-left:38px!important;width:100%;display:block}
+#bookingModal .br-section-body .bk-pill {display:flex;justify-content:center;align-items:center;gap:10px;padding:6px 8px;background:#fff;font-size:12px;min-height:35px;color:#29457a}
+#bookingModal .br-section-body .bk-pill>i {font-size:16px;color:#6b7fa8;margin:0}
+#bookingModal .br-section-body .bk-pill.active {color:#0750fa;border-color:#2764ff;background:linear-gradient(115deg,#f7fbff,#e7efff);box-shadow:inset 0 0 0 2px #f6faff,0 2px 5px #387aff12}
+#bookingModal .br-section-body .bk-pill.active>i {color:#0750fa!important}
+#bookingModal .br-dot {height:19px;width:19px;border-radius:50%;box-shadow:inset 0 -2px 3px #0003,inset 0 1px 2px #fff9;flex-shrink:0}
+#bookingModal .br-dot-white{background:radial-gradient(circle at 35% 30%,white,#f5f6fa 50%,#c2c9d5);border:1px solid #d0d5df}
+#bookingModal .br-dot-red{background:linear-gradient(120deg,#ff6172,#dc0520)}
+#bookingModal .br-dot-yellow{background:linear-gradient(120deg,#ffe032,#ffb000)}
+#bookingModal .br-dot-black{background:linear-gradient(120deg,#384259,#111827)}
+#bookingModal .br-section-3 .br-section-body {grid-template-columns:1fr 1fr}
+#bookingModal .br-section-3 .br-section-body>div:first-child {grid-column:1/-1}
+#bookingModal .br-section-5 .br-section-body {grid-template-columns:1.65fr 1fr;gap:18px}
+#bookingModal .br-section-6 {display:flex;align-items:center;background:#fff;border:0}
+#bookingModal .br-section-6 .br-section-heading {min-width:170px;padding:8px 12px}
+#bookingModal .br-section-6 .br-section-body {flex:1;padding:8px 10px 8px 0}
+#bookingModal .br-section-6 .br-section-body>div>label {display:none}
+#bookingModal .br-section-6 .bk-pill {gap:7px;white-space:nowrap}
+#bookingModal .br-section-6 .bk-pill.active {background:linear-gradient(110deg,#176bff,#5731ff);color:white;box-shadow:0 3px 12px #366dff33}
+#bookingModal .br-section-6 .bk-pill.active i {color:white!important}
+#bookingModal #bk-sales-amt {background:#eafff5;border-color:#8de9bd;color:#1d8262}
+#bookingModal .br-dropdown-icon {font-size:16px;color:#6a80aa;margin:0 7px 0 2px}
+#bookingModal #bk-filmBrandLabel {padding:7px 12px;line-height:20px}
+#bookingModal #bk-filmBrandPicker {position:relative;background:#f6f8fd}
+#bookingModal #bk-filmBrandPicker[open] {z-index:70}
+#bookingModal #bk-filmBrandOptions {position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:70;max-height:192px;overflow-y:auto;background:#fff;border:1px solid #cfdaf1;border-radius:12px;padding:4px;box-shadow:0 10px 25px #29427326}
+#bookingModal #bk-discountCodePanel label,#bookingModal #bk-filmBrandOptions label,#bookingModal #bk-installPosList label {min-height:28px;padding:4px 10px;margin:0;line-height:20px;font-size:14px}
+#bookingModal #bk-discountCodePanel input[type=checkbox],#bookingModal #bk-filmBrandOptions input[type=checkbox],#bookingModal #bk-installPosList input[type=checkbox] {min-height:16px;height:16px;width:16px;padding:0}
+#bookingModal .br-footer {position:sticky;bottom:0;z-index:60;display:flex;gap:12px;margin:0 -16px!important;padding:10px 16px;background:#ffffffed;border-top:1px solid #e2eaff;align-items:center;flex-shrink:0}
+#bookingModal .br-footer>button {height:40px;font-size:14px;border-radius:13px;font-weight:700}
+#bookingModal .br-footer>button[type=submit] {width:220px;background:linear-gradient(110deg,#0967ff,#6331ff)}
+#bookingModal .br-footer>button:not([type=submit]):not(.br-clear) {width:150px;background:#f8faff;color:#294273;border-color:#d0dbf0}
+#bookingModal .br-footer .br-clear {margin-right:auto;width:auto;background:transparent;color:#6b80aa;font-size:14px;font-weight:500;display:flex;gap:14px;align-items:center}
+@media(max-width:640px){
+#bookingModal .br-header{padding:14px 16px;min-height:72px}#bookingModal .br-header h3{font-size:22px}#bookingModal .br-header #bk-customerInfo{font-size:12px}#bookingModal .br-header>div{gap:10px}#bookingModal .br-header>div>div:first-child{width:48px;height:48px;border-radius:15px}#bookingModal .br-slogan{display:none}
+#bookingModal #bookingForm{padding:10px 10px 0}#bookingModal .br-section-heading{gap:10px;padding:10px}#bookingModal .br-section-body{padding:10px}#bookingModal .br-section-heading h4{font-size:16px}#bookingModal .br-section-heading p{font-size:12px}
+#bookingModal .br-section-body .grid-cols-4{grid-template-columns:repeat(2,minmax(0,1fr))}#bookingModal .br-section-body .bk-pill{gap:8px;font-size:12px}#bookingModal .br-section-5 .br-section-body{grid-template-columns:1fr}#bookingModal .br-section-6{display:block}#bookingModal .br-section-6 .br-section-body{padding:0 10px 10px}#bookingModal .br-footer{margin:0 -10px!important;padding:10px;gap:7px}#bookingModal .br-footer>button{font-size:13px}#bookingModal .br-footer>button[type=submit]{width:42%}#bookingModal .br-footer>button:not([type=submit]):not(.br-clear){width:24%}#bookingModal .br-footer .br-clear{font-size:11px;gap:5px}
+}
+#bookingModal .br-section-6 .bk-pill[data-val="กำลังติดตั้ง"] i {color:#a132f7}
+#bookingModal .br-section-6 .bk-pill[data-val="เสร็จสิ้น"] i {color:#00ad81}
+#bookingModal .br-section-6 .bk-pill[data-val="ยกเลิก"] i {color:#fa365f}
+@media(min-width:641px) and (max-width:850px){#bookingModal .br-section-6{display:block}#bookingModal .br-section-6 .br-section-body{padding:0 16px 12px}}
+
+#bookingModal .br-section-body input:not([type=hidden]):not([type=checkbox]), #bookingModal .br-section-body select, #bookingModal .br-section-body textarea {padding-top:6px;padding-bottom:6px;line-height:21px}
+/* Distinct soft backgrounds for the six booking sections. */
+#bookingModal .br-section-1 {--section-tint:#eaf3ff;--section-body:#f5f9ff;--section-border:#c9ddfa}
+#bookingModal .br-section-2 {--section-tint:#e8f7f2;--section-body:#f3fbf8;--section-border:#bfe5d8}
+#bookingModal .br-section-3 {--section-tint:#f1ebff;--section-body:#f9f5ff;--section-border:#dbcef5}
+#bookingModal .br-section-4 {--section-tint:#fff3dc;--section-body:#fffbf1;--section-border:#f0dbaf}
+#bookingModal .br-section-5 {--section-tint:#ffedf2;--section-body:#fff6f8;--section-border:#f2cdd9}
+#bookingModal .br-section-6 {--section-tint:#e7f6fa;--section-body:#f1fafc;--section-border:#bfdee7}
+#bookingModal .br-section {background:var(--section-tint);border:1px solid var(--section-border)}
+#bookingModal .br-section .br-section-body {background:var(--section-body)}
