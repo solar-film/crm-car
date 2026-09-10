@@ -295,7 +295,10 @@
         <div id="drawerBody" class="px-5 pb-5 space-y-4"></div>
     </aside>
 
+    <script src="booking-read-model.js"></script>
     <script>
+    const { normalizeProofList } = BookingReadModel;
+
     // ─── CONFIG ───────────────────────────────────────────────────────────
     const SHEET_ID        = '1u__xYWoWZpmrnquc-Fpk19WtpcrckxSd0-_G35NWxXQ';
     const CSV = {
@@ -463,18 +466,12 @@
                 safeParse(dataText),
             ]);
 
-            // Build Detail_film map
-            detailMap = {};
-            details.forEach(row => {
-                const id = fv(row, ['JobID','Job ID'], '');
-                if (id) { detailMap[id] = row; detailMap[normId(id)] = row; }
-            });
-
-            // Build Detail_Installer map
+            // Merge non-empty film fields, as on the booking page.
+            detailMap = BookingReadModel.makeLookupMap(details, key => key.replace(/\s/g, '').toLowerCase() === 'jobid' || key.toLowerCase().includes('job'));
             installerMap = {};
             installers.forEach(row => {
-                const id = fv(row, ['JobID','Job ID'], '');
-                if (id) { installerMap[id] = row; installerMap[normId(id)] = row; }
+                const id = normId(fv(row, ['JobID', 'Job ID'], ''));
+                if (id) (installerMap[id] ||= []).push(row);
             });
 
             // Build Waranty map
@@ -488,7 +485,7 @@
             cutReasonMap = {};
             cutReasons.forEach(row => {
                 const key = fv(row, ['ID','id'], '').trim();
-                if (key) cutReasonMap[key] = row;
+                if (key) { cutReasonMap[key] = row; cutReasonMap[normId(key)] = row; }
             });
 
             // Build data sheet map (keyed by JobID, one job may have multiple rows)
@@ -496,118 +493,64 @@
             dataRows.forEach(row => {
                 const id = fv(row, ['JobID','Job ID'], '');
                 if (!id) return;
-                [id, normId(id)].forEach(key => {
+                [...new Set([id, normId(id)])].forEach(key => {
                     if (!dataMap[key]) dataMap[key] = [];
                     dataMap[key].push(row);
                 });
             });
 
 
-            // Build ขนาดกระจก map (keyed by JobID, one job may have multiple rows)
+            // The booking page displays the last glass-size record for each job.
             glassMap = {};
             glasses.forEach(row => {
-                const id = fv(row, ['JobID','Job ID'], '');
-                if (!id) return;
-                [id, normId(id)].forEach(key => {
-                    if (!glassMap[key]) glassMap[key] = [];
-                    glassMap[key].push(row);
-                });
+                const id = normId(fv(row, ['JobID', 'Job ID'], ''));
+                if (id) glassMap[id] = row;
             });
 
-            // Build customer map
-            const custMap = {};
-            customers.forEach(row => {
-                const id = fv(row, ['CustID','รหัสลูกค้า'], '');
-                if (id) { custMap[id] = row; custMap[normId(id)] = row; }
-            });
-
-            // Build PayIn map (keyed by JobID)
-            const payMap = {};
-            payIns.forEach(row => {
-                const jobId = fv(row, ['JobID','Job ID','jobid'], '');
-                if (jobId) {
-                    payMap[jobId] = row;
-                    payMap[normId(jobId)] = row;
-                }
-            });
+            const custMap = BookingReadModel.makeLookupMap(customers, key => key.replace(/\s/g, '').toLowerCase() === 'custid' || key.toLowerCase().includes('cust'));
+            const payMap = BookingReadModel.buildPayInDetailsMap(payIns);
+            const jobs = BookingReadModel.buildJobs(bookings, custMap, payMap, detailMap);
 
             // Build rows
-            allRows = bookings.map(row => {
-                const jobId = fv(row, ['JobID','Job ID'], '');
-                if (!jobId || jobId === '-') return null;
-
-                const status = fv(row, ['Status','สถานะ'], '-');
-                if (nh(status).includes(nh('ยกเลิก'))) return null;
-
-                const custId = tv(row['CustID'] || row['custid'], '');
-                const cust = custMap[custId] || custMap[normId(custId)] || {};
-                const pay  = payMap[jobId] || payMap[normId(jobId)] || {};
-                const hasPaymentInfo = Object.values(pay).some(value => {
-                    const text = tv(value, '');
-                    return text && text !== '-';
-                });
-
-                const installDate = fv(row, ['วันที่ติดตั้ง','วันที่'], '-');
-                const parsedDate  = parseDate(installDate);
-                const apptTime    = fv(row, ['เวลานัด','เวลา'], '-');
-
-                // PayIn fields (ชื่อคอลัมน์จริงจาก PayIn sheet)
-                const billNo    = fv(pay, ['เลขที่บิล/ใบเสร็จ','เลขที่บิล','เลขบิล','เลขที่ใบเสร็จ'], '-');
-                const payType   = fv(pay, ['ประเภทการชำระ','ประเภทชำระ','ประเภทการชำระเงิน','ประเภทชำระเงิน','payment type'], '-');
-                const amount    = parseNum(fv(pay, ['ยอดเงิน(บาท)','ยอดเงิน','ยอดชำระ'], '0'));
-                const payStatus = fv(pay, ['สถานะ'], '-');
-                const proof1    = fv(pay, ['หลักฐาน_1','หลักฐาน 1','หลักฐานการชำระเงิน','หลักฐาน','สลิป','Slip','Payment Proof'], '');
-                const proof2    = fv(pay, ['หลักฐาน_2','หลักฐาน 2','สลิป 2','Slip 2','Payment Proof 2'], '');
-
-                // Bookings fields
-                const productVal  = parseNum(tv(row['มูลค่าสินค้า'], '0').replace(/,/g, ''));
-                const discount    = parseNum(tv(row['ส่วนลด'], '0').replace(/,/g, ''));
-                const discountCode = tv(row['รหัสส่วนลด'], '-');
-                const warranty    = tv(row['การรับประกัน'], '-');
-                const note        = fv(row, ['หมายเหตุ'], '-');
-                const sales       = fv(row, ['พน.ขาย','พน ขาย','ฝ่ายขาย','พนง.ขาย','พนักงานขาย','เซลล์','เซล','Sale','Sales','Seller','sales'], '-');
-                const promotion   = fv(row, ['Pro_ID','โปรโมชั่น','Promotion'], '-');
-                const displayAmount = amount > 0 ? amount : parseNum(fv(row, ['ยอดขาย'], '0'));
-
-                // Extra detail rows
-                const detailRow    = detailMap[jobId] || detailMap[normId(jobId)] || null;
-                const installerRow = installerMap[jobId] || installerMap[normId(jobId)] || null;
-                const dataRows     = dataMap[jobId] || dataMap[normId(jobId)] || [];
-
+            allRows = jobs.filter(job => !BookingReadModel.isCancelledJob(job)).map(job => {
+                const jobId = job.id;
+                const payment = payMap[jobId] || payMap[normId(jobId)];
                 return {
                     jobId,
-                    jobStatus: fv(row, ['Status','สถานะ'], '-'),
-                    installDate,
-                    parsedDate,
-                    apptTime,
-                    custName     : fv(cust, ['ชื่อลูกค้า','ชื่อ'], '-'),
-                    custPhone    : fv(cust, ['เบอร์โทร','เบอร์','Tel','Phone'], '-'),
-                    custType     : fv(row, ['ประเภทลูกค้า'], '-'),
-                    sales,
-                    carModel     : fv(row, ['รุ่นรถยนต์','รุ่นรถ'], '-'),
-                    plate        : fv(row, ['ทะเบียนรถ','ทะเบียน'], '-'),
-                    film         : fv(row, ['ยี่ห้อฟิล์ม','ฟิล์ม'], '-'),
-                    installType  : fv(row, ['ตำแหน่งติดตั้ง','ตำแหน่งติดตั้ง ใหม่','ตำแหน่งติดตั้งใหม่','การติดตั้ง','ประเภทการติดตั้ง','ตำแหน่ง'], '-'),
-                    productVal,
-                    discount,
-                    discountCode,
-                    billNo,
-                    payType,
-                    amount      : displayAmount,
-                    payStatus,
-                    hasPaymentInfo,
-                    proof1,
-                    proof2,
-                    warranty,
-                    note,
-                    promotion,
-                    detailRow,
-                    installerRow,
-                    dataRows,
-                    rawRow      : row,
-                    searchText  : [jobId, installDate, fv(cust,['ชื่อลูกค้า','ชื่อ'],'-'), fv(cust,['เบอร์โทร','เบอร์','Tel','Phone'],'-'), fv(row,['ทะเบียนรถ','ทะเบียน'],'-'), billNo, payStatus, apptTime].join(' ').toLowerCase()
+                    jobStatus: job.status,
+                    installDate: job.date,
+                    parsedDate: parseDate(job.date),
+                    apptTime: job.time,
+                    custName: job.custName,
+                    custPhone: job.custPhone,
+                    custType: job.customerType,
+                    sales: job.sales,
+                    customerChannel: job.customerChannel,
+                    customerChannelName: job.customerChannelName,
+                    carModel: job.carModel,
+                    plate: job.plate,
+                    plateType: job.plateType,
+                    film: job.film,
+                    installType: job.installType,
+                    productVal: job.basePrice,
+                    discount: job.discount,
+                    discountCode: job.discountCode,
+                    billNo: job.receiptNo,
+                    payType: job.paymentType,
+                    amount: job.price,
+                    isSales: BookingReadModel.isSalesJob(job),
+                    payStatus: job.paymentStatus,
+                    hasPaymentInfo: Boolean(payment && payment.status !== '-'),
+                    proofs: payment?.proofs || [],
+                    hasSlip: job.hasSlip,
+                    warranty: job.warranty,
+                    note: job.note,
+                    promotion: job.promotion,
+                    detailRow: job.filmDetails,
+                    dataRows: dataMap[jobId] || dataMap[normId(jobId)] || [],
+                    searchText: [job.searchText, job.date, job.time, job.custPhone].join(' ').toLowerCase()
                 };
-            }).filter(Boolean);
+            });
 
             // Sort by Date/Time (Ascending: oldest first, newest at the bottom)
             allRows.sort((a,b) => {
@@ -618,11 +561,7 @@
                     return dateA - dateB;
                 }
                 
-                const timeA = (a.apptTime || '').toString().trim();
-                const timeB = (b.apptTime || '').toString().trim();
-                if (timeA === '-' && timeB !== '-') return 1;
-                if (timeB === '-' && timeA !== '-') return -1;
-                return timeA.localeCompare(timeB);
+                return BookingReadModel.timeToNumber(a.apptTime) - BookingReadModel.timeToNumber(b.apptTime);
             });
 
             document.getElementById('lastUpdated').textContent = `อัปเดต: ${new Date().toLocaleString('th-TH', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})} น.`;
@@ -712,28 +651,19 @@
 
     // ─── RENDER ───────────────────────────────────────────────────────────
     function isDamageJob(custType) {
-        const n = nh(custType);
-        return n.includes(nh('เคลม')) || n.includes(nh('ปัญหา')) ||
-               n.includes(nh('งานแก้')) || n.includes(nh('แก้')) || n.includes(nh('ในวัน'));
-    }
-
-    function isPaidStatus(n) {
-        return n.includes('ครบ') || n.includes('แล้ว') || n.includes('โอนเต็ม') || n.includes('จ่ายเต็ม');
+        const job = { customerType: custType };
+        return BookingReadModel.isClaimCustomerJob(job) || BookingReadModel.isFixCustomerJob(job);
     }
 
     function getPayStatusClass(s) {
-        const n = nh(s);
-        if (n.includes(nh('ค้างชำระ'))) return 'bg-rose-100 text-rose-700 border-rose-200';
-        if (n.includes(nh('มัดจำ')))    return 'bg-amber-100 text-amber-700 border-amber-200';
-        if (isPaidStatus(n)) return 'bg-green-100 text-green-700 border-green-200';
-        return 'bg-slate-100 text-slate-600 border-slate-200';
+        return BookingReadModel.getPaymentStatusColorClass(s);
     }
 
     function getRowClass(r) {
-        const n = nh(r.payStatus);
-        if (n.includes(nh('ค้างชำระ'))) return 'bg-rose-50 hover:bg-rose-100/70';
-        if (n.includes(nh('มัดจำ')))    return 'bg-amber-50 hover:bg-amber-100/70';
-        if (isPaidStatus(n)) return 'bg-green-50 hover:bg-green-100/70';
+        const cls = getPayStatusClass(r.payStatus);
+        if (cls.includes('rose')) return 'bg-rose-50 hover:bg-rose-100/70';
+        if (cls.includes('amber')) return 'bg-amber-50 hover:bg-amber-100/70';
+        if (cls.includes('emerald')) return 'bg-green-50 hover:bg-green-100/70';
         return 'bg-white hover:bg-slate-50';
     }
 
@@ -747,12 +677,12 @@
     }
 
     function hasPaymentProof(row) {
-        return Boolean(tv(row?.proof1, '') || tv(row?.proof2, ''));
+        return Boolean(row?.hasSlip);
     }
 
     function paymentProofIcon(row) {
         if (!hasPaymentProof(row)) return '';
-        const count = [row.proof1, row.proof2].filter(Boolean).length;
+        const count = normalizeProofList(row.proofs).length;
         return `
             <span class="payment-proof-icon" title="มีรูปหลักฐานการชำระเงิน ${count} รูป" aria-label="มีรูปหลักฐานการชำระเงิน">
                 <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -767,12 +697,12 @@
         const tfoot = document.getElementById('tableFoot');
 
         // Update summary cards
-        const normalRows  = rows.filter(r => !isDamageJob(r.custType));
+        const normalRows  = rows.filter(r => r.isSales);
         const damageRows  = rows.filter(r => isDamageJob(r.custType));
         const totalAmt    = normalRows.reduce((s,r) => s + r.amount, 0);
         const totalDisc   = rows.reduce((s,r) => s + r.discount, 0);
         const totalDamage = damageRows.reduce((s,r) => s + r.amount, 0);
-        const unpaidCount = rows.filter(r => nh(r.payStatus).includes(nh('ค้างชำระ'))).length;
+        const unpaidCount = rows.filter(r => getPayStatusClass(r.payStatus).includes('rose')).length;
         document.getElementById('statTotal').textContent    = rows.length.toLocaleString('th-TH');
         document.getElementById('statRevenue').textContent  = fmtMoney(totalAmt);
         document.getElementById('statDiscount').textContent = fmtMoney(totalDisc);
@@ -782,7 +712,7 @@
         filteredRows = rows;
 
         if (!rows.length) {
-            tbody.innerHTML = `<tr><td colspan="13" class="px-6 py-12 text-center text-slate-400 text-sm">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" class="px-6 py-12 text-center text-slate-400 text-sm">ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>`;
             tfoot.innerHTML = '';
             return;
         }
@@ -815,8 +745,8 @@
                 <td class="px-4 py-3 text-xs text-slate-700 whitespace-nowrap">${esc(r.payType)}</td>
                 <td class="px-4 py-3 text-xs text-right font-medium text-slate-900 whitespace-nowrap">${r.productVal > 0 ? fmt(r.productVal) : '-'}</td>
                 <td class="px-4 py-3 text-xs text-right whitespace-nowrap ${r.discount > 0 ? 'text-amber-700 font-semibold' : 'text-slate-400'}">${r.discount > 0 ? fmt(r.discount) : '-'}</td>
-                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${isDamageJob(r.custType) ? 'text-slate-300' : 'text-slate-900'}">${isDamageJob(r.custType) ? '-' : fmt(r.amount)}</td>
-                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${isDamageJob(r.custType) ? 'text-orange-700' : 'text-slate-300'}">${isDamageJob(r.custType) ? fmt(r.amount) : '-'}</td>
+                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${r.isSales ? 'text-slate-900' : 'text-slate-300'}">${r.isSales && r.amount > 0 ? fmt(r.amount) : '-'}</td>
+                <td class="px-4 py-3 text-sm text-right font-bold whitespace-nowrap ${isDamageJob(r.custType) ? 'text-orange-700' : 'text-slate-300'}">${isDamageJob(r.custType) && r.amount > 0 ? fmt(r.amount) : '-'}</td>
                 <td class="px-4 py-3 whitespace-nowrap">
                     <span class="rounded-md border px-2 py-0.5 text-[10px] font-semibold ${getPayStatusClass(r.payStatus)}">${esc(r.payStatus)}</span>
                 </td>
@@ -850,7 +780,7 @@
                     i+1, r.installDate, r.apptTime, r.custName, r.custType, r.carModel, r.plate,
                     r.installType, r.film, r.billNo, r.payType,
                     r.productVal, r.discount,
-                    dmg ? 0 : r.amount, dmg ? r.amount : 0,
+                    r.isSales ? r.amount : 0, dmg ? r.amount : 0,
                     r.payStatus
                 ];
             })
@@ -878,7 +808,7 @@ function openDrawer(idx) {
         const row = (label, value) => {
             if (!value || value === '-') return '';
             return `<div class="flex items-start gap-2 px-4 py-2">
-                <span class="w-36 shrink-0 text-xs font-semibold text-slate-400">${label}</span>
+                <span class="w-36 shrink-0 text-xs font-semibold text-slate-400">${esc(label)}</span>
                 <span class="text-xs text-slate-800">${esc(value)}</span>
             </div>`;
         };
@@ -905,12 +835,16 @@ function openDrawer(idx) {
             row('Job ID', r.jobId),
             row('วันที่ติดตั้ง', r.installDate),
             row('เวลานัด', r.apptTime !== '-' ? r.apptTime + ' น.' : '-'),
+            row('สถานะงาน', r.jobStatus),
             badge('พน.ขาย', r.sales, 'bg-blue-50 text-blue-700 border-blue-200'),
             row('ชื่อลูกค้า', r.custName),
             row('เบอร์โทร', r.custPhone),
+            row('ช่องทางติดต่อ', r.customerChannel),
+            row('ชื่อช่องทางติดต่อ', r.customerChannelName),
             badge('ประเภทลูกค้า', r.custType, getCustTypeClass(r.custType)),
             row('รุ่นรถยนต์', r.carModel),
             row('ทะเบียนรถ', r.plate),
+            row('ป้าย', r.plateType),
             row('ยี่ห้อฟิล์ม', r.film),
             row('ตำแหน่งติดตั้ง', r.installType),
             row('โปรโมชั่น', r.promotion),
@@ -930,60 +864,53 @@ function openDrawer(idx) {
             badge('สถานะการชำระ', r.payStatus, getPayStatusClass(r.payStatus)),
         ].join('');
         html += section('💳 การชำระเงิน', 'border-indigo-200',
-            r.hasPaymentInfo ? paymentItems : warningBox('ยังไม่มีข้อมูลการชำระเงินในชีต PayIn'));
+            paymentItems + (r.hasPaymentInfo ? '' : warningBox('ยังไม่มีข้อมูลการชำระเงินในชีต PayIn')));
 
         // ── หลักฐานการชำระเงิน ──
-        if (r.proof1 || r.proof2) {
-            const toImgUrl = url => {
-                if (!url) return '';
-                // กรณีที่เป็น Google Drive URL หรือ URL เต็ม
-                if (url.startsWith('http')) {
-                    if (url.includes('drive.google.com')) {
-                        const m = url.match(/[-\w]{25,}/);
-                        return m ? `https://lh3.googleusercontent.com/d/${m[0]}` : url;
-                    }
-                    return url;
-                }
-                
-                // สำหรับ Path ที่มาจาก AppSheet
-                let clean = url.replace(/\/\/+/g, '/');
-                if (clean.startsWith('/')) clean = clean.substring(1); 
-                
-                // ดึงชื่อ App จาก Path (โฟลเดอร์แรกสุด)
-                const appNameMatch = clean.match(/^([^\/]+)/);
-                const appName = appNameMatch ? appNameMatch[1] : 'CAR_CRM-691939189';
-                
-                // แปลง Path ของ Google Drive เป็นลิงก์ AppSheet API เพื่อให้เว็บดึงภาพมาแสดงได้
-                return `https://www.appsheet.com/template/gettablefileurl?appName=${encodeURIComponent(appName)}&tableName=PayIn&fileName=${encodeURIComponent(clean)}`;
-            };
-
-            const proofImgs = [r.proof1, r.proof2].filter(Boolean).map(url => {
-                const imgUrl = toImgUrl(url);
-                return `<a href="${esc(imgUrl)}" target="_blank" rel="noopener noreferrer">
-                    <img src="${esc(imgUrl)}" alt="หลักฐาน"
-                        class="rounded-lg border border-slate-200 object-cover w-full max-h-64 hover:opacity-90 transition-opacity"
-                        onerror="this.parentElement.innerHTML='<div class=\\'flex flex-col text-left\\'><span class=\\'text-xs text-red-400 font-semibold mb-1\\'>โหลดรูปไม่ได้</span><span class=\\'text-[10px] text-slate-400 break-all\\'>${esc(imgUrl)}</span></div>'">
+        if (normalizeProofList(r.proofs).length) {
+            const proofImgs = normalizeProofList(r.proofs).map(raw => {
+                const item = BookingReadModel.buildProofItem(raw);
+                if (item.type === 'path') return '<div class="text-xs text-slate-400">ไม่พบข้อมูลรูปภาพ</div>';
+                return `<a href="${esc(item.href)}" target="_blank" rel="noopener noreferrer" class="block rounded-lg border border-slate-200 p-2">
+                    ${item.type === 'image' ? `<img src="${esc(item.src)}" alt="หลักฐานการชำระเงิน" loading="lazy" referrerpolicy="no-referrer"
+                        class="object-contain w-full max-h-64 hover:opacity-90 transition-opacity"
+                        onerror="this.hidden=true;this.nextElementSibling.textContent='โหลดรูปไม่ได้ — คลิกเปิดหลักฐาน'">` : ''}
+                    <span class="block mt-1 text-xs text-indigo-600 underline">เปิดหลักฐาน</span>
                 </a>`;
             }).join('');
-            const cols = [r.proof1, r.proof2].filter(Boolean).length === 1 ? '1' : '2';
+            const cols = normalizeProofList(r.proofs).length === 1 ? 'grid-cols-1' : 'grid-cols-2';
             html += section('🧾 หลักฐานการโอนเงิน', 'border-teal-200',
-                `<div class="px-4 py-3 grid grid-cols-${cols} gap-3">${proofImgs}</div>`);
+                `<div class="px-4 py-3 grid ${cols} gap-3">${proofImgs}</div>`);
         }
 
-        // ── Warranty ──
-        const wRow = warantyMap[r.jobId] || warantyMap[normId(r.jobId)] || {};
-        const warrantyItems = [
-            r.warranty && r.warranty !== '-' ? row('รับประกันโดย', r.warranty) : null,
-            wRow['เลขที่ใบรับประกัน'] ? row('เลขที่ใบรับประกัน', tv(wRow['เลขที่ใบรับประกัน'], '')) : null,
-            wRow['ปีรับประกัน']       ? row('ปีรับประกัน',       tv(wRow['ปีรับประกัน'], ''))       : null,
-            wRow['วันที่เริ่ม']        ? row('วันที่เริ่ม',        tv(wRow['วันที่เริ่ม'], ''))        : null,
-            wRow['สิ้นสุด']           ? row('วันที่สิ้นสุด',      tv(wRow['สิ้นสุด'], ''))            : null,
-        ].filter(Boolean).join('');
+        // Related detail cards use the same source sheets as index.html.
+        const recordItems = (record, extraSkip = []) => Object.entries(record || {})
+            .filter(([key, value]) => !['jobid', 'วันที่ลงรายการ', 'วันลงรายการ', 'timestamp', 'createdat', 'updatedat', ...extraSkip].includes(nh(key)) && tv(value, '') && tv(value, '') !== '-')
+            .map(([key, value]) => row(key, tv(value, ''))).join('');
+        html += section('🎞️ รายละเอียดฟิล์ม', 'border-sky-200',
+            recordItems(r.detailRow) || warningBox('ยังไม่มีข้อมูลรายละเอียดฟิล์ม'));
+        html += section('📐 ขนาดกระจก', 'border-slate-200',
+            recordItems(glassMap[normId(r.jobId)], ['szid']) || warningBox('ยังไม่มีข้อมูลขนาดกระจก'));
+        const installerRows = installerMap[normId(r.jobId)] || [];
+        html += section('👷 ทีมช่างติดตั้ง', 'border-orange-200',
+            installerRows.map(record => '<div class="py-2">' + recordItems(record, ['insid']) + '</div>').join('') || warningBox('ยังไม่มีข้อมูลทีมช่างติดตั้ง'));
+        const wRow = warantyMap[r.jobId] || warantyMap[normId(r.jobId)];
         html += section('🛡️ การรับประกัน', 'border-green-200',
-            warrantyItems || warningBox('ยังไม่มีข้อมูลการรับประกัน กรุณาตรวจสอบชีตการรับประกัน'));
+            row('รับประกันโดย', r.warranty) + (recordItems(wRow, ['waid', 'ทะเบียนรถ', 'ทะเบียน']) || warningBox('ยังไม่มีข้อมูลการรับประกัน กรุณาตรวจสอบชีตการรับประกัน')));
 
         // ── data sheet rows ──
-        const dataRows = r.dataRows || [];
+        const seenData = new Set();
+        const dataRows = (r.dataRows || []).filter(record => {
+            const id = fv(record, ['MIS_ID'], '') || JSON.stringify(record);
+            if (seenData.has(id)) return false;
+            seenData.add(id);
+            return true;
+        });
+        const reasonText = record => {
+            const code = fv(record, ['เหตุผลขอตัดฟิล์ม', 'เหตุผล'], '-');
+            const reason = cutReasonMap[code] || cutReasonMap[normId(code)];
+            return reason ? fv(reason, ['เหตุผลขอตัดฟิล์ม', 'เหตุผล'], code) : code;
+        };
         const dataContent = dataRows.length ? `
             <div class="overflow-x-auto">
                 <table class="min-w-full text-left text-xs">
@@ -1008,7 +935,7 @@ function openDrawer(idx) {
                                 <td class="px-3 py-2 text-center text-slate-700">${esc(fv(d, ['ยาว','H','h'], '-'))}</td>
                                 <td class="px-3 py-2 text-center font-semibold text-slate-900">${esc(fv(d, ['จำนวน','แผ่น'], '-'))}</td>
                                 <td class="px-3 py-2 text-slate-700">${esc(fv(d, ['ทีมช่าง','ช่าง'], '-'))}</td>
-                                <td class="px-3 py-2 text-slate-700">${esc(fv(d, ['เหตุผลขอตัดฟิล์ม','เหตุผล'], '-'))}</td>
+                                <td class="px-3 py-2 text-slate-700">${esc(reasonText(d))}</td>
                                 <td class="px-3 py-2 text-slate-500">${esc(fv(d, ['หมายเหตุ','Note','note'], '-'))}</td>
                             </tr>
                         `).join('')}

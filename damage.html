@@ -27,18 +27,38 @@
             display: flex;
         }
 
+        .damage-table {
+            width: 100%;
+        }
+
         .damage-table th,
         .damage-table td {
             vertical-align: top;
+            padding-left: 20px;
+            padding-right: 20px;
         }
 
         .damage-table th {
             white-space: nowrap;
+            width: 1%;
+            letter-spacing: normal;
+        }
+
+        .damage-table th:last-child {
+            width: auto;
+            min-width: 320px;
+        }
+
+        .damage-table .reason-cell {
+            min-width: 320px;
+            white-space: nowrap;
+            overflow-wrap: normal;
         }
 
         .damage-table td {
             color: #0f172a;
             line-height: 1.25;
+            white-space: nowrap;
         }
 
         .damage-table .group-row td {
@@ -412,14 +432,17 @@
                 <button onclick="fetchDamageData()" class="mt-4 rounded-lg bg-slate-800 px-4 py-2 text-sm text-white hover:bg-slate-700">ลองใหม่อีกครั้ง</button>
             </div>
 
+            <p class="px-6 py-2 text-xs text-slate-500">นับรถตามทะเบียนไม่ซ้ำ และยอดความเสียหายแต่ละ JOB ครั้งเดียว • ยอดแยกช่าง/ฟิล์มและตัวกรองแบ่งตามพื้นที่เสียหาย (หากไม่มีพื้นที่ แบ่งเท่ากันตามรายการ)</p>
             <div id="tableWrap" class="hidden overflow-x-auto">
                 <table class="damage-table min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-100">
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">วันติดตั้ง</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ประเภท</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ลูกค้า / JobID</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ข้อมูลรถ</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 w-36">ประเภท / ฟิล์ม</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ตำแหน่ง</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ฟิล์ม</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">Sqf.เสียหาย</th>
                             <th scope="col" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600">มูลค่าความเสียหาย</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600">ช่าง</th>
@@ -1224,14 +1247,26 @@
                 const installersForJob = installerGroups[normalizeLookupId(jobId)] || findRowsByRecordId(installerRows, jobId);
                 const installerNames = getInstallerNames(installersForJob || [], installerNameMap);
 
-                return details.map(detail => {
+                const sizes = details.map(detail => getDamageSizeInfoFromData(detail, booking));
+                const totalSqf = sizes.reduce((sum, size) => sum + Math.max(size.sqf || 0, 0), 0);
+                const bookingDamage = parseNumber(findField(booking, ['ยอดขาย (บาท)', 'ยอดขาย', 'มูลค่าสินค้า']));
+                let allocatedCents = 0;
+                let cumulativeWeight = 0;
+                return details.map((detail, detailIndex) => {
                     const dateText = findField(booking, ['วันที่ติดตั้ง', 'วันที่']);
                     const date = parseDamageDate(dateText);
                     const reasonId = detail ? findField(detail, ['เหตุผลขอตัดฟิล์ม', 'เหตุผล']) : '';
                     const reasonText = translateReason(reasonId);
                     const position = getDamagePosition(detail);
-                    const sizeInfo = getDamageSizeInfoFromData(detail, booking);
-                    const damageValue = parseNumber(findField(booking, ['ยอดขาย (บาท)', 'ยอดขาย', 'มูลค่าสินค้า']));
+                    const sizeInfo = sizes[detailIndex];
+                    // Allocate the booking amount once and preserve its total to the cent.
+                    const weight = totalSqf > 0 ? Math.max(sizeInfo.sqf || 0, 0) / totalSqf : 1 / details.length;
+                    cumulativeWeight += weight;
+                    const cents = detailIndex === details.length - 1
+                        ? Math.round(bookingDamage * 100) - allocatedCents
+                        : Math.round(bookingDamage * 100 * cumulativeWeight) - allocatedCents;
+                    allocatedCents += cents;
+                    const damageValue = cents / 100;
                     const item = {
                         monthText: monthLabelFromDate(date),
                         dateText,
@@ -1338,15 +1373,20 @@
             return 'other';
         }
 
+        function vehicleKey(row) {
+            const plate = textValue(row.plate).normalize('NFKC').replace(/[\s\-–—]+/g, '').toLowerCase();
+            return plate && !['ไม่ระบุ', 'ไม่มี', 'ไม่ทราบ'].includes(plate)
+                ? `plate:${plate}` : `job:${normalizeLookupId(row.jobId)}`;
+        }
+
         function summarizeDamageType(rows) {
             return rows.reduce((summary, row) => {
-                summary.count += 1;
                 summary.damage += row.damageValue;
                 if (typeof row.sqf === 'number' && Number.isFinite(row.sqf) && row.sqf > 0) {
                     summary.sqf += row.sqf;
                 }
                 return summary;
-            }, { count: 0, damage: 0, sqf: 0 });
+            }, { count: new Set(rows.map(vehicleKey)).size, damage: 0, sqf: 0 });
         }
 
         function formatSqfValue(value) {
@@ -1366,22 +1406,19 @@
         }
 
         function aggregateByField(rows, field) {
-            const map = {};
+            const map = new Map();
             rows.forEach(row => {
                 const key = row[field] || '-';
                 if (key === '-') return;
-                if (!map[key]) map[key] = { count: 0, damage: 0, sqf: 0, claimCount: 0, repairCount: 0 };
-                map[key].count += 1;
-                map[key].damage += row.damageValue;
-                const kind = getCustomerTypeKind(row.customerType);
-                if (kind === 'claim') map[key].claimCount += 1;
-                if (kind === 'repair') map[key].repairCount += 1;
-                if (typeof row.sqf === 'number' && Number.isFinite(row.sqf) && row.sqf > 0) {
-                    map[key].sqf += row.sqf;
-                }
+                if (!map.has(key)) map.set(key, []);
+                map.get(key).push(row);
             });
-            return Object.entries(map)
-                .map(([name, data]) => ({ name, ...data }))
+            return [...map]
+                .map(([name, items]) => ({
+                    name, ...summarizeDamageType(items),
+                    claimCount: summarizeDamageType(items.filter(row => getCustomerTypeKind(row.customerType) === 'claim')).count,
+                    repairCount: summarizeDamageType(items.filter(row => getCustomerTypeKind(row.customerType) === 'repair')).count
+                }))
                 .sort((a, b) => b.damage - a.damage);
         }
 
@@ -1478,42 +1515,55 @@
             renderSummary(rows);
 
             if (!rows.length) {
-                dom.damageTableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-slate-500">ไม่พบรายการ Mistake ตามเงื่อนไขที่เลือก</td></tr>';
+                dom.damageTableBody.innerHTML = '<tr><td colspan="10" class="px-6 py-10 text-center text-slate-500">ไม่พบรายการ Mistake ตามเงื่อนไขที่เลือก</td></tr>';
                 return;
             }
 
-            const groups = rows.reduce((map, row) => {
-                if (!map[row.monthKey]) map[row.monthKey] = [];
-                map[row.monthKey].push(row);
-                return map;
-            }, {});
+            const groups = new Map();
+            rows.forEach(row => {
+                const key = vehicleKey(row);
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(row);
+            });
 
-            dom.damageTableBody.innerHTML = Object.entries(groups).map(([monthKey, groupRows]) => {
-                const label = groupRows[0]?.monthText || monthKey;
-                const body = groupRows.map(row => {
+            dom.damageTableBody.innerHTML = [...groups.values()].map(groupRows => {
+                const vehicleTotal = summarizeDamageType(groupRows);
+                const jobs = new Map();
+                groupRows.forEach(row => {
+                    const key = normalizeLookupId(row.jobId);
+                    if (!jobs.has(key)) jobs.set(key, []);
+                    jobs.get(key).push(row);
+                });
+                groupRows = [...jobs.values()].flat();
+                const body = groupRows.map((row, index) => {
+                    const jobKey = normalizeLookupId(row.jobId);
+                    const isFirstJobRow = index === 0 || normalizeLookupId(groupRows[index - 1].jobId) !== jobKey;
+                    const jobRowCount = jobs.get(jobKey).length;
                     const detailClass = row.hasDetail ? 'hover:bg-blue-50/40' : 'bg-yellow-50 hover:bg-yellow-100';
                     return `
-                    <tr class="${detailClass}">
-                        <td class="whitespace-nowrap px-6 py-2">
+                    <tr class="${detailClass} ${index === 0 ? 'border-t border-slate-200' : ''}">
+                        ${isFirstJobRow ? `<td rowspan="${jobRowCount}" class="whitespace-nowrap px-6 py-2">
                             <div class="text-sm font-medium text-slate-900">${escapeHtml(row.dateText)}</div>
-                            <div class="text-sm text-slate-500">${escapeHtml(row.monthText)}</div>
                         </td>
-                        <td class="px-6 py-2">
+                        <td rowspan="${jobRowCount}" class="whitespace-nowrap px-6 py-2">
+                            ${renderCustomerTypeBadge(row.customerType)}
+                        </td>
+                        <td rowspan="${jobRowCount}" class="px-6 py-2">
                             <div class="whitespace-nowrap text-sm font-semibold text-slate-900">${escapeHtml(row.customerName)}</div>
                             <div class="mt-0.5 whitespace-nowrap text-xs font-medium text-blue-700">${escapeHtml(row.jobId)}</div>
-                        </td>
-                        <td class="px-6 py-2">
-                            <div class="whitespace-nowrap text-sm font-medium text-slate-900">${escapeHtml(row.plate || '-')}</div>
-                            <div class="mt-0.5 text-xs text-slate-500">${escapeHtml(row.carModel || '-')}</div>
-                        </td>
-                        <td class="px-6 py-2 w-36 max-w-[9rem]">
-                            ${renderCustomerTypeBadge(row.customerType)}
-                            <div class="mt-0.5 text-xs font-semibold text-slate-600 truncate" title="${escapeHtml(row.film || '-')}">${escapeHtml(row.film || '-')}</div>
+                        </td>` : ''}
+                        ${index === 0 ? `<td rowspan="${groupRows.length}" class="px-6 py-2 bg-slate-50/50">
+                            <div class="whitespace-nowrap text-sm font-semibold text-slate-900">${escapeHtml(row.plate || 'ไม่ระบุทะเบียน')}</div>
+                            <div class="mt-0.5 text-xs text-slate-500">${escapeHtml([...new Set(groupRows.map(item => item.carModel || '-'))].join(', '))}</div>
+                        </td>` : ''}
+                        <td class="px-6 py-2 text-sm text-slate-700">${escapeHtml(row.position || '-')}</td>
+                        <td class="px-6 py-2 whitespace-nowrap">
+                            <div class="mt-0.5 text-xs font-semibold text-slate-600">${escapeHtml(row.film || '-')}</div>
                         </td>
                         <td class="whitespace-nowrap px-6 py-2 text-right text-sm text-slate-700">${renderSqfCell(row.sqf, row.glassSize)}</td>
-                        <td class="money-cell whitespace-nowrap px-6 py-2 text-right text-sm">฿${formatMoney(row.damageValue)}</td>
+                        ${index === 0 ? `<td rowspan="${groupRows.length}" class="money-cell whitespace-nowrap px-6 py-2 text-right text-sm bg-slate-50/50">฿${formatMoney(vehicleTotal.damage)}</td>` : ''}
                         <td class="whitespace-nowrap px-6 py-2 text-sm">${renderInstallerCell(row.installer)}</td>
-                        <td class="px-6 py-2">
+                        <td class="reason-cell px-6 py-2">
                             <div class="text-sm text-red-600">${escapeHtml(row.reasonText)}</div>
                             ${hasDisplayText(row.note) ? `<div class="mt-0.5 text-xs text-slate-500">${escapeHtml(row.note)}</div>` : ''}
                         </td>
@@ -1525,7 +1575,7 @@
             }).join('');
 
             // Grand total row
-            const totalCount = rows.length;
+            const totalCount = summarizeDamageType(rows).count;
             const totalSqf = rows.reduce((sum, row) => (
                 typeof row.sqf === 'number' && Number.isFinite(row.sqf) && row.sqf > 0 ? sum + row.sqf : sum
             ), 0);
@@ -1533,7 +1583,7 @@
 
             dom.damageTableBody.innerHTML += `
                 <tr class="border-t-2 border-slate-300 bg-slate-100 font-bold">
-                    <td colspan="4" class="px-6 py-3 text-sm text-slate-800">
+                    <td colspan="6" class="px-6 py-3 text-sm text-slate-800">
                         รวมทั้งหมด <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-800">${totalCount} คัน</span>
                     </td>
                     <td class="whitespace-nowrap px-6 py-3 text-right text-sm text-slate-800">
