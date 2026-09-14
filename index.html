@@ -6196,7 +6196,7 @@
         async function verifyPayInBackendVersion() {
             if (!PAYIN_SCRIPT_URL) throw new Error('ยังไม่ได้ตั้งค่า PayIn API');
             if (!payInBackendVersionPromise) {
-                payInBackendVersionPromise = fetch(`${PAYIN_SCRIPT_URL}?backendCheck=${Date.now()}`, { cache: 'no-store' })
+                payInBackendVersionPromise = fetch(`${PAYIN_SCRIPT_URL}?driveCheck=1&backendCheck=${Date.now()}`, { cache: 'no-store' })
                     .then(async response => {
                         const text = await response.text();
                         let data = null;
@@ -6205,6 +6205,9 @@
                         if (data.backendVersion !== PAYIN_REQUIRED_BACKEND_VERSION) {
                             throw new Error('Apps Script Web App ยังเป็นเวอร์ชันเก่า กรุณา Deploy เป็น New version ก่อนบันทึกรูป PayIn');
                         }
+                        if (!data.drive || data.drive.ready !== true) {
+                            throw new Error('ระบบรูป PayIn ยังเข้าถึงโฟลเดอร์ Google Drive ไม่ได้ กรุณาตรวจสิทธิ์ใน Apps Script ที่ตรงกับ PAYIN_SCRIPT_URL แล้วลองอีกครั้ง');
+                        }
                         return data;
                     })
                     .catch(error => {
@@ -6212,7 +6215,12 @@
                         throw error;
                     });
             }
-            return payInBackendVersionPromise;
+            try {
+                return await payInBackendVersionPromise;
+            } finally {
+                // Recheck on the next save: Drive permissions can change while the page is open.
+                payInBackendVersionPromise = null;
+            }
         }
 
         function generateSizeId() {
