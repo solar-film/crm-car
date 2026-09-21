@@ -112,6 +112,41 @@
         .stats-paired-card-header {
             min-height: 88px;
         }
+
+        .first-known-report-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            min-width: max-content;
+        }
+
+        .first-known-report-table th,
+        .first-known-report-table td {
+            height: 42px;
+            min-width: 58px;
+            border-right: 1px solid rgba(15, 23, 42, 0.06);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            padding: 0 0.75rem;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .first-known-report-table .source-column {
+            left: 0;
+            min-width: 190px;
+            max-width: 240px;
+            text-align: left;
+        }
+
+        .first-known-report-table .total-column {
+            right: 0;
+            min-width: 76px;
+            border-right: 0;
+        }
+
+        .first-known-report-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
     </style>
     <script src="sidebar.js" defer></script>
 </head>
@@ -242,16 +277,32 @@
 
                 <!-- Daily Trend Line Chart (Full Width on Desktop) -->
                 <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-                    <div class="mb-5 flex items-center justify-between">
+                    <button id="dailyTrendToggle" type="button" aria-expanded="false" aria-controls="dailyTrendPanel" onclick="toggleDailyTrend()" class="flex w-full items-center justify-between gap-4 text-left">
                         <div>
                             <h2 class="text-lg font-bold text-slate-900">แนวโน้มรายวัน (แยกช่องทาง)</h2>
                             <p class="text-sm text-slate-500 mt-0.5">รายละเอียดจำนวนการติดต่อแต่ละช่องทาง และยอดรวมในแต่ละวัน</p>
                         </div>
-                        <i data-lucide="trending-up" class="h-5 w-5 text-slate-400"></i>
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100" title="เปิดหรือซ่อนกราฟ">
+                            <i id="dailyTrendChevron" data-lucide="chevron-down" class="h-5 w-5 transition-transform duration-200"></i>
+                        </span>
+                    </button>
+                    <div id="dailyTrendPanel" class="hidden pt-5" aria-hidden="true">
+                        <div class="relative min-h-[350px] w-full">
+                            <canvas id="dailyTrendChart"></canvas>
+                        </div>
                     </div>
-                    <div class="relative min-h-[350px] w-full">
-                        <canvas id="dailyTrendChart"></canvas>
+                </div>
+
+                <!-- First-known Daily Report -->
+                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
+                    <div class="flex flex-col gap-1 border-b border-slate-200 bg-slate-50/50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">รู้จักครั้งแรก <span class="text-rose-500">*</span> รายวัน</h2>
+                            <p class="mt-0.5 text-sm text-slate-500">จำนวนลูกค้าจากชีต Customer แยกตามวันที่บันทึก</p>
+                        </div>
+                        <p id="firstKnownReportPeriod" class="text-sm font-medium text-slate-500"></p>
                     </div>
+                    <div id="firstKnownDailyReport" class="custom-scrollbar overflow-x-auto"></div>
                 </div>
             </section>
 
@@ -420,6 +471,8 @@
             'loginForm', 'loginUser', 'loginPass', 'loginError',
             'monthFilter', 'lastUpdated', 'loadingMessage', 'errorMessage', 'content',
             'channelRanking', 'monthlyBarChart', 'dailyTrendChart', 'tableSummary', 'tableBody',
+            'dailyTrendToggle', 'dailyTrendPanel',
+            'firstKnownReportPeriod', 'firstKnownDailyReport',
             'bookingChannelSummaryPeriod', 'bookingChannelSummaryList',
             'addStatsModal', 'addStatsModalTitle', 'addStatsModalSubtitle', 'addStatsForm', 'addStatsStatus', 'statsDate', 'statsRecorder',
             'statsPhone', 'statsLine', 'statsFb', 'statsTiktok', 'statsWalkin', 'statsNote',
@@ -429,6 +482,7 @@
         let rows = [];
         let bookings = [];
         let customers = [];
+        let customerAcquisitions = [];
         let sheetName = CONTACT_SHEET_NAMES[0];
         let appHasStarted = false;
         let dailyChartInstance = null;
@@ -753,7 +807,7 @@
             const currentMonth = monthKeyFromDate(new Date());
             const current = dom.monthFilter.value || currentMonth;
             
-            const months = [...new Map([...rows, ...bookings].map(row => [row.monthKey, monthLabel(row.monthKey)])).entries()]
+            const months = [...new Map([...rows, ...bookings, ...customerAcquisitions].map(row => [row.monthKey, monthLabel(row.monthKey)])).entries()]
                 .sort((a, b) => b[0].localeCompare(a[0])); // Sort descending usually, but localeCompare does asc string. For YYYY-MM b[0] vs a[0] does desc.
                 
             dom.monthFilter.innerHTML = '<option value="">ทุกเดือน (ตลอดกาล)</option>' + months
@@ -821,6 +875,97 @@
                 map[normalizeText(custId)] = [channel, channelName].filter(Boolean).join(' : ') || 'ไม่ระบุ';
                 return map;
             }, {});
+        }
+
+        function buildCustomerAcquisitions(rowsData) {
+            return rowsData.map((row, index) => {
+                const dateRaw = findField(row, ['วันที่บันทึก', 'วันที่ลงทะเบียน', 'วันที่สร้าง', 'Date']);
+                const date = parseDate(dateRaw);
+                const source = textValue(findField(row, ['รู้จักครั้งแรก *', 'รู้จักครั้งแรก', 'First Known', 'FirstKnown']), 'ไม่ระบุ');
+                return {
+                    id: findField(row, ['CustID', 'Customer ID', 'รหัสลูกค้า']) || `customer-${index}`,
+                    source,
+                    date,
+                    monthKey: monthKeyFromDate(date)
+                };
+            }).filter(item => item.date);
+        }
+
+        function renderFirstKnownDailyReport() {
+            if (!dom.firstKnownDailyReport) return;
+
+            const month = dom.monthFilter.value;
+            const data = customerAcquisitions.filter(item => !month || item.monthKey === month);
+            dom.firstKnownReportPeriod.textContent = month
+                ? `${monthLabel(month)} • ${formatCount(data.length)} ลูกค้า`
+                : `ทุกเดือน • ${formatCount(data.length)} ลูกค้า`;
+
+            if (!data.length) {
+                dom.firstKnownDailyReport.innerHTML = `
+                    <div class="px-6 py-10 text-center text-sm text-slate-500">
+                        ไม่มีข้อมูลรู้จักครั้งแรกในช่วงที่เลือก
+                    </div>
+                `;
+                return;
+            }
+
+            const dates = [...new Map(data.map(item => [dateKey(item.date), item.date])).entries()]
+                .sort((a, b) => a[1] - b[1]);
+            const dateTotals = Object.fromEntries(dates.map(([key]) => [key, 0]));
+            const sourceMap = {};
+
+            data.forEach(item => {
+                const key = dateKey(item.date);
+                if (!sourceMap[item.source]) {
+                    sourceMap[item.source] = {
+                        label: item.source,
+                        total: 0,
+                        byDate: Object.fromEntries(dates.map(([dateKeyValue]) => [dateKeyValue, 0]))
+                    };
+                }
+                sourceMap[item.source].byDate[key] += 1;
+                sourceMap[item.source].total += 1;
+                dateTotals[key] += 1;
+            });
+
+            const sources = Object.values(sourceMap)
+                .sort((a, b) => b.total - a.total || a.label.localeCompare(b.label, 'th'));
+            const dateHeader = dates.map(([, date]) => `
+                <th class="bg-slate-100 text-slate-600">
+                    <span class="block text-sm font-bold text-slate-800">${date.getDate().toLocaleString('th-TH')}</span>
+                    <span class="block whitespace-nowrap text-[10px] font-medium">${escapeHtml(date.toLocaleDateString('th-TH', { month: 'short' }))}</span>
+                </th>
+            `).join('');
+            const rowsHtml = sources.map(source => `
+                <tr class="group hover:bg-blue-50/40">
+                    <td class="source-column sticky z-10 bg-white text-sm font-medium text-slate-700 group-hover:bg-blue-50">${escapeHtml(source.label)}</td>
+                    ${dates.map(([key]) => {
+                        const value = source.byDate[key] || 0;
+                        return `<td class="text-sm ${value ? 'bg-blue-50/40 font-semibold text-slate-800' : 'text-slate-300'}">${value ? formatCount(value) : '-'}</td>`;
+                    }).join('')}
+                    <td class="total-column sticky z-10 bg-slate-50 text-sm font-bold text-blue-700 group-hover:bg-blue-50">${formatCount(source.total)}</td>
+                </tr>
+            `).join('');
+
+            dom.firstKnownDailyReport.innerHTML = `
+                <table class="first-known-report-table text-sm" aria-label="รายงานรู้จักครั้งแรกรายวัน">
+                    <thead>
+                        <tr>
+                            <th class="source-column sticky z-20 bg-slate-100 text-xs font-bold text-slate-600">รู้จักครั้งแรก</th>
+                            ${dateHeader}
+                            <th class="total-column sticky z-20 bg-slate-100 text-xs font-bold text-slate-700">รวม</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                        <tr class="bg-blue-50/80">
+                            <td class="source-column sticky z-10 bg-blue-50 text-sm font-bold text-blue-800">รวมรายวัน</td>
+                            ${dates.map(([key]) => `<td class="text-sm font-bold text-blue-800">${formatCount(dateTotals[key])}</td>`).join('')}
+                            <td class="total-column sticky z-10 bg-blue-100 text-sm font-bold text-blue-800">${formatCount(data.length)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
         }
 
         function isActiveBooking(item) {
@@ -1243,6 +1388,8 @@
                 }
             });
 
+            renderFirstKnownDailyReport();
+
             // Table Body
             if (!alignedRowsByDate.length) {
                 dom.tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-12 text-center text-slate-500"><i data-lucide="inbox" class="mx-auto mb-3 h-8 w-8 text-slate-300"></i> ไม่พบข้อมูลสถิติตามตัวกรองที่เลือก</td></tr>`;
@@ -1305,6 +1452,24 @@
         function todayInputValue() {
             const now = new Date();
             return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        }
+
+        function setDailyTrendExpanded(expanded) {
+            dom.dailyTrendToggle.setAttribute('aria-expanded', String(expanded));
+            dom.dailyTrendPanel.setAttribute('aria-hidden', String(!expanded));
+            dom.dailyTrendPanel.classList.toggle('hidden', !expanded);
+
+            const chevron = document.getElementById('dailyTrendChevron');
+            chevron?.classList.toggle('rotate-180', expanded);
+
+            if (expanded && dailyChartInstance) {
+                requestAnimationFrame(() => dailyChartInstance.resize());
+            }
+        }
+
+        function toggleDailyTrend() {
+            const isExpanded = dom.dailyTrendToggle.getAttribute('aria-expanded') === 'true';
+            setDailyTrendExpanded(!isExpanded);
         }
 
         function dateToInputValue(date) {
@@ -1498,6 +1663,7 @@
                 rows = await parseCsvDataRobust(result.text);
                 bookings = bookingText ? buildBookings(await parseCsvRows(bookingText)) : [];
                 customers = customerText ? await parseCsvRows(customerText) : [];
+                customerAcquisitions = buildCustomerAcquisitions(customers);
                 
                 populateMonthFilter();
                 renderStats();
