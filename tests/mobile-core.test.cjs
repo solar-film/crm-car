@@ -39,7 +39,7 @@ const customers = [
 ];
 const payIns = [
   { Pay_ID: 'PAY-OLD', JobID: 'JOB-1', 'สถานะ': 'มัดจำ', 'ยอดเงิน(บาท)': '1000' },
-  { Pay_ID: 'PAY-NEW', JobID: ' JOB-1 ', 'สถานะ': 'ชำระครบ', 'ยอดเงิน(บาท)': '5500', 'หลักฐาน_1': 'CAR_CRM-691939189/Images/Pay_In/a.jpg' }
+  { Pay_ID: 'PAY-NEW', JobID: ' JOB-1 ', 'สถานะ': 'ชำระครบ', 'ยอดเงิน(บาท)': '5500', 'หลักฐาน_1': 'CAR_CRM-691939189/Images/Pay_In/a.jpg', 'หลักฐาน_4': 'CAR_CRM-691939189/Images/Pay_In/d.jpg' }
 ];
 
 const appointments = Core.buildAppointments(bookings, customers, payIns);
@@ -48,6 +48,7 @@ assert.deepEqual(appointments.map(item => item.id), ['JOB-1', 'JOB-2'], 'appoint
 assert.equal(appointments[0].customerName, 'คุณหนึ่ง');
 assert.equal(appointments[0].payIn.id, 'PAY-NEW', 'latest normalized PayIn row wins');
 assert.equal(appointments[0].payIn.hasProof, true);
+assert.equal(appointments[0].payIn.proofs[3], 'CAR_CRM-691939189/Images/Pay_In/d.jpg');
 assert.equal(Core.paymentKind(appointments[0].payIn), 'paid');
 assert.equal(Core.statusKind(appointments[0].status), 'done');
 assert.equal(Core.filterAppointments(appointments, '2026-08-29', 'ขข 22')[0].id, 'JOB-2');

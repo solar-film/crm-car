@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const PAYIN_HEADERS = [
   'Pay_ID', 'JobID', 'สถานะ', 'ใบเสนอราคา', 'เลขที่บิล/ใบเสร็จ', 'ประเภทการชำระ',
-  'ยอดเงิน(บาท)', 'หมายเหตุ', 'หลักฐาน_1', 'หลักฐาน_2', 'วันที่บันทึกรายการ'
+  'ยอดเงิน(บาท)', 'หมายเหตุ', 'หลักฐาน_1', 'หลักฐาน_2', 'หลักฐาน_3', 'หลักฐาน_4', 'วันที่บันทึกรายการ'
 ];
 
 class RangeMock {
@@ -29,7 +29,7 @@ class RangeMock {
     values.forEach((rowValues, rowOffset) => rowValues.forEach((value, columnOffset) => {
       const rowIndex = this.row - 1 + rowOffset;
       const columnIndex = this.column - 1 + columnOffset;
-      if (this.sheet.ignoreProofWrites && (columnIndex === 8 || columnIndex === 9)) return;
+      if (this.sheet.ignoreProofWrites && columnIndex >= 8 && columnIndex <= 11) return;
       while (!this.sheet.rows[rowIndex]) this.sheet.rows[rowIndex] = [];
       this.sheet.rows[rowIndex][columnIndex] = value;
     }));
@@ -168,7 +168,7 @@ function call(runtime, payload, contentLength) {
 const runtime = createRuntime();
 const health = JSON.parse(runtime.doGet().text);
 assert.equal(health.status, 'API ready');
-assert.match(health.backendVersion, /^2026-08-30-payin-proof-confirmed$/);
+assert.match(health.backendVersion, /^2026-09-23-payin-four-proofs$/);
 const driveHealth = JSON.parse(runtime.doGet({ parameter: { driveCheck: '1' } }).text);
 assert.deepEqual(driveHealth.drive, { ready: true });
 
@@ -202,8 +202,8 @@ assert.equal(runtime.sheet.rows[1][2], 'ชำระครบ', 'stale record id
 
 const duplicateRuntime = createRuntime();
 duplicateRuntime.sheet.rows.push(
-  ['PAY-A', 'JOB-DUP', 'มัดจำ', '', '', '', 100, '', '', '', ''],
-  ['PAY-B', 'JOB-DUP', 'ชำระครบ', '', '', '', 200, '', '', '', '']
+  ['PAY-A', 'JOB-DUP', 'มัดจำ', '', '', '', 100, '', '', '', '', '', ''],
+  ['PAY-B', 'JOB-DUP', 'ชำระครบ', '', '', '', 200, '', '', '', '', '', '']
 );
 const duplicateJob = call(duplicateRuntime, {
   action: 'upsertPayIn', sheetName: 'PayIn', JobID: 'JOB-DUP', token: 'secret', 'ยอดเงิน(บาท)': '999'
@@ -244,6 +244,21 @@ assert.equal(duplicate.success, true);
 assert.equal(duplicate.reused, true);
 assert.equal(duplicate.verified, true);
 assert.equal(runtime.folder.files.filter(file => !file.trashed).length, 1, 'same request id never creates another file');
+
+const fourthRequestId = 'abcdef12-1234-4123-8123-1234567890ab';
+const fourthProof = call(runtime, {
+  action: 'attachPayInProof', sheetName: 'PayIn', recordId: insert.id, JobID: 'JOB-1',
+  slot: 4, mimeType: 'image/jpeg', base64: jpeg, clientRequestId: fourthRequestId, token: 'secret'
+});
+assert.equal(fourthProof.success, true);
+assert.equal(runtime.sheet.rows[1][11], fourthProof.relativePath, 'fourth proof is stored in หลักฐาน_4');
+
+const fifthProof = call(runtime, {
+  action: 'attachPayInProof', sheetName: 'PayIn', recordId: insert.id, JobID: 'JOB-1',
+  slot: 5, mimeType: 'image/jpeg', base64: jpeg, clientRequestId: requestId, token: 'secret'
+});
+assert.equal(fifthProof.success, false);
+assert.match(fifthProof.error, /ตำแหน่งรูปหลักฐานไม่ถูกต้อง/);
 
 const proofWriteFailureRuntime = createRuntime();
 const proofWriteFailureInsert = call(proofWriteFailureRuntime, {

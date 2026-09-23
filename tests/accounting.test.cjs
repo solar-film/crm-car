@@ -92,7 +92,7 @@ function csv(text) {
     await checkParity({
         Bookings: [booking('JOB-1'), booking('JOB-2', 'ลูกค้าเก่า', {'เลขที่บิล/ใบเสร็จ': 'BOOKING-BILL', 'ประเภทการชำระ': 'เงินสด'}), booking('JOB-CANCEL', 'ลูกค้าใหม่', { Status: 'ยกเลิก' }), booking('JOB-CLAIM', 'ลูกค้าเคลม'), booking('JOB-FIX', 'งานแก้'), booking('JOB-UNKNOWN', 'อื่น ๆ')],
         Customer: [{ CustID: 'C1', 'ชื่อลูกค้า': 'Fixture', 'เบอร์โทร': '000', 'ช่องทางติดต่อ': 'Line' }, { CustID: 'C1', 'ชื่อลูกค้า': '', 'เบอร์โทร': '' }],
-        PayIn: [{ JobID: 'JOB-1', 'สถานะ': 'ชำระครบ', 'เลขที่บิล/ใบเสร็จ': 'CV-TEST', 'ประเภทการชำระ': 'โอน', 'ยอดเงิน(บาท)': '500', 'หลักฐาน_1': 'CAR_CRM-691939189/Images/slip.jpg' }, { JobID: 'JOB-1', 'สถานะ': '', 'เลขที่บิล/ใบเสร็จ': '', 'หลักฐาน_1': '', 'หลักฐาน_2': '' }],
+        PayIn: [{ JobID: 'JOB-1', 'สถานะ': 'ชำระครบ', 'เลขที่บิล/ใบเสร็จ': 'CV-TEST', 'ประเภทการชำระ': 'โอน', 'ยอดเงิน(บาท)': '500', 'หลักฐาน_1': 'CAR_CRM-691939189/Images/slip.jpg', 'หลักฐาน_4': 'CAR_CRM-691939189/Images/slip-4.jpg' }, { JobID: 'JOB-1', 'สถานะ': '', 'เลขที่บิล/ใบเสร็จ': '', 'หลักฐาน_1': '', 'หลักฐาน_2': '', 'หลักฐาน_3': '', 'หลักฐาน_4': '' }],
         Detail_Installer: [{ JobID: 'JOB-1', 'ทีมช่าง': 'Team A' }, { JobID: 'JOB-1', 'ทีมช่าง': 'Team B' }],
         Detail_film: [{ JobID: 'JOB-1', 'รุ่นฟิล์ม': 'Film A' }, { JobID: 'JOB-1', 'รุ่นฟิล์ม': '', 'บานหน้า': 'Film B' }],
         data: [{ JobID: 'JOB-1', MIS_ID: 'M1', 'เหตุผลขอตัดฟิล์ม': 'R1' }],
@@ -106,6 +106,7 @@ function csv(text) {
     assert.equal(job.payStatus, 'ชำระครบ');
     assert.equal(job.apptTime, '10:00');
     assert.equal(job.hasSlip, true);
+    assert.equal(job.proofs.length, 2);
     assert.equal(run("allRows.find(row => row.jobId === 'JOB-2').billNo"), 'BOOKING-BILL');
     assert.equal(run("allRows.find(row => row.jobId === 'JOB-2').payType"), 'เงินสด');
     run("openDrawer(filteredRows.findIndex(row => row.jobId === 'JOB-1'));");
