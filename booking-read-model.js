@@ -85,7 +85,7 @@ function buildPayInDetailsMap(rows) {
             const k = key.replace(/\s/g, '').toLowerCase();
             return k.includes('หลักฐาน') || k.includes('สลิป') || k.includes('slip') || k.includes('รูป') || k.includes('image') || k.includes('แนบ');
         });
-        const proofSlots = [1, 2].map(slot => {
+        const proofSlots = [1, 2, 3, 4].map(slot => {
             const proofKey = findKey(keys, key => {
                 const k = key.replace(/\s/g, '').toLowerCase();
                 return k === `หลักฐาน_${slot}` || k === `หลักฐาน${slot}` || k === `proof_${slot}` || k === `proof${slot}`;
@@ -127,7 +127,7 @@ function buildPayInDetailsMap(rows) {
                 const value = incoming[key];
                 if (value !== undefined && value !== null && value !== '' && value !== '-') merged[key] = value;
             });
-            merged.proofSlots = [0, 1].map(index => incoming.proofSlots[index] || existing.proofSlots[index] || '');
+            merged.proofSlots = [0, 1, 2, 3].map(index => incoming.proofSlots[index] || existing.proofSlots[index] || '');
             merged.proofs = merged.proofSlots.filter(value => value && value !== '-');
             merged.hasSlip = merged.proofs.some(value => value.length > 5);
             if (incoming.hasSlip || (!merged.id && incoming.id)) merged.id = incoming.id;

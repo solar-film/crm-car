@@ -1427,7 +1427,7 @@
                             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h3l2-3h8l2 3h3v12H3V7zm9 3a4 4 0 100 8 4 4 0 000-8z"></path></svg>
                             รูปหลักฐานการชำระเงิน
                         </h4>
-                        <p class="mt-1 text-[11px] leading-4 text-slate-500">ถ่ายรูปจากกล้องหรือเลือกรูปได้สูงสุด 2 รูป (JPG, PNG, WebP) ระบบจะย่อรูปก่อนบันทึกลง Google Drive</p>
+                        <p class="mt-1 text-[11px] leading-4 text-slate-500">ถ่ายรูปจากกล้องหรือเลือกรูปได้สูงสุด 4 รูป (JPG, PNG, WebP) ระบบจะย่อรูปก่อนบันทึกลง Google Drive</p>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="rounded-xl border border-slate-200 bg-white p-2.5">
@@ -1457,6 +1457,34 @@
                             <input id="pi-proof-camera-2" type="file" accept="image/*" capture="environment" class="hidden" onchange="selectPayInProof(event, 2)">
                             <input id="pi-proof-file-2" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="selectPayInProof(event, 2)">
                             <p id="pi-proof-status-2" class="mt-1.5 min-h-4 text-[10px] text-slate-500"></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 bg-white p-2.5">
+                            <div class="mb-2 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">หลักฐาน 3</span>
+                                <button type="button" id="pi-proof-remove-3" onclick="removePayInProof(3)" class="hidden text-[11px] font-semibold text-rose-600 hover:text-rose-700">ล้างรูป</button>
+                            </div>
+                            <div id="pi-proof-preview-3" class="h-32 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50"></div>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <label for="pi-proof-camera-3" class="cursor-pointer rounded-lg bg-emerald-600 px-2 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700">📷 ถ่ายรูป</label>
+                                <label for="pi-proof-file-3" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">เลือกรูป</label>
+                            </div>
+                            <input id="pi-proof-camera-3" type="file" accept="image/*" capture="environment" class="hidden" onchange="selectPayInProof(event, 3)">
+                            <input id="pi-proof-file-3" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="selectPayInProof(event, 3)">
+                            <p id="pi-proof-status-3" class="mt-1.5 min-h-4 text-[10px] text-slate-500"></p>
+                        </div>
+                        <div class="rounded-xl border border-slate-200 bg-white p-2.5">
+                            <div class="mb-2 flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-600">หลักฐาน 4</span>
+                                <button type="button" id="pi-proof-remove-4" onclick="removePayInProof(4)" class="hidden text-[11px] font-semibold text-rose-600 hover:text-rose-700">ล้างรูป</button>
+                            </div>
+                            <div id="pi-proof-preview-4" class="h-32 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50"></div>
+                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                <label for="pi-proof-camera-4" class="cursor-pointer rounded-lg bg-emerald-600 px-2 py-2 text-center text-xs font-bold text-white hover:bg-emerald-700">📷 ถ่ายรูป</label>
+                                <label for="pi-proof-file-4" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-2 py-2 text-center text-xs font-semibold text-slate-700 hover:bg-slate-50">เลือกรูป</label>
+                            </div>
+                            <input id="pi-proof-camera-4" type="file" accept="image/*" capture="environment" class="hidden" onchange="selectPayInProof(event, 4)">
+                            <input id="pi-proof-file-4" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="selectPayInProof(event, 4)">
+                            <p id="pi-proof-status-4" class="mt-1.5 min-h-4 text-[10px] text-slate-500"></p>
                         </div>
                     </div>
                 </section>
@@ -2109,13 +2137,15 @@
         let filmSeriesOptions = []; // รายชื่อฟิล์ม
         let reasonOptions = [];     // รายชื่อเหตุผลขอตัดฟิล์ม [{id, text}]
         let currentViewJobId = null; // ตัวแปรเก็บ ID งานที่เปิดดูอยู่ปัจจุบัน เพื่อใช้สั่งพิมพ์
-        const PAYIN_PROOF_SLOT_COUNT = 2;
+        const PAYIN_PROOF_SLOT_COUNT = 4;
         const PAYIN_PROOF_MAX_SOURCE_BYTES = 20 * 1024 * 1024;
         const PAYIN_PROOF_MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
-        const PAYIN_REQUIRED_BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
+        const PAYIN_REQUIRED_BACKEND_VERSION = '2026-09-23-payin-four-proofs';
         const payInProofState = {
             1: { existing: '', upload: null, removed: false, processing: false, requestId: 0 },
-            2: { existing: '', upload: null, removed: false, processing: false, requestId: 0 }
+            2: { existing: '', upload: null, removed: false, processing: false, requestId: 0 },
+            3: { existing: '', upload: null, removed: false, processing: false, requestId: 0 },
+            4: { existing: '', upload: null, removed: false, processing: false, requestId: 0 }
         };
         let payInSubmitInFlight = false;
         let payInPendingMutationId = '';

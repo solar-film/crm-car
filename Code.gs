@@ -14,9 +14,10 @@ const PAYIN_IMAGE_FOLDER_ID_PROPERTY = 'CAR_CRM_PAYIN_FOLDER_ID';
 const APPSHEET_APP_FOLDER_NAME = 'CAR_CRM-691939189';
 const PAYIN_IMAGE_RELATIVE_FOLDER = 'Images/Pay_In';
 const PAYIN_IMAGE_MAX_BYTES = 3 * 1024 * 1024;
+const PAYIN_PROOF_SLOT_COUNT = 4;
 const PAYIN_MAX_POST_BYTES = 10 * 1024 * 1024;
 const PAYIN_MUTATION_CACHE_SECONDS = 6 * 60 * 60;
-const BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
+const BACKEND_VERSION = '2026-09-23-payin-four-proofs';
 
 // ─── Column definitions ───────────────────────────────────────
 const SCHEMA = {
@@ -101,7 +102,7 @@ const SCHEMA = {
       'Pay_ID', 'JobID', 'สถานะ',
       'ใบเสนอราคา', 'เลขที่บิล/ใบเสร็จ',
       'ประเภทการชำระ', 'ยอดเงิน(บาท)',
-      'หมายเหตุ', 'หลักฐาน_1', 'หลักฐาน_2',
+      'หมายเหตุ', 'หลักฐาน_1', 'หลักฐาน_2', 'หลักฐาน_3', 'หลักฐาน_4',
       'วันที่บันทึกรายการ'
     ]
   },
@@ -671,7 +672,7 @@ function hasExpectedImageSignature_(bytes, mimeType) {
 function decodePayInProofUploads_(body) {
   if (body.payInProofUploads === undefined) return [];
   if (!Array.isArray(body.payInProofUploads)) throw new Error('รูปหลักฐานมีรูปแบบข้อมูลไม่ถูกต้อง');
-  if (body.payInProofUploads.length > 2) throw new Error('แนบรูปหลักฐานได้สูงสุด 2 รูป');
+  if (body.payInProofUploads.length > PAYIN_PROOF_SLOT_COUNT) throw new Error(`แนบรูปหลักฐานได้สูงสุด ${PAYIN_PROOF_SLOT_COUNT} รูป`);
 
   const allowedMimeTypes = {
     'image/jpeg': 'jpg',
@@ -682,7 +683,7 @@ function decodePayInProofUploads_(body) {
 
   return body.payInProofUploads.map(function (upload) {
     const slot = Number(upload && upload.slot);
-    if ((slot !== 1 && slot !== 2) || seenSlots[slot]) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
+    if (!Number.isInteger(slot) || slot < 1 || slot > PAYIN_PROOF_SLOT_COUNT || seenSlots[slot]) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
     seenSlots[slot] = true;
 
     let mimeType = String(upload.mimeType || '').toLowerCase().trim();
@@ -756,7 +757,7 @@ function decodePayInProof_(body) {
   const requestId = String(body.clientRequestId || '').toLowerCase().trim();
   if (!recordId || recordId.length > 100) throw new Error('ไม่พบ Pay_ID สำหรับผูกรูป');
   if (!jobId || jobId.length > 100) throw new Error('ไม่พบ JobID สำหรับผูกรูป');
-  if (slot !== 1 && slot !== 2) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
+  if (!Number.isInteger(slot) || slot < 1 || slot > PAYIN_PROOF_SLOT_COUNT) throw new Error('ตำแหน่งรูปหลักฐานไม่ถูกต้อง');
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(requestId)) {
     throw new Error('รหัสคำขออัปโหลดไม่ถูกต้อง');
   }
@@ -1080,8 +1081,9 @@ function doPost(e) {
 
     // เส้นทางรูปเป็นค่าที่ server สร้างเท่านั้น ป้องกัน client เขียน path เอง
     if (sheetName === 'PayIn') {
-      delete body['หลักฐาน_1'];
-      delete body['หลักฐาน_2'];
+      for (let slot = 1; slot <= PAYIN_PROOF_SLOT_COUNT; slot++) {
+        delete body[`หลักฐาน_${slot}`];
+      }
     }
 
     if (action === 'upsertPayIn') {

@@ -18,14 +18,15 @@ Required deployment steps:
 5. Open `Project Settings` > `Script properties`.
 6. Add `CAR_CRM_WRITE_TOKEN` with a long random secret value.
 7. For PayIn photos, the script normally verifies and finds `CAR_CRM-691939189/Images/Pay_In` inside `appsheet/data` automatically. If it cannot verify that path or Google Drive contains more than one matching app folder, add `CAR_CRM_PAYIN_FOLDER_ID` with the Folder ID of the existing `Pay_In` folder.
-8. Save the project.
-9. Select and run `authorizeOnce()`.
-10. Approve both the Google Sheets and Google Drive permission prompts.
-11. Go to `Deploy` > `Manage deployments` > edit the web app deployment.
-12. Select `Version` > `New version`.
-13. Keep `Execute as` set to `Me`.
-14. Keep access set to `Anyone` or `Anyone with the link`.
-15. Deploy and keep using the `/exec` URL in the writer pages.
+8. In the `PayIn` sheet, insert `หลักฐาน_3` and `หลักฐาน_4` immediately after `หลักฐาน_2` and before `วันที่บันทึกรายการ`.
+9. Save the project.
+10. Select and run `authorizeOnce()`.
+11. Approve both the Google Sheets and Google Drive permission prompts.
+12. Go to `Deploy` > `Manage deployments` > edit the web app deployment.
+13. Select `Version` > `New version`.
+14. Keep `Execute as` set to `Me`.
+15. Keep access set to `Anyone` or `Anyone with the link`.
+16. Deploy and keep using the `/exec` URL in the writer pages.
 
 This prevents the error:
 
@@ -35,9 +36,9 @@ The important permanent fix is the explicit `spreadsheets` and `drive` scopes in
 
 ## PayIn photo storage
 
-- The PayIn form accepts up to two JPG, PNG, or WebP photos, downsizes them in the browser, and sends them to `Code.gs`.
+- The PayIn form accepts up to four JPG, PNG, or WebP photos, downsizes them in the browser, and sends them to `Code.gs`.
 - `Code.gs` saves the actual files in the existing AppSheet folder `CAR_CRM-691939189/Images/Pay_In`.
-- The sheet keeps AppSheet-compatible relative paths in `หลักฐาน_1` and `หลักฐาน_2`; existing AppSheet and CAR CRM views can therefore use the same files.
+- The sheet keeps AppSheet-compatible relative paths in `หลักฐาน_1` through `หลักฐาน_4`; existing AppSheet and CAR CRM views can therefore use the same files.
 - Each save carries a short-lived idempotency key, preventing common mobile/network retries from creating the same PayIn row and photos twice.
 - The script does not make payment evidence public. Access continues to follow the existing Google Drive/AppSheet permissions.
 - Replacing or removing a proof updates the sheet reference but retains the previous private Drive file for audit/recovery; no evidence file is permanently deleted by the web form.
