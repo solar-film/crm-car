@@ -12,8 +12,8 @@
   <link rel="icon" href="./icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="./icon-192.png">
   <link rel="stylesheet" href="./styles.css?v=8">
-  <script src="./core.js?v=10" defer></script>
-  <script src="./app.js?v=12" defer></script>
+  <script src="./core.js?v=11" defer></script>
+  <script src="./app.js?v=13" defer></script>
 </head>
 <body>
   <div class="app-shell">
@@ -171,7 +171,7 @@
             <div class="proof-heading">
               <div>
                 <h3 id="proofHeading">รูปสลิปการชำระเงิน</h3>
-                <p>ถ่ายจากกล้องหรือเลือกรูปในเครื่องได้สูงสุด 2 รูป</p>
+                <p>ถ่ายจากกล้องหรือเลือกรูปในเครื่องได้สูงสุด 4 รูป</p>
               </div>
               <span>JPG / PNG / WebP</span>
             </div>
@@ -199,6 +199,30 @@
                 <input id="proofCamera2" class="visually-hidden-file" type="file" accept="image/*" capture="environment" data-proof-input="2">
                 <input id="proofFile2" class="visually-hidden-file" type="file" accept="image/*" data-proof-input="2">
                 <p id="proofStatus2" class="proof-status"></p>
+              </article>
+
+              <article class="proof-card" data-proof-card="3">
+                <div class="proof-card-title"><strong>รูปเพิ่มเติม 2</strong><button class="proof-remove hidden" type="button" data-remove-proof="3">ยกเลิกรูปใหม่</button></div>
+                <div id="proofPreview3" class="proof-preview"><span>ยังไม่มีรูป</span></div>
+                <div class="proof-actions">
+                  <label class="camera-button" for="proofCamera3">ถ่ายรูป</label>
+                  <label class="gallery-button" for="proofFile3">เลือกรูป</label>
+                </div>
+                <input id="proofCamera3" class="visually-hidden-file" type="file" accept="image/*" capture="environment" data-proof-input="3">
+                <input id="proofFile3" class="visually-hidden-file" type="file" accept="image/*" data-proof-input="3">
+                <p id="proofStatus3" class="proof-status"></p>
+              </article>
+
+              <article class="proof-card" data-proof-card="4">
+                <div class="proof-card-title"><strong>รูปเพิ่มเติม 3</strong><button class="proof-remove hidden" type="button" data-remove-proof="4">ยกเลิกรูปใหม่</button></div>
+                <div id="proofPreview4" class="proof-preview"><span>ยังไม่มีรูป</span></div>
+                <div class="proof-actions">
+                  <label class="camera-button" for="proofCamera4">ถ่ายรูป</label>
+                  <label class="gallery-button" for="proofFile4">เลือกรูป</label>
+                </div>
+                <input id="proofCamera4" class="visually-hidden-file" type="file" accept="image/*" capture="environment" data-proof-input="4">
+                <input id="proofFile4" class="visually-hidden-file" type="file" accept="image/*" data-proof-input="4">
+                <p id="proofStatus4" class="proof-status"></p>
               </article>
             </div>
           </section>

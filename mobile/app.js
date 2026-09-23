@@ -9,7 +9,8 @@
   const WRITE_TOKEN_KEY = 'carCrmWriteToken';
   const MAX_SOURCE_IMAGE_BYTES = 20 * 1024 * 1024;
   const MAX_UPLOAD_IMAGE_BYTES = 3 * 1024 * 1024;
-  const PAYIN_REQUIRED_BACKEND_VERSION = '2026-08-30-payin-proof-confirmed';
+  const PAYIN_PROOF_SLOT_COUNT = 4;
+  const PAYIN_REQUIRED_BACKEND_VERSION = '2026-09-23-payin-four-proofs';
   const SHEETS = Object.freeze({ bookings: 'Bookings', customers: 'Customer', payIns: 'PayIn' });
   let payInBackendVersionPromise = null;
 
@@ -23,7 +24,9 @@
     toastTimer: null,
     proofs: {
       1: makeEmptyProofState(),
-      2: makeEmptyProofState()
+      2: makeEmptyProofState(),
+      3: makeEmptyProofState(),
+      4: makeEmptyProofState()
     }
   };
 
@@ -291,7 +294,7 @@
   }
 
   function resetProofs(existingProofs) {
-    [1, 2].forEach(slot => {
+    Array.from({ length: PAYIN_PROOF_SLOT_COUNT }, (_, index) => index + 1).forEach(slot => {
       revokePreview(state.proofs[slot]);
       state.proofs[slot] = makeEmptyProofState(existingProofs && existingProofs[slot - 1]);
       document.querySelectorAll(`[data-proof-input="${slot}"]`).forEach(input => { input.value = ''; });
@@ -604,7 +607,8 @@
       'หมายเหตุ': dom.paymentNote.value.trim()
     };
     if (existingPayIn && existingPayIn.id) payload.recordId = existingPayIn.id;
-    const uploadSlots = [1, 2].filter(slot => state.proofs[slot].blob);
+    const proofSlots = Array.from({ length: PAYIN_PROOF_SLOT_COUNT }, (_, index) => index + 1);
+    const uploadSlots = proofSlots.filter(slot => state.proofs[slot].blob);
 
     setSaving(true, 'กำลังบันทึกข้อมูล…');
     hideFormMessage();
@@ -633,8 +637,8 @@
           paymentType: payload['ประเภทการชำระ'],
           amount: Number(payload['ยอดเงิน(บาท)']) || 0,
           note: payload['หมายเหตุ'],
-          proofs: [state.proofs[1].existing, state.proofs[2].existing],
-          hasProof: Boolean(state.proofs[1].existing || state.proofs[2].existing)
+          proofs: proofSlots.map(slot => state.proofs[slot].existing),
+          hasProof: proofSlots.some(slot => Boolean(state.proofs[slot].existing))
         };
       };
 
@@ -685,8 +689,8 @@
         paymentType: payload['ประเภทการชำระ'],
         amount: Number(payload['ยอดเงิน(บาท)']) || 0,
         note: payload['หมายเหตุ'],
-        proofs: [state.proofs[1].existing, state.proofs[2].existing],
-        hasProof: Boolean(state.proofs[1].existing || state.proofs[2].existing)
+        proofs: proofSlots.map(slot => state.proofs[slot].existing),
+        hasProof: proofSlots.some(slot => Boolean(state.proofs[slot].existing))
       };
       showFormMessage('บันทึก PayIn และรูปสลิปเรียบร้อยแล้ว', 'success');
       showToast('บันทึก PayIn สำเร็จ');
@@ -730,7 +734,7 @@
 
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register('./sw.js?v=11', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
+    navigator.serviceWorker.register('./sw.js?v=12', { scope: './' }).catch(error => console.warn('Service worker:', error.message));
   }
 
   initialise();

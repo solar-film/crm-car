@@ -190,7 +190,7 @@
         const value = incoming[key];
         if (value !== undefined && value !== null && value !== '' && value !== '-') merged[key] = value;
       });
-      merged.proofs = [0, 1].map(index => incoming.proofs[index] || existing.proofs[index] || '');
+      merged.proofs = [0, 1, 2, 3].map(index => incoming.proofs[index] || existing.proofs[index] || '');
       merged.hasProof = merged.proofs.some(Boolean);
       if (incoming.hasProof || (!merged.id && incoming.id)) merged.id = incoming.id;
       return merged;
@@ -208,7 +208,7 @@
         paymentType: getField(row, ['ประเภทการชำระ', 'วิธีการชำระ', 'PaymentType']),
         amount: numericValue(getField(row, ['ยอดเงิน(บาท)', 'ยอดเงิน', 'ยอดชำระ', 'Amount'])),
         note: getField(row, ['หมายเหตุ', 'Note']),
-        proofs: [getField(row, ['หลักฐาน_1']), getField(row, ['หลักฐาน_2'])],
+        proofs: [1, 2, 3, 4].map(slot => getField(row, [`หลักฐาน_${slot}`])),
         raw: row
       };
       payIn.hasProof = payIn.proofs.some(Boolean);

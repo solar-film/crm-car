@@ -14,15 +14,16 @@
 - อ่านเฉพาะ `Bookings`, `Customer` และ `PayIn`
 - รายการที่ `Bookings.Status` มีค่า `ยกเลิก` จะถูกตัดออกก่อนนับ ค้นหา และแสดงผลทุกกรณี
 - PayIn ใช้ `upsertPayIn` เพื่อไม่สร้างแถวซ้ำเมื่อมือถือ retry
-- รูปสลิปส่งทีละรูปผ่าน `attachPayInProof` พร้อม `clientRequestId` เพื่อให้ retry เดิมไม่สร้างไฟล์ซ้ำ
+- แนบรูปสลิปได้สูงสุด 4 รูป และส่งทีละรูปผ่าน `attachPayInProof` พร้อม `clientRequestId` เพื่อให้ retry เดิมไม่สร้างไฟล์ซ้ำ
 
 ## Apps Script setup
 
-1. ตั้ง Script Property `CAR_CRM_PAYIN_FOLDER_ID` เป็น Folder ID ของ `CAR_CRM-691939189/Images/Pay_In`
-2. ให้ manifest มี scopes `spreadsheets` และ `drive`
-3. รัน `authorizeOnce()` และอนุญาต Sheets + Drive
-4. สร้าง Web app deployment ใหม่สำหรับ mobile โดยไม่แก้ deployment เดิม
-5. นำ URL `/exec` ของ deployment ใหม่ไปแทน `__MOBILE_SCRIPT_URL__` ใน `app.js`
+1. เพิ่มคอลัมน์ `หลักฐาน_3` และ `หลักฐาน_4` ในชีต `PayIn` ต่อจาก `หลักฐาน_2` และก่อน `วันที่บันทึกรายการ`
+2. ตั้ง Script Property `CAR_CRM_PAYIN_FOLDER_ID` เป็น Folder ID ของ `CAR_CRM-691939189/Images/Pay_In`
+3. ให้ manifest มี scopes `spreadsheets` และ `drive`
+4. รัน `authorizeOnce()` และอนุญาต Sheets + Drive
+5. สร้าง Web app deployment ใหม่สำหรับ mobile โดยไม่แก้ deployment เดิม
+6. นำ URL `/exec` ของ deployment ใหม่ไปแทน `__MOBILE_SCRIPT_URL__` ใน `app.js`
 
 ## Tests
 
