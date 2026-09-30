@@ -798,6 +798,18 @@
                     }
                 }
 
+                // Additional discovery channels; avoid duplicates if added to the sheet later.
+                ['Chat GPT', 'Gemini', 'อื่นๆ'].forEach(value => {
+                    const exists = Array.from(select.options).some(option =>
+                        option.value.replace(/\s+/g, '').toLowerCase() === value.replace(/\s+/g, '').toLowerCase()
+                    );
+                    if (!exists) {
+                        const option = document.createElement('option');
+                        option.value = option.textContent = value;
+                        select.appendChild(option);
+                    }
+                });
+
                 // Fetch booking counts (โหลดคู่ขนานกับลูกค้า)
                 fetchBookingCounts();
                 // Fetch dropdown options สำหรับฟอร์มเพิ่มคิวจอง
