@@ -528,6 +528,10 @@
             return price ? price.toLocaleString('th-TH') : '';
         }
 
+        function strikethroughText(value) {
+            return Array.from(String(value)).map(character => `${character}\u0336`).join('');
+        }
+
         function getPrice(row, brandKey) {
             return row ? parsePrice(row[brandKey]) : 0;
         }
@@ -992,7 +996,7 @@
 
                 const regular = getPrice(regularRow, brand.key);
                 return [
-                    regular ? `❌ ราคาปกติ ${formatBaht(regular)} บาท` : '',
+                    regular ? `❌ ราคาปกติ ${strikethroughText(formatBaht(regular))} บาท` : '',
                     `✅ พิเศษเพียง ${formatBaht(special)} บาท`
                 ].filter(Boolean).join('\n');
             };
@@ -1162,7 +1166,7 @@
                 line(),
                 '⏱ ติดตั้งรวดเร็ว 2-3 ชม. มีห้องรับรองระดับ VIP พร้อมบริการ',
                 '',
-                '📅 วันนี้ - 30 ก.ย. 69 เท่านั้น!',
+                '📅 วันนี้ - 31 ต.ค. 69 เท่านั้น!',
                 sunroofRecommend
             ].filter(lineText => lineText !== '').join('\n');
         }
