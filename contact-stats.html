@@ -149,6 +149,7 @@
         }
     </style>
     <script src="sidebar.js" defer></script>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="text-slate-900 bg-slate-50 auth-locked min-h-screen">
     <!-- Login Screen -->
@@ -462,9 +463,9 @@
             { key: 'walkin', label: 'WalkIn', color: 'bg-amber-500', bg: 'bg-amber-100', hex: '#f59e0b' }
         ];
         
-        const LOGIN_USER = 'admin';
-        const LOGIN_PASS = 'MHL741mhl+';
-        const LOGIN_KEY = 'carCrmLoggedIn';
+        
+        
+        
 
         const dom = {};
         const DOM_IDS = [
@@ -1706,22 +1707,20 @@
             cacheDom();
             lucide.createIcons();
             
-            const stored = localStorage.getItem(LOGIN_KEY);
-            if (stored === '1' || stored === 'yes') {
-                localStorage.setItem(LOGIN_KEY, '1');
+            window.CarCrmAuth.onLogin(unlockPage);
+            if (window.CarCrmAuth.isLoggedIn()) {
                 unlockPage();
                 return;
             }
 
-            dom.loginForm.addEventListener('submit', event => {
+            dom.loginForm.addEventListener('submit', async event => {
                 event.preventDefault();
                 const btn = event.submitter;
                 const orgText = btn.innerHTML;
                 btn.innerHTML = `<i data-lucide="loader-2" class="h-5 w-5 animate-spin mx-auto"></i>`;
 
-                setTimeout(() => {
-                    if (dom.loginUser.value.trim() === LOGIN_USER && dom.loginPass.value === LOGIN_PASS) {
-                        localStorage.setItem(LOGIN_KEY, '1');
+                setTimeout(async () => {
+                    if (await window.CarCrmAuth.login(dom.loginUser.value.trim(), dom.loginPass.value)) {
                         dom.loginError.classList.add('hidden');
                         unlockPage();
                     } else {

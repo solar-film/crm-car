@@ -168,6 +168,7 @@
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
     <script src="sidebar.js" defer></script>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="text-slate-800 auth-locked">
     <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -491,9 +492,9 @@
         const GLASS_SIZE_CSV_URLS = [
             GLASS_SIZE_CSV_URL
         ];
-        const LOGIN_USER = 'admin';
-        const LOGIN_PASS = 'MHL741mhl+';
-        const LOGIN_KEY = 'carCrmLoggedIn';
+        
+        
+        
         const GLASS_KEY_COLUMN = 'ประเภทรถยนต์';
         const GLASS_POSITION_COLUMN = 'ตำแหน่งติดตั้ง';
         const GLASS_POSITION_COLUMNS = [GLASS_POSITION_COLUMN, 'ตำแหน่งติดตั้ง ใหม่', 'ตำแหน่งติดตั้งใหม่', 'ตำแหน่ง', 'รายการ', 'ชิ้นงาน'];
@@ -1819,17 +1820,15 @@
 
         function initLogin() {
             cacheDom();
-            const stored = localStorage.getItem(LOGIN_KEY);
-            if (stored === '1' || stored === 'yes') {
-                localStorage.setItem(LOGIN_KEY, '1');
+            window.CarCrmAuth.onLogin(unlockPage);
+            if (window.CarCrmAuth.isLoggedIn()) {
                 unlockPage();
                 return;
             }
 
-            dom.loginForm.addEventListener('submit', event => {
+            dom.loginForm.addEventListener('submit', async event => {
                 event.preventDefault();
-                if (dom.loginUser.value.trim() === LOGIN_USER && dom.loginPass.value === LOGIN_PASS) {
-                    localStorage.setItem(LOGIN_KEY, '1');
+                if (await window.CarCrmAuth.login(dom.loginUser.value.trim(), dom.loginPass.value)) {
                     unlockPage();
                     return;
                 }

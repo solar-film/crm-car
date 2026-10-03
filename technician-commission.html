@@ -242,7 +242,8 @@
         }
     </style>
     <script src="sidebar.js" defer></script>
-    <script src="commission-auth.js" defer></script>
+    <script src="commission-auth.js?v=20261003-github-1" defer></script>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="text-slate-800 auth-locked">
     <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -434,11 +435,11 @@
             `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('ช่างติดตั้ง')}`
         ];
 
-        const LOGIN_USER = 'admin';
-        const LOGIN_PASS = 'MHL741mhl+';
-        const LOGIN_KEY = 'carCrmLoggedIn';
-        const COMMISSION_PASS = 'oil2026';
-        const COMMISSION_ACCESS_KEY = 'technicianCommissionAccess';
+        
+        
+        
+        
+        
 
         const CUSTOMER_TYPE_FIELDS = ['ประเภทลูกค้า', 'Customer Type', 'CustomerType', 'customer_type'];
         const CUSTOMER_GROUPS = ['ลูกค้าใหม่', 'ลูกค้าเก่า'];
@@ -1303,10 +1304,8 @@
         }
 
         async function requestCommissionAccess() {
-            if (sessionStorage.getItem(COMMISSION_ACCESS_KEY) === '1') return true;
 
             const granted = await window.CarCrmCommissionAuth.request({
-                password: COMMISSION_PASS,
                 title: 'คำนวณค่าคอมช่าง',
                 message: 'ใส่รหัสผ่านเพื่อเข้าสู่หน้าคำนวณค่าคอมช่าง',
                 confirmText: 'เข้าสู่หน้า',
@@ -1314,7 +1313,6 @@
             });
 
             if (granted) {
-                sessionStorage.setItem(COMMISSION_ACCESS_KEY, '1');
                 return true;
             }
 
@@ -1330,19 +1328,17 @@
 
         function setupLogin() {
             cacheDom();
-            const stored = localStorage.getItem(LOGIN_KEY);
-            if (stored === '1' || stored === 'yes') {
-                localStorage.setItem(LOGIN_KEY, '1');
+            window.CarCrmAuth.onLogin(unlockPage);
+            if (window.CarCrmAuth.isLoggedIn()) {
                 unlockPage();
                 return;
             }
 
-            dom.loginForm.addEventListener('submit', event => {
+            dom.loginForm.addEventListener('submit', async event => {
                 event.preventDefault();
                 const user = dom.loginUser.value.trim();
                 const pass = dom.loginPass.value;
-                if (user === LOGIN_USER && pass === LOGIN_PASS) {
-                    localStorage.setItem(LOGIN_KEY, '1');
+                if (await window.CarCrmAuth.login(user, pass)) {
                     dom.loginError.classList.add('hidden');
                     unlockPage();
                     return;

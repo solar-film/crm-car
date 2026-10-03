@@ -3,7 +3,6 @@
     const MODAL_ID = 'carCrmCommissionAuthModal';
 
     const defaults = {
-        password: 'oil2026',
         title: 'คำนวณค่าคอมช่าง',
         message: 'ใส่รหัสผ่านเพื่อเข้าสู่หน้าคำนวณค่าคอมช่าง',
         confirmText: 'เข้าสู่หน้า',
@@ -310,7 +309,7 @@
         return modal;
     }
 
-    function submitActiveRequest() {
+    async function submitActiveRequest() {
         if (!activeRequest) return;
 
         const modal = ensureModal();
@@ -318,13 +317,19 @@
         const error = modal.querySelector('[data-auth-error]');
         const password = input.value.trim();
 
-        if (password === activeRequest.password) {
-            closeModal(true);
+        const request = activeRequest;
+        if (request.saving) return;
+        request.saving = true;
+        try {
+            await window.CarCrmAuth.request('commission', {password});
+            if (activeRequest === request) closeModal(true);
             return;
-        }
+        } catch (failure) {
+            if (activeRequest !== request) return;
+            error.textContent = failure.message;
+        } finally { request.saving = false; }
 
         input.classList.add('is-error');
-        error.textContent = activeRequest.errorText;
         error.classList.add('is-visible');
         input.select();
     }
@@ -342,7 +347,12 @@
         request.resolve(result);
     }
 
-    function requestAccess(options = {}) {
+    async function requestAccess(options = {}) {
+        if (activeRequest) return activeRequest.promise;
+        try {
+            const session = await window.CarCrmAuth.request('session');
+            if (session.authenticated && session.commission) return true;
+        } catch (_) {}
         if (activeRequest) return activeRequest.promise;
 
         const config = { ...defaults, ...options };
@@ -372,7 +382,6 @@
         });
 
         activeRequest = {
-            password: config.password,
             errorText: config.errorText,
             promise,
             resolve: resolveRequest

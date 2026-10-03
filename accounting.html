@@ -59,6 +59,7 @@
             .print-container { box-shadow: none !important; border: none !important; }
         }
     </style>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="min-h-screen bg-slate-100 text-slate-800 lg:flex">
 
@@ -316,19 +317,16 @@
         return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
     }
 
-    const LOGIN_USER = 'admin';
-    const LOGIN_PASS = 'MHL741mhl+';
-    const LOGIN_KEY  = 'carCrmLoggedIn';
+    
+    
+    
 
     // ─── AUTH ─────────────────────────────────────────────────────────────
-    function doLogin() {
+    async function doLogin() {
         const u = document.getElementById('loginUser').value.trim();
         const p = document.getElementById('loginPass').value;
-        if (u === LOGIN_USER && p === LOGIN_PASS) {
-            localStorage.setItem(LOGIN_KEY, '1');
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('appContent').classList.remove('hidden');
-            fetchData();
+        if (await window.CarCrmAuth.login(u, p)) {
+            unlockPage();
         } else {
             document.getElementById('loginError').classList.remove('hidden');
         }
@@ -976,7 +974,8 @@ function openDrawer(idx) {
 
     window.addEventListener('load', () => {
         setDefaultMonth();
-        if (localStorage.getItem(LOGIN_KEY) === '1') {
+        window.CarCrmAuth.onLogin(unlockPage);
+        if (window.CarCrmAuth.isLoggedIn()) {
             document.getElementById('appContent').classList.remove('hidden');
             fetchData();
         } else {

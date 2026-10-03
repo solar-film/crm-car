@@ -211,6 +211,7 @@
     </style>
     <link rel="stylesheet" href="apple-style.css?v=20260520-4">
     <script src="sidebar.js" defer></script>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="text-slate-900 auth-locked">
     <div id="loginScreen" class="fixed inset-0 z-[9999] min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -368,9 +369,9 @@
         const CAR_MODEL_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(CAR_MODEL_SHEET_NAME)}`;
         const PRICE_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(PRICE_SHEET_NAME)}`;
 
-        const LOGIN_USER = 'admin';
-        const LOGIN_PASS = 'MHL741mhl+';
-        const LOGIN_KEY = 'carCrmLoggedIn';
+        
+        
+        
 
         const PRICE_PROMO_COLUMNS = ['Pro_ID', 'โปรโมชั่น'];
         const PRICE_KEY_COLUMNS = ['กลุ่มราคา', 'ประเภทรถยนต์'];
@@ -1393,17 +1394,15 @@
 
         function initLogin() {
             cacheDom();
-            const stored = localStorage.getItem(LOGIN_KEY);
-            if (stored === '1' || stored === 'yes') {
-                localStorage.setItem(LOGIN_KEY, '1');
+            window.CarCrmAuth.onLogin(unlockPage);
+            if (window.CarCrmAuth.isLoggedIn()) {
                 unlockPage();
                 return;
             }
 
-            dom.loginForm.addEventListener('submit', event => {
+            dom.loginForm.addEventListener('submit', async event => {
                 event.preventDefault();
-                if (dom.loginUser.value.trim() === LOGIN_USER && dom.loginPass.value === LOGIN_PASS) {
-                    localStorage.setItem(LOGIN_KEY, '1');
+                if (await window.CarCrmAuth.login(dom.loginUser.value.trim(), dom.loginPass.value)) {
                     unlockPage();
                     return;
                 }

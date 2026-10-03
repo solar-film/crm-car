@@ -87,6 +87,7 @@
     </style>
     <!-- Placeholder for sidebar script if needed -->
     <script src="sidebar.js" defer></script>
+    <script src="crm-auth.js?v=20261003-github-1" defer></script>
 </head>
 <body class="auth-locked antialiased selection:bg-blue-200 selection:text-blue-900">
     
@@ -385,9 +386,9 @@
         const DETAIL_FILM_SHEET_NAME = 'Detail_film';
         const CUT_REASON_SHEET_NAME = 'เหตุผลขอตัดฟิล์ม';
         const CONTACT_SHEET_NAMES = ['สถิตการติดต่อ', 'สถิติดการติดต่อ', 'สถิติการติดต่อ', 'สถิติ ติดต่อ', 'ContactStats', 'Contact Stats', 'Contact'];
-        const LOGIN_USER = 'admin';
-        const LOGIN_PASS = 'MHL741mhl+';
-        const LOGIN_KEY = 'carCrmLoggedIn';
+        
+        
+        
 
         const CONTACT_CHANNELS = [
             { key: 'phone', label: 'Tel', headers: ['โทร', 'โทรศัพท์', 'Tel', 'Phone'] },
@@ -1480,19 +1481,19 @@
         }
 
         function setupLogin() {
-            if (localStorage.getItem(LOGIN_KEY) === '1') {
+            window.CarCrmAuth.onLogin(unlockApp);
+            if (window.CarCrmAuth.isLoggedIn()) {
                 unlockApp();
                 return;
             }
 
             document.body.classList.add('auth-locked');
-            dom.loginForm.addEventListener('submit', event => {
+            dom.loginForm.addEventListener('submit', async event => {
                 event.preventDefault();
                 const user = dom.loginUser.value.trim();
                 const pass = dom.loginPass.value;
 
-                if (user === LOGIN_USER && pass === LOGIN_PASS) {
-                    localStorage.setItem(LOGIN_KEY, '1');
+                if (await window.CarCrmAuth.login(user, pass)) {
                     dom.loginError.classList.add('hidden');
                     unlockApp();
                 } else {
